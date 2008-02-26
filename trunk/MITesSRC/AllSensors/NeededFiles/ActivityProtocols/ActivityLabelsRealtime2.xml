@@ -1,0 +1,40 @@
+<?xml version='1.0'?>
+<ANNOTATION xmlns="urn:mites-schema">
+<FILEINFO>
+<SUBJECT NAME="Fahd Albinali" />
+<LOCATION NAME="house_n Lab" />
+    <OBSERVER NAME="Fahd Albinali" />
+    <NOTES NAME="Observing physical activities of 2 users in the house_n lab with 2 mites attached on their ankle and wrist" />
+  </FILEINFO>
+  <LABELS>
+      <CATEGORY NAME="posture">
+      	<LABEL NAME="Kicking Ball" />
+        <LABEL NAME="bending over" />
+        <LABEL NAME="sitting" />
+        <LABEL NAME="squatting" />
+        <LABEL NAME="standing still" />
+        <LABEL NAME="sitting" />
+        <LABEL NAME="lying still" />
+      </CATEGORY>
+      <CATEGORY NAME="ambulation">
+        <LABEL NAME="running" />
+        <LABEL NAME="jogging" />
+        <LABEL NAME="jumping" />
+        <LABEL NAME="walking up stairs" />
+        <LABEL NAME="walking down stairs" />
+        <LABEL NAME="crawling" />
+        <LABEL NAME="walking" />
+        <LABEL NAME="walking" />
+      </CATEGORY>
+      <CATEGORY NAME="transitions">
+        <LABEL NAME="kneeling" />
+        <LABEL NAME="bending" />
+        <LABEL NAME="picking up" />
+        <LABEL NAME="turning/pivoting" />
+        <LABEL NAME="standing up" />
+        <LABEL NAME="lying down" />
+        <LABEL NAME="sitting down" />
+      </CATEGORY>   
+  
+  </LABELS>
+</ANNOTATION>

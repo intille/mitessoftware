@@ -1,0 +1,13 @@
+<?xml version='1.0'?>
+<PROTOCOLS xmlns="urn:mites-schema">
+<PROTOCOL>
+	<NAME>Campus Activities</NAME>
+	<DESCRIPTION>These set of activities are performed on campus.</DESCRIPTION>
+	<FILE>..\..\NeededFiles\ActivityProtocols\ActivityLabelsRealtime1.xml</FILE>
+</PROTOCOL>
+<PROTOCOL>
+	<NAME>Gym Activities</NAME>
+	<DESCRIPTION>These set of activities are performed in the Gym.</DESCRIPTION>
+	<FILE>..\..\NeededFiles\ActivityProtocols\ActivityLabelsRealtime2.xml</FILE>
+</PROTOCOL>
+</PROTOCOLS>
