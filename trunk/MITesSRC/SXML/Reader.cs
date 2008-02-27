@@ -10,7 +10,7 @@ namespace SXML
     public class Reader
     {
         public const string DEFAULT_XML_FILE = "SensorData.xml";
-        public const string DEFAULT_XSD_FILE = "..\\..\\NeededFiles\\Master\\SensorData.xsd";
+        public const string DEFAULT_XSD_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\SensorData.xsd";
 
         private string xmlFile;
         private string xsdFile;

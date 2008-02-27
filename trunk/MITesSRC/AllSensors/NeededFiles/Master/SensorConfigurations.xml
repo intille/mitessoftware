@@ -3,23 +3,23 @@
 <SENSORSET>
 	<NAME>Stanford MITes Set 1</NAME>
 	<DESCRIPTION>This set requires 2 receivers to be running. Receiver 1 expects data from MITes 0,1,4 and 7. Receiver 2 expects data from MITes 8, 11, 14 and 17.</DESCRIPTION>
-	<FILE>..\..\NeededFiles\SensorConfigurations\SensorData3.xml</FILE>
+	<FILE>..\..\..\..\MITesSRC\AllSensors\NeededFiles\SensorConfigurations\SensorData3.xml</FILE>
 </SENSORSET>
 
 <SENSORSET>
 	<NAME>Stanford MITes Set 2</NAME>
 	<DESCRIPTION>This set requires 2 receivers to be running. Receiver 1 expects data from MITes 0 and 1. Receiver 2 expects data from MITes 11 and 17.</DESCRIPTION>
-	<FILE>..\..\NeededFiles\SensorConfigurations\SensorData4.xml</FILE>
+	<FILE>..\..\..\..\MITesSRC\AllSensors\NeededFiles\SensorConfigurations\SensorData4.xml</FILE>
 </SENSORSET>
 
 <SENSORSET>
 	<NAME>Accelerometers and Heart Rate</NAME>
 	<DESCRIPTION>This set requires 1 receiver only.</DESCRIPTION>
-	<FILE>..\..\NeededFiles\SensorConfigurations\SensorData1.xml</FILE>
+	<FILE>..\..\..\..\MITesSRC\AllSensors\NeededFiles\SensorConfigurations\SensorData1.xml</FILE>
 </SENSORSET>
 <SENSORSET>
 	<NAME>Accelerometers</NAME>
 	<DESCRIPTION>This sensor set requires 2 receivers.</DESCRIPTION>
-	<FILE>..\..\NeededFiles\SensorConfigurations\SensorData2.xml</FILE>
+	<FILE>..\..\..\..\MITesSRC\AllSensors\NeededFiles\SensorConfigurations\SensorData2.xml</FILE>
 </SENSORSET>
 </CONFIGURATIONS>

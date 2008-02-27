@@ -8,7 +8,7 @@ namespace SimpleLogger
 
     public class Logger
     {
-        public const string LOGGER_DIRECTORY = "..\\..\\NeededFiles\\log\\";
+        public const string LOGGER_DIRECTORY = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\log\\";
         
         public enum Priority : int
         {

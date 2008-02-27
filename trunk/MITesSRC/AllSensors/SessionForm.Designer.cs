@@ -66,7 +66,7 @@ namespace MITesLogger_PC
         private void InitializeInterface()
         {
             //Initializations
-            SimpleLogger.Logger logger = new SimpleLogger.Logger("..\\..\\NeededFiles\\log", SimpleLogger.Logger.Priority.FATAL);
+            SimpleLogger.Logger logger = new SimpleLogger.Logger(Form1.NEEDED_FILES_PATH+"NeededFiles\\log", SimpleLogger.Logger.Priority.FATAL);
             string executableDirectory = System.Windows.Forms.Application.StartupPath;
 
             //Check the Sensor Configurations master file                     

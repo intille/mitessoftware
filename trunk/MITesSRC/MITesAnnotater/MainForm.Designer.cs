@@ -340,16 +340,16 @@ namespace MitesAnnotater
 
         public const int SCREEN_WIDTH_MARGIN = 10;
         public const int SCREEN_HEIGHT_MARGIN = 10;
-        
+       
         
         //Constant files for sound
-        private const string CLICK_SOUND_FILE = "..\\..\\NeededFiles\\sounds\\click.wav";
-        private const string RESET_SOUND_FILE = "..\\..\\NeededFiles\\sounds\\reset.wav";
-        private const string START_SOUND_FILE = "..\\..\\NeededFiles\\sounds\\start.wav";
-        private const string STOP_SOUND_FILE = "..\\..\\NeededFiles\\sounds\\stop.wav";
+        private const string CLICK_SOUND_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\sounds\\click.wav";
+        private const string RESET_SOUND_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\sounds\\reset.wav";
+        private const string START_SOUND_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\sounds\\start.wav";
+        private const string STOP_SOUND_FILE = "...\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\sounds\\stop.wav";
 
-        private const string STRONG_SIGNAL_FILE = "..\\..\\NeededFiles\\images\\strong.gif";
-        private const string WEAK_SIGNAL_FILE = "..\\..\\NeededFiles\\images\\weak.gif";
+        private const string STRONG_SIGNAL_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\images\\strong.gif";
+        private const string WEAK_SIGNAL_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\images\\weak.gif";
 
 
         private SoundPlayer startSound, resetSound, stopSound, clickSound;

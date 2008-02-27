@@ -9,8 +9,8 @@ namespace SXML
 {
     public class ConfigurationReader
     {
-        public const string DEFAULT_XML_FILE = "..\\..\\NeededFiles\\Master\\SensorConfigurations.xml";
-        public const string DEFAULT_XSD_FILE = "..\\..\\NeededFiles\\Master\\SensorConfigurations.xsd";
+        public const string DEFAULT_XML_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\SensorConfigurations.xml";
+        public const string DEFAULT_XSD_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\SensorConfigurations.xsd";
 
         private string xmlFile;
         private string xsdFile;

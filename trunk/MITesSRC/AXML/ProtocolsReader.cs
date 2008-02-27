@@ -10,8 +10,8 @@ namespace AXML
     public class ProtocolsReader
     {
 
-        public const string DEFAULT_XML_FILE = "..\\..\\NeededFiles\\Master\\ActivityProtocols.xml";
-        public const string DEFAULT_XSD_FILE = "..\\..\\NeededFiles\\Master\\ActivityProtocols.xsd";
+        public const string DEFAULT_XML_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\ActivityProtocols.xml";
+        public const string DEFAULT_XSD_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\ActivityProtocols.xsd";
 
         private string xmlFile;
         private string xsdFile;

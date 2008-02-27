@@ -15,6 +15,10 @@ namespace MITesLogger_PC
 	/// </summary>
 	public class Form1 : System.Windows.Forms.Form
 	{
+        /// <summary>
+        /// 
+        /// </summary>
+        public const string NEEDED_FILES_PATH = "..\\..\\..\\..\\MITesSRC\\AllSensors\\";
 		private static readonly bool DEBUG = true;
 		private int stopHour = -1; 
 		private bool isStartedReceiver = false;
@@ -1147,7 +1151,7 @@ namespace MITesLogger_PC
             
             //this.progressForm.InitializeInterface();
             
-            SimpleLogger.Logger logger = new SimpleLogger.Logger("..\\..\\NeededFiles\\log", SimpleLogger.Logger.Priority.FATAL);
+            SimpleLogger.Logger logger = new SimpleLogger.Logger(Form1.NEEDED_FILES_PATH+"NeededFiles\\log", SimpleLogger.Logger.Priority.FATAL);
             string startupPath=System.Windows.Forms.Application.StartupPath;
 
             progressForm.Show();

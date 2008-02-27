@@ -10,7 +10,8 @@ namespace AXML
 {
     public class Reader
     {
-        public const string DEFAULT_XSD_FILE = "..\\..\\NeededFiles\\Master\\ActivityLabelsRealtime.xsd";    
+
+        public const string DEFAULT_XSD_FILE = "..\\..\\..\\..\\MITesSRC\\AllSensors\\NeededFiles\\Master\\ActivityLabelsRealtime.xsd";    
         public const string DEFAULT_XML_FILE = "ActivityLabelsRealtime.xml";
 
         private string xmlFile;
