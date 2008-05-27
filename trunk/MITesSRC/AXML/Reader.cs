@@ -96,7 +96,7 @@ namespace AXML
                                 {
                                    if (jAttribute.Name == Constants.NAME_ATTRIBUTE)
                                    {
-                                            category.Name=jAttribute.Value.Replace(' ','_').Replace(',','_').ToLower();
+                                            category.Name=jAttribute.Value.Replace(' ','-').Replace(',','_').ToLower();
                                    }else if (jAttribute.Name == Constants.PROPERTY_ATTRIBUTE)
                                    {
                                             category.Property=jAttribute.Value;
@@ -110,7 +110,7 @@ namespace AXML
                                     {
                                         if (kAttribute.Name == Constants.NAME_ATTRIBUTE)
                                         {
-                                            Label newlabel = new Label(kAttribute.Value.Replace(' ', '_').Replace(',', '_').ToLower(), category.Name);
+                                            Label newlabel = new Label(kAttribute.Value.Replace(' ', '-').Replace(',', '_').ToLower(), category.Name);
                                             //newlabel.InitializeTone(this.caller.Handle.ToInt32(),frequency);
                                             category.Labels.Add(newlabel);
                                             //frequency += 200;

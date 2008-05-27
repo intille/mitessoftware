@@ -311,7 +311,7 @@ namespace MITesDataCollection
             samplingCSVs = new StreamWriter[this.sensors.MaximumSensorID + 1];
             averagedRaw = new StreamWriter[this.sensors.MaximumSensorID + 1];
             masterCSV = new StreamWriter(dataDirectory + "\\MITesSummaryData.csv");
-            hrCSV = new StreamWriter(dataDirectory + "\\MITesHeartRate.csv");
+            hrCSV = new StreamWriter(dataDirectory + "\\HeartRate_MITes.csv");
             
             string csv_line1 = "UnixTimeStamp,TimeStamp,X,Y,Z";
             string csv_line2 = "UnixTimeStamp,TimeStamp,Sampling";
@@ -324,18 +324,18 @@ namespace MITesDataCollection
             foreach (Sensor sensor in this.sensors.Sensors)
             {
                 int sensor_id = Convert.ToInt32(sensor.ID);
-                string location = sensor.Location.Replace(' ', '_');
+                string location = sensor.Location.Replace(' ', '-');
                 if (sensor_id > 0) //exclude HR
                 {
-                    activityCountCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes" +sensor_id+"_Count_"+location+".csv");
+                    activityCountCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" +sensor_id.ToString("00")+"_ActivityCount_"+location+".csv");
                     activityCountCSVs[sensor_id].WriteLine(csv_line1);
-                    averagedRaw[sensor_id] = new StreamWriter(dataDirectory + "\\MITes" + sensor_id + "_1s_RawMean_" + location + ".csv");
+                    averagedRaw[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" + sensor_id.ToString("00") + "_1s-RawMean_" + location + ".csv");
                     averagedRaw[sensor_id].WriteLine(csv_line1);
-                    samplingCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes" + sensor_id + "_SampleRate_" + location + ".csv");
+                    samplingCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" + sensor_id.ToString("00") + "_SampleRate_" + location + ".csv");
                     samplingCSVs[sensor_id].WriteLine(csv_line2);
-                    master_csv_header += ",MITes" + sensor_id + "_SR," + "MITes" + sensor_id + "_AVRaw_X," + 
-                        "MITes" + sensor_id + "_AVRaw_Y,"+ "MITes" + sensor_id + "_AVRaw_Z," + "MITes" + sensor_id + "_AC_X," + 
-                        "MITes" + sensor_id + "_AC_Y," + "MITes" + sensor_id + "_AC_Z";
+                    master_csv_header += ",MITes" + sensor_id.ToString("00") + "_SR," + "MITes" + sensor_id.ToString("00") + "_AVRaw_X," +
+                        "MITes" + sensor_id.ToString("00") + "_AVRaw_Y," + "MITes" + sensor_id.ToString("00") + "_AVRaw_Z," + "MITes" + sensor_id.ToString("00") + "_AC_X," +
+                        "MITes" + sensor_id.ToString("00") + "_AC_Y," + "MITes" + sensor_id.ToString("00") + "_AC_Z";
 
                 }
             }
