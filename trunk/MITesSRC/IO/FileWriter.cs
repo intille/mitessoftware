@@ -4,7 +4,7 @@ using System.IO;
 namespace HousenCS.IO
 {
 	/// <summary>
-	/// Object for writing ASCII files.
+	/// Object for writing ASCII files.   
 	/// </summary>
 	public class FileWriter
 	{
