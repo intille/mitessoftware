@@ -110,6 +110,7 @@ namespace HousenCS.MITes
             : this(MAX_MITES_DATA)
         { }
 
+        private System.IO.TextWriter tw;
         /// <summary>
         /// reate an object to process incoming serial port data and convert it 
         /// into a useful MITesData format that can be processed by many classes.
@@ -124,6 +125,7 @@ namespace HousenCS.MITes
             // but the amount of space used will be consistent.
             for (int i = 0; i < someMITesData.Length; i++)
                 someMITesData[i] = new MITesData();
+            
         }
 
         private void Debug(String aMsg)
@@ -567,11 +569,15 @@ namespace HousenCS.MITes
         /// <param name="aMITesData">The object in which to store the raw bytes.</param>
         private void SetRawBytes(MITesData aMITesData)
         {
+
             aMITesData.rawBytes[0] = packet[0];
             aMITesData.rawBytes[1] = packet[1];
             aMITesData.rawBytes[2] = packet[2];
             aMITesData.rawBytes[3] = packet[3];
             aMITesData.rawBytes[4] = packet[4];
+           // tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
+            tw.WriteLine("R: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
+            //tw.Close();
         }
 
         /// <summary>
@@ -652,6 +658,7 @@ namespace HousenCS.MITes
                 DecodeAccelerometerPacket(aMITesData);
                 SetTime(aMITesData);
                 SetUnixTime(aMITesData);
+                
             }
             else
             {
@@ -679,12 +686,16 @@ namespace HousenCS.MITes
             int i = 0;
             int valuesGrabbed = 0;
 
+            tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
+
             //Console.WriteLine(" BB ");
             if (numBytes != 0) // Have some data
             {
                 while (i < numBytes)
                 {
                     v = bytes[i] & 0xff;
+
+                    tw.Write(v + " ");
 
                     // First check if got a reset and start of packet
                     if ((packetPosition == NO_HEADER_SEEN) && (v == PACKET_MARKER))
@@ -733,7 +744,10 @@ namespace HousenCS.MITes
                     lV = v;
                     i++;
                 }
+
+                tw.WriteLine();
             }
+            tw.Close();
             if (valuesGrabbed < someData.Length)
                 return valuesGrabbed;
             else

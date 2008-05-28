@@ -2508,6 +2508,11 @@ namespace MITesDataCollection
                         y = (int)this.mitesDecoders[0].someMITesData[i].y;
                         z = (int)this.mitesDecoders[0].someMITesData[i].z;
 
+                        if ((channel != 14) && (channel != 7) && (channel != 8) && (channel != 11) && (channel != 4)
+                            && (channel != 17) && (channel != 1) && (channel != 0))
+                        {
+                            Console.Out.Write("error");
+                        }
                         if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
                         {
                             if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x>0) && (y>0) && (z>0))
