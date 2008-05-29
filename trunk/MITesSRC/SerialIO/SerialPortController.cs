@@ -62,7 +62,7 @@ namespace HousenCS.SerialIO
 		/// is full data will be lost. Warnings may be printed to the Console if the 
 		/// SerialPortController is initialized to print messsages.  
 		/// </summary>
-		public const int DEFAULT_MAX_BUFFER_SIZE = 2000;
+		public const int DEFAULT_MAX_BUFFER_SIZE = 4096;
 		
 		/// <summary>
 		/// Constructor for SerialPortController that allows data to be read from and 

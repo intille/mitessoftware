@@ -47,7 +47,7 @@ namespace HousenCS.MITes
 		/// on mobile devices, however. It would be useful to optimize this value at 
 		/// some point. 
 		/// </summary>
-		public static int MAXBYTESBUFFER = 4000; 
+		public static int MAXBYTESBUFFER = 4096; 
 
 		/// <summary>
 		/// The buffer that actually stores raw serial data acquired from the SerialPortController. 

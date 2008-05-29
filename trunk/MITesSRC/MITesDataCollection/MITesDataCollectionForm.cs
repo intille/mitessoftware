@@ -46,7 +46,7 @@ namespace MITesDataCollection
         private bool isStartedReceiver = false;
         private double[,] returnVals = new double[3, 4];
         //private MITesReceiverController mrc = null;
-        private const int BYTES_BUFFER_SIZE = 4000; //2048 
+        private const int BYTES_BUFFER_SIZE = 4096; //2048 
         private byte[] someBytes = new byte[BYTES_BUFFER_SIZE];
         private bool isResized = false;
         private bool isNeedRedraw = false;
@@ -2295,7 +2295,7 @@ namespace MITesDataCollection
 
 
                 //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+                for (int i = 0; (i < 1); i++) //this.sensors.TotalReceivers); i++) // FIX SSI
                     this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);                
 
                 for (int i = 1; (i < this.sensors.TotalReceivers); i++)
@@ -2508,11 +2508,11 @@ namespace MITesDataCollection
                         y = (int)this.mitesDecoders[0].someMITesData[i].y;
                         z = (int)this.mitesDecoders[0].someMITesData[i].z;
 
-                        if ((channel != 14) && (channel != 7) && (channel != 8) && (channel != 11) && (channel != 4)
-                            && (channel != 17) && (channel != 1) && (channel != 0))
-                        {
-                            Console.Out.Write("error");
-                        }
+                      //  if ((channel != 14) && (channel != 7) && (channel != 8) && (channel != 11) && (channel != 4)
+                      //      && (channel != 17) && (channel != 1) && (channel != 0))
+                      //  {
+                      //      Console.Out.Write("error");
+                      //  }
                         if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
                         {
                             if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x>0) && (y>0) && (z>0))

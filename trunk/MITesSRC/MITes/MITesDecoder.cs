@@ -110,7 +110,7 @@ namespace HousenCS.MITes
             : this(MAX_MITES_DATA)
         { }
 
-        //private System.IO.TextWriter tw;
+        private System.IO.TextWriter tw;
         /// <summary>
         /// reate an object to process incoming serial port data and convert it 
         /// into a useful MITesData format that can be processed by many classes.
@@ -561,6 +561,32 @@ namespace HousenCS.MITes
                 return false;
         }
 
+        private bool IsValidChannelSelective(int channel)
+        {
+            if ((channel >= 0) && (channel <= 17))
+            {
+               if (channel == 0)
+                   return true;
+                if (channel == 1)
+                    return true;
+                if (channel == 4)
+                    return true;
+                if (channel == 7)
+                    return true;
+                if (channel == 8)
+                    return true;
+                if (channel == 11)
+                    return true;
+                if (channel == 14)
+                    return true;
+                if (channel == 17)
+                    return true;
+                return false;
+            }
+            else
+                return false;
+        }
+
         // R
         /// <summary>
         /// Raw bytes are stored with each MITesData so data can be easily saved back out again in an 
@@ -577,7 +603,7 @@ namespace HousenCS.MITes
             aMITesData.rawBytes[4] = packet[4];
            
            //System.IO.TextWriter tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
-           // tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
+            tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
             //tw.Close();
         }
 
@@ -692,11 +718,14 @@ namespace HousenCS.MITes
             //Console.WriteLine(" BB ");
             if (numBytes != 0) // Have some data
             {
+                //tw.Write("(GOT DATA: " + numBytes + ")");
+                //tw.Flush();
                 while (i < numBytes)
                 {
                     v = bytes[i] & 0xff;
 
-                    //tw.Write("("+i+","+v+")" + " ");
+                    //tw.Write("(" + i + ",v: " + v + ",LV: " + lV + ",PP: " + packetPosition + "," + dataIndex + ")" + " ");
+                    //tw.Flush();
 
                     // First check if got a reset and start of packet
                     if ((packetPosition == NO_HEADER_SEEN) && (v == PACKET_MARKER))
@@ -714,9 +743,12 @@ namespace HousenCS.MITes
                         packet[packetPosition] = bytes[i];
 
                         // Sanity check. Make sure channel is valid ... if not, reset and wait for new header
-                        if ((packetPosition == 0) && (!IsValidChannel(packet[packetPosition])))
+                        if ((packetPosition == 0) && (!IsValidChannelSelective(packet[packetPosition])))
                         {
-                            packetPosition = NO_HEADER_SEEN;
+                            if (v == PACKET_MARKER)
+                              packetPosition = FIRST_HEADER_SEEN;
+                            else
+                              packetPosition = NO_HEADER_SEEN;
                         }
                         else
                         {
@@ -724,7 +756,12 @@ namespace HousenCS.MITes
                             if (packetPosition == PACKET_SIZE)
                             {
                                 if (dataIndex >= someData.Length)
+                                {
                                     Warning("MAX_MITES_DATA too small! Losing info. Size:" + someData.Length);
+                      //              tw.Write("(LosingInfo)");
+                      //              tw.Flush();
+
+                                }
                                 else
                                 {
                                     DecodeLastPacket(someData[dataIndex]);
@@ -739,16 +776,23 @@ namespace HousenCS.MITes
                     else
                     {
                         // Either a reset (new header) or loss of data
-                        packetPosition = NO_HEADER_SEEN;
-                        Warning("Data loss? " + lV + " " + v);
+                        if (v != PACKET_MARKER)
+                            packetPosition = NO_HEADER_SEEN;
+                        else
+                            packetPosition = FIRST_HEADER_SEEN; 
+                     //   Warning("Data loss? " + lV + " " + v);
+                     //   tw.Write("(DL?)");
+                     //   tw.Flush();
                     }
+//                    tw.Write("(SET_LV: " + v + ")");
+//                    tw.Flush();
                     lV = v;
                     i++;
                 }
 
                 //tw.WriteLine();
             }
-            //tw.Close();
+            tw.Close();
             if (valuesGrabbed < someData.Length)
                 return valuesGrabbed;
             else
