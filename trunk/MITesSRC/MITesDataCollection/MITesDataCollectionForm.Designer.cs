@@ -30,10 +30,10 @@ namespace MITesDataCollection
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
-            this.readDataTimer = new System.Windows.Forms.Timer(this.components);
-            this.qualityTimer = new System.Windows.Forms.Timer(this.components);
-            this.HRTimer = new System.Windows.Forms.Timer(this.components);
+            this.mainMenu1 = new System.Windows.Forms.MainMenu();
+            this.readDataTimer = new System.Windows.Forms.Timer();
+            this.qualityTimer = new System.Windows.Forms.Timer();
+            this.HRTimer = new System.Windows.Forms.Timer();
             this.SuspendLayout();
             // 
             // readDataTimer
@@ -109,6 +109,8 @@ namespace MITesDataCollection
         private System.Windows.Forms.MenuItem menuItem21;
         private System.Windows.Forms.MenuItem menuItem22;
         private System.Windows.Forms.Panel panel1, panel2, panel3, panel4;
+        private System.Windows.Forms.Timer qualityTimer;
+        private System.Windows.Forms.Timer HRTimer;
 
         #region PC and PocketPC Specific Widgets
 #if (PocketPC)
@@ -122,8 +124,7 @@ namespace MITesDataCollection
         private System.Windows.Forms.Form form2;
         private System.Windows.Forms.Form form3;
         private System.Windows.Forms.Form form4;
-        private System.Windows.Forms.Timer qualityTimer;
-        private System.Windows.Forms.Timer HRTimer;
+
 #endif 
         #endregion PocketPC Widgets
 

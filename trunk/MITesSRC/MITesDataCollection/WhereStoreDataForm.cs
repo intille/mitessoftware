@@ -80,6 +80,8 @@ namespace MITesDataCollection
             this.Visible = false;
         }
 
+#if (PocketPC)
+#else
         private const int CP_NOCLOSE_BUTTON = 0x200;
         protected override CreateParams CreateParams
         {
@@ -90,7 +92,7 @@ namespace MITesDataCollection
                 return myCp;
             }
         } 
-
+#endif
         private void menuItem1_Click(object sender, EventArgs e)
         {
 #if (PocketPC)

@@ -29,7 +29,7 @@ namespace MITesDataCollection
             foreach (SXML.Sensor sensor in this.sensorConfiguration.Sensors)
             {
                 int sensor_id = Convert.ToInt32(sensor.ID);
-                double rate = ((double)this.aMITesDataFilterer.MitesPerformanceTracker[sensor_id].PreviousCounter / (double)this.aMITesDataFilterer.MitesPerformanceTracker[sensor_id].GoodRate) * 100;
+                double rate = ((double)HousenCS.MITes.MITesDataFilterer.MITesPerformanceTracker[sensor_id].PreviousCounter / (double)HousenCS.MITes.MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate) * 100;
                 if (rate > 100)
                     rate = 100;
                 else if (rate < 0)
@@ -46,7 +46,7 @@ namespace MITesDataCollection
             foreach (SXML.Sensor sensor in this.sensorConfiguration.Sensors)
             {
                 int sensor_id = Convert.ToInt32(sensor.ID);
-                double rate = ((double)this.aMITesDataFilterer.MitesPerformanceTracker[sensor_id].PreviousCounter / (double)this.aMITesDataFilterer.MitesPerformanceTracker[sensor_id].GoodRate) * 100;
+                double rate = ((double)HousenCS.MITes.MITesDataFilterer.MITesPerformanceTracker[sensor_id].PreviousCounter / (double)HousenCS.MITes.MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate) * 100;
                 if (rate > 100)
                     rate = 100;
                 if (rate < 0)

@@ -69,7 +69,7 @@ namespace MITesDataCollection
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
+            this.mainMenu1 = new System.Windows.Forms.MainMenu();
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -78,12 +78,13 @@ namespace MITesDataCollection
             // 
             // mainMenu1
             // 
-            this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-            this.menuItem1});
+            this.mainMenu1.MenuItems.Add(this.menuItem1);
+                
+                //.AddRange(new System.Windows.Forms.MenuItem[] {
+            //this.menuItem1});
             // 
             // menuItem1
             // 
-            this.menuItem1.Index = 0;
             this.menuItem1.Text = "Quit";
             this.menuItem1.Click += new System.EventHandler(this.menuItem1_Click);
             // 

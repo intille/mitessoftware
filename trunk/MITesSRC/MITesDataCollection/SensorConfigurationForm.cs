@@ -57,6 +57,8 @@ namespace MITesDataCollection
             InitializeInterface();
         }
 
+#if (PocketPC)
+#else
         private const int CP_NOCLOSE_BUTTON = 0x200;
         protected override CreateParams CreateParams
         {
@@ -67,7 +69,7 @@ namespace MITesDataCollection
                 return myCp;
             }
         } 
-
+#endif
         private void button1_Click(object sender, EventArgs e)
         {           
             this.nextForm.Visible=true;

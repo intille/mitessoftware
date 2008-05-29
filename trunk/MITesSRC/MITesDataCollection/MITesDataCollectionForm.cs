@@ -1682,15 +1682,15 @@ namespace MITesDataCollection
 #endif
             #endregion Calculation of Widgets locations and sizes
         }
-
+#if (PocketPC)
+#else
         void form_FormClosing(object sender, FormClosingEventArgs e)
         {
             if (isQuitting ==false)
                 e.Cancel = true;
         }
 
-
-
+#endif
   
 
         void menuItem6Tab2_Click(object sender, EventArgs e)
@@ -2710,7 +2710,11 @@ namespace MITesDataCollection
         private bool isQuitting = false;
         private void menuItem1_Click(object sender, EventArgs e)
         {
+#if (PocketPC)
+            if (MessageBox.Show("Are you sure you want to Quit MITes Software?", "Confirm", MessageBoxButtons.YesNo,MessageBoxIcon.Question,MessageBoxDefaultButton.Button1) == DialogResult.Yes)
+#else
             if (MessageBox.Show("Are you sure you want to Quit MITes Software?", "Confirm", MessageBoxButtons.YesNo) == DialogResult.Yes)
+#endif
             {
                 isQuitting = true;
                 for (int i = 0; (i < this.sensors.TotalReceivers); i++)

@@ -110,7 +110,7 @@ namespace HousenCS.MITes
             : this(MAX_MITES_DATA)
         { }
 
-        private System.IO.TextWriter tw;
+        //private System.IO.TextWriter tw;
         /// <summary>
         /// reate an object to process incoming serial port data and convert it 
         /// into a useful MITesData format that can be processed by many classes.
@@ -575,8 +575,9 @@ namespace HousenCS.MITes
             aMITesData.rawBytes[2] = packet[2];
             aMITesData.rawBytes[3] = packet[3];
             aMITesData.rawBytes[4] = packet[4];
-           // tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
-            tw.WriteLine("R: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
+           
+           //System.IO.TextWriter tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
+           // tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
             //tw.Close();
         }
 
@@ -686,7 +687,7 @@ namespace HousenCS.MITes
             int i = 0;
             int valuesGrabbed = 0;
 
-            tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
+            //tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
 
             //Console.WriteLine(" BB ");
             if (numBytes != 0) // Have some data
@@ -695,7 +696,7 @@ namespace HousenCS.MITes
                 {
                     v = bytes[i] & 0xff;
 
-                    tw.Write(v + " ");
+                    //tw.Write("("+i+","+v+")" + " ");
 
                     // First check if got a reset and start of packet
                     if ((packetPosition == NO_HEADER_SEEN) && (v == PACKET_MARKER))
@@ -745,9 +746,9 @@ namespace HousenCS.MITes
                     i++;
                 }
 
-                tw.WriteLine();
+                //tw.WriteLine();
             }
-            tw.Close();
+            //tw.Close();
             if (valuesGrabbed < someData.Length)
                 return valuesGrabbed;
             else

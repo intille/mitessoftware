@@ -176,7 +176,7 @@ namespace HousenCS.MITes
 			{
                 //MessageBox.Show("Able to open " + portNum);
 				isValid = false;
-				byte[] someData = new byte[2048];
+				byte[] someData = new byte[4000];
 
 				int startTime = Environment.TickCount;
 				// Loop for 1 second and wait for a DD 
