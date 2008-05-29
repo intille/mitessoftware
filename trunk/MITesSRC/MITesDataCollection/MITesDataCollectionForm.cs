@@ -2295,7 +2295,7 @@ namespace MITesDataCollection
 
 
                 //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
-                for (int i = 0; (i < 1); i++) //this.sensors.TotalReceivers); i++) // FIX SSI
+                for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
                     this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);                
 
                 for (int i = 1; (i < this.sensors.TotalReceivers); i++)
