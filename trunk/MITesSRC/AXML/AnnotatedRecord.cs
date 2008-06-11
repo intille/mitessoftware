@@ -190,7 +190,7 @@ namespace AXML
  
             string csv = "";
 
-            csv += this.start_date + "," + this.end_date;
+            csv += this.start_date + "," + this.end_date + ",";
             foreach (Label label in this.labels)
             {
                 csv += ","+label.Name ;

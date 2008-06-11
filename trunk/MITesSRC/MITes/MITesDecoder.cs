@@ -603,7 +603,7 @@ namespace HousenCS.MITes
             aMITesData.rawBytes[4] = packet[4];
            
            //System.IO.TextWriter tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
-            tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
+           // tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
             //tw.Close();
         }
 
@@ -792,7 +792,7 @@ namespace HousenCS.MITes
 
                 //tw.WriteLine();
             }
-            tw.Close();
+            //tw.Close();
             if (valuesGrabbed < someData.Length)
                 return valuesGrabbed;
             else

@@ -129,7 +129,7 @@ namespace AXML
         {
             string csv = "";
 
-            csv +=  Constants.STARTTIME_ATTRIBUTE + "," +  Constants.ENDTIME_ATTRIBUTE;
+            csv += Constants.STARTTIME_ATTRIBUTE + "," + Constants.ENDTIME_ATTRIBUTE + ","+Constants.COLOR_ATTRIBUTE;
             foreach (Category category in this.categories)
             {
                 csv += "," + category.Name;

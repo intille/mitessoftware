@@ -37,6 +37,7 @@ namespace AXML
         public const string ENDTIME_ATTRIBUTE = "ENDTIME";
         public const string LABEL_ATTRIBUTE = "LABEL";
         public const string CATEGORY_ATTRIBUTE = "CATEGORY";
+        public const string COLOR_ATTRIBUTE = "COLOR";
         
     }
 }
