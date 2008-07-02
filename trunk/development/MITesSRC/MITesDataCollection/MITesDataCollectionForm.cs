@@ -158,7 +158,8 @@ namespace MITesDataCollection
         private TextWriter[] averagedRaw;
         private TextWriter masterCSV;
         private TextWriter hrCSV;
-
+        private int sumHR = 0;
+        private int hrCount = 0;
         #endregion Definition of objects that store values for CSV files
 #endif
 
@@ -235,8 +236,14 @@ namespace MITesDataCollection
             this.sensors = uncalibratedSensors;            
             this.currentCalibrationSensorIndex = 0;
             this.calCounter = 0;
-            this.horizontalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.NEEDED_FILES_PATH + "images\\mites\\horizontal.jpg");
-            this.verticalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.NEEDED_FILES_PATH + "images\\mites\\vertical.jpg");
+
+#if (PocketPC)
+            this.horizontalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.MITES_HORIZONTAL_96_96);
+            this.verticalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.MITES_VERTICAL_96_96);
+#else
+            this.horizontalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.MITES_HORIZONTAL_288_288);
+            this.verticalMITes = (System.Drawing.Image)new System.Drawing.Bitmap(Constants.MITES_VERTICAL_288_288);
+#endif
 
             //create a dummy annotation
             this.annotation = new Annotation();            
@@ -378,7 +385,11 @@ namespace MITesDataCollection
             //intialize the mode of the software
             this.collectDataMode = true;
             this.isCollectingSimpleData = false;
+#if (PocketPC)
             this.isCollectingDetailedData = false;
+#else
+            this.isCollectingDetailedData=true;
+#endif
             this.isPlotting = true;
             this.isExtracting = false;
 
@@ -1629,6 +1640,7 @@ namespace MITesDataCollection
 
         #region Helper Methods
 
+        //close the ARFF training file and reset menus
         public void EndTraining()
         {
             tw.Close();
@@ -1645,8 +1657,6 @@ namespace MITesDataCollection
                 else
                     this.menuItem8Tab2.Enabled = true;
             }
-
-            //disable stop/start and reset buttons
             this.startStopButton.Enabled = false;
             this.resetButton.Enabled = false;
             ((Button)this.categoryButtons[0]).Visible = true;
@@ -1902,6 +1912,12 @@ namespace MITesDataCollection
 
 
         #region Timer Methods
+
+        /// <summary>
+        /// This is called every 30 seconds to check the heart rate data and update the interface
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void HRTimer_Tick(object sender, System.EventArgs e)
         {
             if (this.collectDataMode)
@@ -1919,6 +1935,13 @@ namespace MITesDataCollection
                 MITesDataFilterer.MITesPerformanceTracker[0].SampleCounter = 0;
             }
         }
+
+        /// <summary>
+        /// This is called once every second to check the sampling rate for accelerometers, update the quality form and
+        /// control the good timer
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         void qualityTimer_Tick(object sender, System.EventArgs e)
         {
             bool overallGoodQuality = true;
@@ -1969,10 +1992,14 @@ namespace MITesDataCollection
             }
         }
 
-        private int sumHR=0;
-        private int hrCount = 0;
+
 
        
+        /// <summary>
+        /// This methods is invoked every 10 milliseconds
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void readDataTimer_Tick(object sender, EventArgs e)
         {
             if (okTimer > 3000)
@@ -1984,6 +2011,7 @@ namespace MITesDataCollection
             if (this.Visible)
                 this.Visible = false;
 #endif
+            //if all receivers are started
             if (isStartedReceiver)
             {
                 count++;
@@ -1999,6 +2027,7 @@ namespace MITesDataCollection
                 }
 
 
+                #region MERGE MITes Data
                 //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
                 for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
                     this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);                
@@ -2006,43 +2035,78 @@ namespace MITesDataCollection
                 for (int i = 1; (i < this.sensors.TotalReceivers); i++)
                     this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);
 
+                #endregion MERGE MITes Data
 
-                //A training session has started
+
+                #region Train in realtime and generate ARFF File
                 if (IsTraining==true)
                 {
+                    //We are autotraining each activity after the other
                     if (AutoTraining == true)
                     {
+                        //Get current activity to train
                         string current_activity = ((AXML.Label)((AXML.Category)this.annotation.Categories[0]).Labels[autoTrainingIndex]).Name;
+                        
+                        //Check if trained
                         if (Extractor.IsTrained(current_activity))
                         {
+                            //store the completed annotation and reset the variables
+                            this.currentRecord.EndDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
+                            this.currentRecord.EndHour = DateTime.Now.Hour;
+                            this.currentRecord.EndMinute = DateTime.Now.Minute;
+                            this.currentRecord.EndSecond = DateTime.Now.Second;
+                            TimeSpan ts = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0));
+                            this.currentRecord.EndUnix = ts.TotalSeconds;
+                            this.annotation.Data.Add(this.currentRecord);
+                            //each time an activity is stopped, rewrite the file on disk, need to backup file to avoid corruption
+                            this.annotation.ToXMLFile();
+                            this.annotation.ToCSVFile();
+                            isExtracting = false;
 
+                            //Point to the next activity and Calculate the delay to start training
                             this.startActivityTime = Environment.TickCount + Extractor.Configuration.TrainingWaitTime*1000;//Constants.TRAINING_GAP;
                             autoTrainingIndex++;
 
-                           //check if auto training completed
+                           
+                            //If we exceeded the last activity then training is completed
                             if (autoTrainingIndex == ((AXML.Category)this.annotation.Categories[0]).Labels.Count)
                             {
-                                this.trainingLabel.Text = "Training Completed";
-                                //this.label11.Text = "Training Completed";
+                                this.trainingLabel.Text = "Training Completed";                            
                                 this.goodTimer.reset();
                                 this.overallTimer.reset();
                                 Thread.Sleep(3000);
                                 EndTraining();
                              
                             }
-                            else
+                            else // if there are still activities to train beep twice and reset good timer
                             {
-                                //((Button)this.categoryButtons[0]).Text = "Training "+((AXML.Label)((AXML.Category)this.annotation.Categories[0]).Labels[autoTrainingIndex]).Name;
                                 this.goodTimer.reset();
                                 PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
                                 PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
                             }
                         }
+                            //if the current activity is not trained and the start time is more that the current time
+                            //then calculate the feature vector
                         else if (this.startActivityTime < Environment.TickCount) // TRAINING_GAP passed 
                         {
-                           // this.label5.Text = "TR in progress";
-                             this.trainingLabel.Text = "Training " + current_activity;
-                            this.goodTimer.start();
+                            //initialize for extraction
+                            if (isExtracting == false)
+                            {
+                                this.trainingLabel.Text = "Training " + current_activity;
+                                this.goodTimer.start();
+                                //store the current state of the categories
+                                this.currentRecord = new AnnotatedRecord();
+                                this.currentRecord.StartDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
+                                this.currentRecord.StartHour = DateTime.Now.Hour;
+                                this.currentRecord.StartMinute = DateTime.Now.Minute;
+                                this.currentRecord.StartSecond = DateTime.Now.Second;
+                                TimeSpan ts = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0));
+                                this.currentRecord.StartUnix = ts.TotalSeconds;
+                                this.currentRecord.Labels.Add(new AXML.Label(current_activity, "none"));
+                                isExtracting = true;
+                            }
+
+                            //Extract feature vector from accelerometer data and write an arff line
                             double lastTimeStamp = Extractor.StoreMITesWindow();
                             if (Extractor.GenerateFeatureVector(lastTimeStamp))
                             {
@@ -2050,14 +2114,12 @@ namespace MITesDataCollection
                                 string arffSample = Extractor.toString() + "," + current_activity.Replace(' ', '_');
                                 this.tw.WriteLine(arffSample);
                                 this.label8.Text = Extractor.DiscardedLossRateWindows.ToString();
-                                //this.label10.Text = Extractor.DiscardedConsecutiveLossWindows.ToString();
-                            }
+                            }         
                         }
-                        else
-                        {
-                           // this.label5.Text = "TR in " + ((int)(this.startActivityTime - Environment.TickCount) / 1000) + " secs";
+                            //if we are waiting for the activity to be trained
+                        else                        
                             this.trainingLabel.Text = "Training " + current_activity + " in " + ((int)(this.startActivityTime - Environment.TickCount) / 1000) + " secs";
-                        }
+                        
                     }
                     else // Manual Training
                     {
@@ -2066,8 +2128,9 @@ namespace MITesDataCollection
 
 
 
+                #endregion Train in realtime and generate ARFF File
 
-                //Classifying
+                #region Classifying activities
 
                 if (isClassifying==true)
                 {
@@ -2076,28 +2139,22 @@ namespace MITesDataCollection
                     {
                         this.label6.ForeColor = Color.Black;
                         Instance newinstance = new Instance(instances.numAttributes());
-                        //Instance masterInstance = new Instance(masterinstances.numAttributes());
                         newinstance.Dataset = instances;
-                        //masterInstance.Dataset = instances;
+
 
                         for (int i = 0; (i < Extractor.Features.Length); i++)
                         {
                             newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
-                            // masterInstance.setValue(instances.attribute(i), Extractor.Features[i]);
                         }
                         double predicted = classifier.classifyInstance(newinstance);
-                        //double master_predicted = masterclassifier.classifyInstance(masterInstance);
+
 
                         string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
-                        //string master_predicted_activity = masterInstance.dataset().classAttribute().value_Renamed((int)master_predicted);
 
                         int currentIndex = (int)labelIndex[predicted_activity];
                         labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
                         classificationCounter++;
 
-                        //currentIndex = (int)masterlabelIndex[master_predicted_activity];
-                        //masterlabelCounters[currentIndex] = (int)masterlabelCounters[currentIndex] + 1;
-                        //masterclassificationCounter++;
 
                         if (classificationCounter == Extractor.Configuration.SmoothWindows)
                         {
@@ -2107,7 +2164,7 @@ namespace MITesDataCollection
                             for (int j = 0; (j < labelCounters.Length); j++)
                             {
                                 if ((labelCounters[j] > mostCount) && (labelCounters[j] > 3) )
-                                { //&& (labelCounters[j] >= (Extractor.Configuration.SmoothWindows / 2)))
+                                { 
                                     mostActivity = activityLabels[j];
                                     mostCount = labelCounters[j];
                                 }
@@ -2119,41 +2176,17 @@ namespace MITesDataCollection
                             if (mostActivity.Equals(""))
                                 mostActivity = "Not Sure";
                             this.label6.Text = mostActivity;
-                            //this.label11.Text = "Fahd is "+mostActivity;
                         }
 
-                        if (false)
-                        {
-                            if (masterclassificationCounter == Extractor.Configuration.SmoothWindows)
-                            {
-                                masterclassificationCounter = 0;
-                                int mostCount = 0;
-                                string mostActivity = "";
-                                for (int j = 0; (j < labelCounters.Length); j++)
-                                {
-                                    if (masterlabelCounters[j] > mostCount)
-                                        mostActivity = activityLabels[j];
-                                    masterlabelCounters[j] = 0;
-                                }
-
-                                this.label16.Text = mostActivity;
-                                //this.label11.Text = "Fahd is "+mostActivity;
-                            }
-                        }
                     }
-                    //else if (Extractor.ErrorFlag > 0)
-                    //{
-                     //   this.label6.ForeColor = Color.Red;
-                    //}
-                    //else
-                   // {
-                    //    this.label6.ForeColor = Color.Black;
-                   // }
                 }
 
+                #endregion Classifying activities
 
+                #region Storing CSV data for the grapher
 #if (PocketPC)
 #else
+
                 if (isCollectingDetailedData == true)
                 {
                     if (activityCountWindowSize > Extractor.Configuration.QualityWindowSize) //write a line to CSV and initialize
@@ -2257,154 +2290,160 @@ namespace MITesDataCollection
                 }
 
 #endif
-                
-                //store sum of abs values of consecutive accelerometer readings
-                for (int i = 0; (i < this.mitesDecoders[0].someMITesDataIndex); i++)
+
+                #endregion Storing CSV data for the grapher
+
+
+                if ((isCalibrating) || (isCollectingDetailedData == true))
                 {
-                    if ((this.mitesDecoders[0].someMITesData[i].type != (int)MITesTypes.NOISE) &&
-                          (this.mitesDecoders[0].someMITesData[i].type == (int)MITesTypes.ACCEL))
+                    //store sum of abs values of consecutive accelerometer readings
+                    for (int i = 0; (i < this.mitesDecoders[0].someMITesDataIndex); i++)
                     {
-                        int channel = 0, x = 0, y = 0, z = 0;
-                        channel = (int)this.mitesDecoders[0].someMITesData[i].channel;
-                        x = (int)this.mitesDecoders[0].someMITesData[i].x;
-                        y = (int)this.mitesDecoders[0].someMITesData[i].y;
-                        z = (int)this.mitesDecoders[0].someMITesData[i].z;
-
-
-                        if (isCalibrating)
+                        if ((this.mitesDecoders[0].someMITesData[i].type != (int)MITesTypes.NOISE) &&
+                              (this.mitesDecoders[0].someMITesData[i].type == (int)MITesTypes.ACCEL))
                         {
-                            if (this.calSensor == -1)
+                            int channel = 0, x = 0, y = 0, z = 0;
+                            channel = (int)this.mitesDecoders[0].someMITesData[i].channel;
+                            x = (int)this.mitesDecoders[0].someMITesData[i].x;
+                            y = (int)this.mitesDecoders[0].someMITesData[i].y;
+                            z = (int)this.mitesDecoders[0].someMITesData[i].z;
+
+
+                            if (isCalibrating)
                             {
-                                if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
+                                if (this.calSensor == -1)
                                 {
-                                    this.calX = new int[Constants.CALIBRATION_SAMPLES];
-                                    this.calY = new int[Constants.CALIBRATION_SAMPLES];
-                                    this.calZ = new int[Constants.CALIBRATION_SAMPLES];                                  
-                                    this.calSensor = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID);
-                                    this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
-
-                                    int receiver_id=Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).Receiver);
-                                    int[] channels = new int[6];                                                                       
-                                    channels[0] = this.calSensor;
-                                    this.mitesControllers[receiver_id].SetChannels(1, channels);
-                                    
-                                }
-                                else //all sensors are calibrated
-                                {
-                                    TextWriter tw = new StreamWriter("SensorData.xml");
-                                    tw.WriteLine(this.sensors.toXML());
-                                    tw.Close();
-                                    MessageBox.Show("Calibration... Completed");
-                                    Application.Exit();
-                                }
-                                
-                            }
-
-                            if (channel == this.calSensor)
-                            {
-                                if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
-                                {
-                                    this.calX[this.calCounter] = x;
-                                    this.calY[this.calCounter] = y;
-                                    this.calCounter++;
-                                }
-                                else //vertical
-                                {
-                                    this.calZ[this.calCounter] = z;
-                                    this.calCounter++;
-                                }
-
-                                // if all required samples are collected
-                                if (this.calCounter == Constants.CALIBRATION_SAMPLES)
-                                {
-
-                                       
-
-                                    if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION){
-
-                                        this.calSensorPosition = Constants.CALIBRATION_SIDE_VERTICAL_POSITION;
-                                        double meanX = 0.0,meanY=0.0;
-                                        double stdX = 0.0,stdY=0.0;
-                                        this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " vertical on a flat surface then click start.";
-                                        this.pictureBox2.Image = this.verticalMITes;
-                                        this.button2.Enabled = true;
-                                        for (int j=0;(j<this.calCounter);j++){
-                                            meanX+=(double) this.calX[j];
-                                            meanY+=(double) this.calY[j];
-                                        }
-                                        meanX=meanX/this.calCounter;
-                                        meanY = meanY / this.calCounter;
-
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XMean = meanX;
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YMean = meanY;
-                                        for (int j = 0; (j < this.calCounter); j++)
-                                        {
-                                            stdX += Math.Pow(this.calX[j] - meanX,2);
-                                            stdY += Math.Pow(this.calY[j] - meanY, 2);
-                                        }
-                                        stdX = Math.Sqrt(stdX / (this.calCounter - 1));
-                                        stdY = Math.Sqrt(stdY / (this.calCounter - 1));
-
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XStd = stdX;
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YStd = stdY;
-                                    }
-                                    else{
-                                        
-                                        
-                                        if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
-                                        {
-                                            this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
-                                            this.pictureBox2.Image = this.horizontalMITes;
-                                            this.button2.Enabled = true;
-                                        }
+                                    if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
+                                    {
+                                        this.calX = new int[Constants.CALIBRATION_SAMPLES];
+                                        this.calY = new int[Constants.CALIBRATION_SAMPLES];
+                                        this.calZ = new int[Constants.CALIBRATION_SAMPLES];
+                                        this.calSensor = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID);
                                         this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
-                                        double meanZ = 0.0;
-                                        double stdZ = 0.0;
 
-                                        for (int j = 0; (j < this.calCounter); j++)                                        
-                                            meanZ += (double)this.calZ[j];                                        
-                                        meanZ = meanZ / this.calCounter;
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZMean = meanZ;
+                                        int receiver_id = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).Receiver);
+                                        int[] channels = new int[6];
+                                        channels[0] = this.calSensor;
+                                        this.mitesControllers[receiver_id].SetChannels(1, channels);
 
-                                        for (int j = 0; (j < this.calCounter); j++)
-                                            stdZ += Math.Pow(this.calZ[j] - meanZ, 2);                                                                                    
-                                        stdZ = Math.Sqrt(stdZ / (this.calCounter - 1));
-                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZStd = stdZ;
-                                        this.currentCalibrationSensorIndex++;
-                                        this.calSensor = -1;
+                                    }
+                                    else //all sensors are calibrated
+                                    {
+                                        TextWriter tw = new StreamWriter("SensorData.xml");
+                                        tw.WriteLine(this.sensors.toXML());
+                                        tw.Close();
+                                        MessageBox.Show("Calibration... Completed");
+                                        Application.Exit();
                                     }
 
-                                    this.isCalibrating = false;
-                                    this.calCounter = 0; 
-                                    
-                                   
                                 }
+
+                                if (channel == this.calSensor)
+                                {
+                                    if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
+                                    {
+                                        this.calX[this.calCounter] = x;
+                                        this.calY[this.calCounter] = y;
+                                        this.calCounter++;
+                                    }
+                                    else //vertical
+                                    {
+                                        this.calZ[this.calCounter] = z;
+                                        this.calCounter++;
+                                    }
+
+                                    // if all required samples are collected
+                                    if (this.calCounter == Constants.CALIBRATION_SAMPLES)
+                                    {
+
+                                        if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
+                                        {
+
+                                            this.calSensorPosition = Constants.CALIBRATION_SIDE_VERTICAL_POSITION;
+                                            double meanX = 0.0, meanY = 0.0;
+                                            double stdX = 0.0, stdY = 0.0;
+                                            this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " vertical on a flat surface then click start.";
+                                            this.pictureBox2.Image = this.verticalMITes;
+                                            this.button2.Enabled = true;
+                                            for (int j = 0; (j < this.calCounter); j++)
+                                            {
+                                                meanX += (double)this.calX[j];
+                                                meanY += (double)this.calY[j];
+                                            }
+                                            meanX = meanX / this.calCounter;
+                                            meanY = meanY / this.calCounter;
+
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XMean = meanX;
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YMean = meanY;
+                                            for (int j = 0; (j < this.calCounter); j++)
+                                            {
+                                                stdX += Math.Pow(this.calX[j] - meanX, 2);
+                                                stdY += Math.Pow(this.calY[j] - meanY, 2);
+                                            }
+                                            stdX = Math.Sqrt(stdX / (this.calCounter - 1));
+                                            stdY = Math.Sqrt(stdY / (this.calCounter - 1));
+
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XStd = stdX;
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YStd = stdY;
+                                        }
+                                        else
+                                        {
+
+
+                                            if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
+                                            {
+                                                this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
+                                                this.pictureBox2.Image = this.horizontalMITes;
+                                                this.button2.Enabled = true;
+                                            }
+                                            this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
+                                            double meanZ = 0.0;
+                                            double stdZ = 0.0;
+
+                                            for (int j = 0; (j < this.calCounter); j++)
+                                                meanZ += (double)this.calZ[j];
+                                            meanZ = meanZ / this.calCounter;
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZMean = meanZ;
+
+                                            for (int j = 0; (j < this.calCounter); j++)
+                                                stdZ += Math.Pow(this.calZ[j] - meanZ, 2);
+                                            stdZ = Math.Sqrt(stdZ / (this.calCounter - 1));
+                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZStd = stdZ;
+                                            this.currentCalibrationSensorIndex++;
+                                            this.calSensor = -1;
+                                        }
+
+                                        this.isCalibrating = false;
+                                        this.calCounter = 0;
+
+
+                                    }
+                                }
+
                             }
-                            
-                        }
 #if (PocketPC)
 #else
-                        if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
-                        {
-                            if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x>0) && (y>0) && (z>0))
+                            if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
                             {
-                                averageX[channel]=averageX[channel]+Math.Abs(prevX[channel]-x);
-                                averageRawX[channel] = averageRawX[channel] + x;
-                                averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
-                                averageRawY[channel] = averageRawY[channel] + y;
-                                averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
-                                averageRawZ[channel] = averageRawZ[channel] + z;
-                                acCounters[channel] = acCounters[channel] + 1;
+                                if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x > 0) && (y > 0) && (z > 0))
+                                {
+                                    averageX[channel] = averageX[channel] + Math.Abs(prevX[channel] - x);
+                                    averageRawX[channel] = averageRawX[channel] + x;
+                                    averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
+                                    averageRawY[channel] = averageRawY[channel] + y;
+                                    averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
+                                    averageRawZ[channel] = averageRawZ[channel] + z;
+                                    acCounters[channel] = acCounters[channel] + 1;
+                                }
+
+                                prevX[channel] = x;
+                                prevY[channel] = y;
+                                prevZ[channel] = z;
                             }
-
-                            prevX[channel] = x;
-                            prevY[channel] = y;
-                            prevZ[channel] = z;
-                        }
 #endif
-
-
+                        }
                     }
+
                 }
                 
 
