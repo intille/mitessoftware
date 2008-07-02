@@ -108,11 +108,23 @@ namespace MITesDataCollection
         public static int HR_SAMPLING_RATE = 60;
         public static int MAX_PORT = 30;
 
+        public static string ACTIVITY_COMPENDIUM_FILE =MASTER_DIRECTORY + "ActivitiesCompendium.xml";
         //Annotation Messages
 
         public static string AUTO_MODE_SESSION = "auto";
         public static string MANUAL_MODE_SESSION = "manual";
         public static int TRAINING_GAP = 10000; //10 seconds
+
+        //MITes Images
+        public static int PC_IMAGE_WIDTH = 288;
+        public static int PC_IMAGE_HEIGHT = 288;
+        public static int PPC_IMAGE_WIDTH = 96;
+        public static int PPC_IMAGE_HEIGHT = 96;
+        public static string MITES_VERTICAL_96_96=Constants.NEEDED_FILES_PATH+ "images\\mites\\vertical9696.jpg";
+        public static string MITES_HORIZONTAL_96_96 = Constants.NEEDED_FILES_PATH + "images\\mites\\horizontal9696.jpg";
+        public static string MITES_VERTICAL_288_288 = Constants.NEEDED_FILES_PATH + "images\\mites\\vertical288288.jpg";
+        public static string MITES_HORIZONTAL_288_288 = Constants.NEEDED_FILES_PATH + "images\\mites\\horizontal288288.jpg";
+
 
     }
 }
