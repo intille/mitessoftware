@@ -71,7 +71,8 @@ namespace MITesDataCollection
         /// </summary>
         private void InitializeComponent()
         {
-            this.mainMenu1 = new System.Windows.Forms.MainMenu();
+            this.components = new System.ComponentModel.Container();
+            this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -81,10 +82,12 @@ namespace MITesDataCollection
             // 
             // mainMenu1
             // 
-            this.mainMenu1.MenuItems.Add(this.menuItem1);
+            this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
+            this.menuItem1});
             // 
             // menuItem1
             // 
+            this.menuItem1.Index = 0;
             this.menuItem1.Text = "Quit";
             this.menuItem1.Click += new System.EventHandler(this.menuItem1_Click);
             // 
@@ -104,6 +107,7 @@ namespace MITesDataCollection
             this.button3.Size = new System.Drawing.Size(195, 25);
             this.button3.TabIndex = 9;
             this.button3.Text = "Estimate Energy Expenditure";
+            this.button3.Visible = false;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // button4
@@ -113,6 +117,7 @@ namespace MITesDataCollection
             this.button4.Size = new System.Drawing.Size(195, 26);
             this.button4.TabIndex = 10;
             this.button4.Text = "Troubleshoot Software";
+            this.button4.Visible = false;
             this.button4.Click += new System.EventHandler(this.button4_Click);
             // 
             // button1
@@ -122,6 +127,7 @@ namespace MITesDataCollection
             this.button1.Size = new System.Drawing.Size(195, 29);
             this.button1.TabIndex = 11;
             this.button1.Text = "Calibrate";
+            this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // MainForm

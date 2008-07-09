@@ -215,7 +215,6 @@ namespace HousenCS.MITes
 //			int time = Environment.TickCount;
 //			byteWriter.writeInt(time);
 //		}
-
 		private void WriteTimeStampRealTime(int time)
 		{
 			DateTime dt = DateTime.Now;

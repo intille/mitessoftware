@@ -94,6 +94,7 @@ namespace MITesDataCollection
         private MITesHRAnalyzer aMITesHRAnalyzer;
         private MITesDataFilterer aMITesDataFilterer;
         private MITesLoggerNew aMITesLogger;
+        private MITesLoggerPLFormat aMITesLoggerPLFormat;
         private MITesActivityLogger aMITesActivityLogger;
         private ReceiverConfigureForm rcf = null;
         private MITesReceiverController[] mitesControllers;
@@ -372,7 +373,6 @@ namespace MITesDataCollection
 
             //Only enable the read data time since we are just calibrating
             this.readDataTimer.Enabled = true;
-
 
         }
 
@@ -976,6 +976,8 @@ namespace MITesDataCollection
             aMITesLogger = new MITesLoggerNew(this.mitesDecoders[0],
                 dataDirectory + "\\data\\raw\\MITesAccelBytes",
                 dataDirectory + "\\data\\log\\MITesLogFileBytes");
+            aMITesLoggerPLFormat = new MITesLoggerPLFormat(this.mitesDecoders[0],
+                                                         dataDirectory + "\\data\\raw\\PLFormat\\");
             //aMITesLogger.SetActive(false);
 
 
@@ -1610,6 +1612,7 @@ namespace MITesDataCollection
                 this.isCollectingDetailedData = false;
                 this.menuItem22.Checked = false;
                 aMITesLogger.SetActive(false);
+                aMITesLoggerPLFormat.SetActive(false);
 
             }
             else
@@ -1617,6 +1620,7 @@ namespace MITesDataCollection
                 this.isCollectingDetailedData = true;
                 this.menuItem22.Checked = true;
                 aMITesLogger.SetActive(true);
+                aMITesLoggerPLFormat.SetActive(true);
 
             }
 
@@ -2451,8 +2455,12 @@ namespace MITesDataCollection
 
                 sum += this.mitesDecoders[0].GetLastByteNum();
                 aMITesLogger.SaveRawData();
+                aMITesLoggerPLFormat.SaveRawData(); 
                 if (flushTimer == 0)
+                {
                     aMITesLogger.FlushBytes();
+                    aMITesLoggerPLFormat.FlushBytes();                    
+                }
                 if (flushTimer > 6000)
                     flushTimer = -1;
                 flushTimer++;

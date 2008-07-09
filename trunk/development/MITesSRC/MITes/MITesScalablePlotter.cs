@@ -219,6 +219,13 @@ namespace HousenCS.MITes
 		public void SetupScaleFactor(Size aPlotAreaSize, int maxNumPlots)
 		{
 			plotAreaSize = aPlotAreaSize;
+
+            // This is necessary to avoid a crash if the plotting window is closed
+            if (plotAreaSize.Height <= 0)
+                plotAreaSize.Height = 1;
+            if (plotAreaSize.Width <= 0)
+                plotAreaSize.Width = 1;
+
 			maxPlots = maxNumPlots;
 			SetupStorage();
 			
