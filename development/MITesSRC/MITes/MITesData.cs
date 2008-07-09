@@ -197,6 +197,10 @@ namespace HousenCS.MITes
         /// </summary>
         public double unixTimeStamp;
 
+        /// <summary>
+        /// A special character used as a sync character (when in repetition) in the raw MITes binary data. 
+        /// </summary>
+        public const byte MITes_SYNC_CHAR = 0x7E;
 
         /// <summary>
         /// The raw 5 byte packet that was used to decode this MITesData. This is saved so that raw data can be resaved
