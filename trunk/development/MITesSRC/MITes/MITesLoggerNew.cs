@@ -267,11 +267,11 @@ namespace HousenCS.MITes
 		private int diffMS = 0;
 		private byte diffMSByte = 0;
 
-        private void WriteTimeDiff(int aTime, int lastTime, double unixTime, bool isForceTimeCodeSave)
+        private void WriteTimeDiff(double aUnixTime, double lastUnixTime, bool isForceTimeCodeSave)
         {
             if (isActive)
             {
-                diffMS = aTime - lastTime;
+                diffMS = (int) (aUnixTime - lastUnixTime);
 
                 // Save a full timestamp if forced
                 // or time is > than 255 ms
@@ -279,28 +279,58 @@ namespace HousenCS.MITes
                 {
                     if (diffMS >= 254)
                         Console.WriteLine("Warning; Max on MS diff: " + diffMS);
-                    diffMSByte = (byte) 255;
+                    diffMSByte = (byte)255;
                     bw.WriteByte(diffMSByte);
                     bwPLFormat.WriteByte(diffMSByte);
                     WriteTimeStamp(aTime, bw);
-                    WriteTimeStampPLFormat(unixTime, bwPLFormat);
+                    WriteTimeStampPLFormat(aUnixTime, bwPLFormat);
                 }
                 else // diff MS in range and no forced timestamp save
                 {
                     //				if (diffMS == 0)
                     //					Console.WriteLine ("Warning: Diff 0");
-                    diffMSByte = (byte) diffMS;
+                    diffMSByte = (byte)diffMS;
                     bw.WriteByte(diffMSByte);
                     bwPLFormat.WriteByte(diffMSByte);
                 }
             }
         }
 
+        //private void WriteTimeDiff(int aTime, int lastTime, double unixTime, bool isForceTimeCodeSave)
+        //{
+        //    if (isActive)
+        //    {
+        //        diffMS = aTime - lastTime;
+
+        //        // Save a full timestamp if forced
+        //        // or time is > than 255 ms
+        //        if (isForceTimeCodeSave || (diffMS > 254))
+        //        {
+        //            if (diffMS >= 254)
+        //                Console.WriteLine("Warning; Max on MS diff: " + diffMS);
+        //            diffMSByte = (byte) 255;
+        //            bw.WriteByte(diffMSByte);
+        //            bwPLFormat.WriteByte(diffMSByte);
+        //            WriteTimeStamp(aTime, bw);
+        //            WriteTimeStampPLFormat(unixTime, bwPLFormat);
+        //        }
+        //        else // diff MS in range and no forced timestamp save
+        //        {
+        //            //				if (diffMS == 0)
+        //            //					Console.WriteLine ("Warning: Diff 0");
+        //            diffMSByte = (byte) diffMS;
+        //            bw.WriteByte(diffMSByte);
+        //            bwPLFormat.WriteByte(diffMSByte);
+        //        }
+        //    }
+        //}
+
 	    private int timeSaveCount = TIMESTAMP_AFTER_SAMPLES; 
 		private int correspondSaveTime = 0; 
 		private int aTime = 0;
 		private double aUnixTime = 0; 
-		private int lastTime = 0; 
+		private int lastTime = 0;
+        private double lastUnixTime = 0; 
 
 		/// <summary>
 		/// For each 5 byte packet, first save the ms-offset marker byte. Then save either the
@@ -310,12 +340,6 @@ namespace HousenCS.MITes
 		{
 		    if (isActive)
 		    {
-		        if ((Environment.TickCount - correspondSaveTime) > CORRESPONDENCE_SAVE_TIME)
-		        {
-		            WriteTimeStampRealTime(aTime);
-		            correspondSaveTime = Environment.TickCount;
-		        }
-
 		        for (int i = 0; i < aMITesDecoder.someMITesDataIndex; i++)
 		        {
 		            aTime = aMITesDecoder.someMITesData[i].timeStamp;
@@ -326,19 +350,22 @@ namespace HousenCS.MITes
 		            // Roughly once per second save full timestamp, no matter what
 		            if (timeSaveCount == TIMESTAMP_AFTER_SAMPLES)
 		            {
-		                WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
-		                timeSaveCount = 0;
+		                //WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        WriteTimeDiff(aUnixTime, lastUnixTime, true); // Force save
+                        timeSaveCount = 0;
 		            }
 		            else
 		            {
-		                WriteTimeDiff(aTime, lastTime, aUnixTime, false);
-		                timeSaveCount++;
+		                //WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        WriteTimeDiff(aUnixTime, lastUnixTime, false); // Force save
+                        timeSaveCount++;
 		            }
 
 		            // Actually save the data! 
 		            SaveMITesData(aMITesDecoder.someMITesData[i]);
 
 		            lastTime = aTime;
+		            lastUnixTime = aUnixTime; 
 		        }
 		    }
 		}
