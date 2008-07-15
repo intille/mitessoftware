@@ -1,7 +1,6 @@
 using System;
 using System.Threading;
 using HousenCS.IO;
-//using System.Runtime.InteropServices;
 
 namespace HousenCS.MITes
 {
@@ -626,7 +625,7 @@ namespace HousenCS.MITes
         public void SetUnixTime(MITesData aMITesData)
         {
 
-            aMITesData.unixTimeStamp = UnixTime.GetUnixTime(aMITesData.channel);
+            aMITesData.unixTimeStamp = UnixTime.GetUnixTime();
             lastUnixTime = aMITesData.unixTimeStamp;
             //  QueryPerformanceCounter(out aMITesData.highPrecisionTime);
         }

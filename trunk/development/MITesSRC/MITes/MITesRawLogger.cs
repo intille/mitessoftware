@@ -101,6 +101,8 @@ namespace HousenCS.MITes
         /// </summary>
         public void ShutDown()
         {
+            SaveSampleLine(); 
+
             if (fw != null)
                 fw.CloseFile();
         }
