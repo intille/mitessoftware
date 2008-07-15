@@ -8,57 +8,34 @@ using HousenCS.MITes;
 namespace HousenCS.MITes
 {
 	/// <summary>
-	/// A MITesLoggerReader with multiple receivers reads the binary file saved by a MITesLogger and
-	/// can replace an aMITesDecoder.GetSensorData(mrc) call. 
+	/// A MITesLoggerReader that reads data saved in the PLFormat. 
 	/// </summary>
-	public class MITesLoggerReaderMR
+	public class MITesLoggerReaderPLFormat
 	{
         private class BFileInfo
         {
             public BFileInfo()
-            {                
+            {
             }
 
             //public DateTime startTime;
             public string fileRec1 = "";
-            public string fileRec2 = ""; 
         }
 
 	    private static DateTime aRefDate = DateTime.Now;
 	    private static bool isRefDateSet = false; 
 
-        private ByteReader br1;
-        private ByteReader br2;
-
+        private ByteReader br;
         private int fileIndex = 0; 
-
         private MITesDecoder aMITesDecoder;
-
         ArrayList someBinaryFiles = new ArrayList();
 
         private void GenerateBinaryFileList(string aDataDir)
         {
-            // Determine number of receivers
-
-            string rec1Dir = aDataDir + "\\1";
-            string rec2Dir = aDataDir + "\\2";
-
-            int numRec = 0;
-            if (Directory.Exists(rec1Dir))
-                numRec++; 
-            if (Directory.Exists(rec2Dir))
-                numRec++; 
-
-            if (numRec == 0)
-                return;
-
             string[] someDays1 = new string[0];
-            string[] someDays2 = new string[0];
 
             // First, find all days 
-            someDays1 = Directory.GetDirectories(rec1Dir); 
-            if (numRec == 2)
-                someDays2 = Directory.GetDirectories(rec2Dir); 
+            someDays1 = Directory.GetDirectories(aDataDir); 
             
             //Merge and sort the days from both receiver directories 
             ArrayList someDays = new ArrayList();
@@ -66,11 +43,6 @@ namespace HousenCS.MITes
             foreach (string d in someDays1)
             {
                 someDays.Add(Path.GetFileName(d));
-            }
-            foreach (string d in someDays2)
-            {
-                if (!someDays.Contains(Path.GetFileName(d)))
-                    someDays.Add(Path.GetFileName(d));
             }
             someDays.Sort();
 
@@ -80,7 +52,7 @@ namespace HousenCS.MITes
             } 
 
             // Now that we have a list of days sorted by date, go into each folder
-            // for both receivers, and put together ordered list of binary files. 
+            // and put together ordered list of binary files. 
 
             foreach (string d in someDays)
             {
@@ -89,13 +61,11 @@ namespace HousenCS.MITes
                 {
                     BFileInfo aBFileInfo = new BFileInfo();
                     // Check for hour dir in rec 1
-                    if (Directory.Exists(rec1Dir + "\\" + d + "\\" + i))
-                        aBFileInfo.fileRec1 = GetBinaryMITesFile(rec1Dir + "\\" + d + "\\" + i);
-                    if (Directory.Exists(rec2Dir + "\\" + d + "\\" + i))
-                        aBFileInfo.fileRec2 = GetBinaryMITesFile(rec2Dir + "\\" + d + "\\" + i);
+                    if (Directory.Exists(aDataDir + "\\" + d + "\\" + i))
+                        aBFileInfo.fileRec1 = GetBinaryMITesFile(aDataDir + "\\" + d + "\\" + i);
 
                     // Add if one of the receiver directories had a file
-                    if ((aBFileInfo.fileRec1 != "") || (aBFileInfo.fileRec2 != ""))
+                    if (aBFileInfo.fileRec1 != "")
                         someBinaryFiles.Add(aBFileInfo);
                 }
             }
@@ -126,7 +96,7 @@ namespace HousenCS.MITes
 		/// </summary>
 		/// <param name="aMITesDecoder">MITesDecoder object</param>
         /// <param name="aDataDir">Data directory for MITes data</param>
-        public MITesLoggerReaderMR(MITesDecoder aMITesDecoder, String aDataDir)
+        public MITesLoggerReaderPLFormat(MITesDecoder aMITesDecoder, String aDataDir)
 		{
 		    GenerateBinaryFileList(aDataDir);
 
@@ -140,12 +110,10 @@ namespace HousenCS.MITes
         /// <param name="aDirPath"></param>
         public static bool IsValidDirectory(string aDirPath)
         {
-            string subjectDataFile = aDirPath + "\\SubjectData.xml";
             string sensorDataFile = aDirPath + "\\SensorData.xml";
-            string activityLabelsFile = aDirPath + "\\ActivityLabels.xml";
+            string activityLabelsFile = aDirPath + "\\ActivityLabelsRealtime.xml";
 
-            if (File.Exists(subjectDataFile) &&
-                File.Exists(sensorDataFile) &&
+            if (File.Exists(sensorDataFile) &&
                 File.Exists(activityLabelsFile))
                 return true;
             else
@@ -157,39 +125,24 @@ namespace HousenCS.MITes
 	        dTimeStamp1 = 0;
 	        dTimeStamp2 = 0; 
 
-            if (br1 != null)
-                br1.CloseFile();
-	        if (br2 != null)
-                br2.CloseFile();
+            if (br != null)
+                br.CloseFile();
 
-	        br1 = null;
-	        br2 = null; 
+	        br = null;
 	       
 	        string f1 = ((BFileInfo) someBinaryFiles[index]).fileRec1;  
-	        string f2 = ((BFileInfo) someBinaryFiles[index]).fileRec2;  
             if (f1 != "")
             {
-                br1 = new ByteReader(f1);
-                br1.OpenFile();              
+                br = new ByteReader(f1);
+                br.OpenFile();              
                 Console.WriteLine("Opening file for read: " + f1);
             }
-            if (f2 != "")
-            {
-                br2 = new ByteReader(f2);
-                br2.OpenFile();
-                Console.WriteLine("Opening file for read: " + f2);
-            }
 
-            if ((br1 == null) && (br2 == null))
+            if (br == null)
                 return false;
             else
-            {
                 return true;                 
-            }
 		}
-
-        //static int MAX_BYTES = 5 * 30;
-        //byte[] someBytes = new byte[MAX_BYTES];  
 
 		private static byte[] b = new byte[1];
         private static int[] ts = new int[1];
@@ -258,7 +211,7 @@ namespace HousenCS.MITes
 
 			if (b[0] == ((int) 255))
 			{
-                Console.WriteLine("Marker: " + debugCount);
+                //Console.WriteLine("Marker: " + debugCount);
 				// Marker, so read the whole timecode
 				readValid = br.ReadBytes(b6);
 
@@ -266,6 +219,8 @@ namespace HousenCS.MITes
                     return MITesData.NONE; 
 
 				lastUnixTime = UnixTime.DecodeUnixTimeCodeBytesFixed(b6); // SSI Added test
+
+                DateTime junk = new DateTime();
 
                 if (lastUnixTime == refTime)
                 {
@@ -277,7 +232,7 @@ namespace HousenCS.MITes
                         if (!readValid)
                             return MITesData.NONE; 
                     }
-                    //Console.WriteLine("SYNC byte: keep time as: " + lastUnixTime);
+                    Console.WriteLine("SYNC byte: keep time as: " + lastUnixTime);
 
                     //Now read the time byte and add to the existing time
                     readValid = br.ReadByte(b);
@@ -287,11 +242,12 @@ namespace HousenCS.MITes
                     
                     return aLastUnixTime + (int)b[0];
                 }
-
-			    //Console.WriteLine ("UNIX Timecode: " + lastUnixTime);
-                DateTime junk = new DateTime();
-                UnixTime.GetDateTime((long)lastUnixTime, out junk);
-                //Console.WriteLine("UNIX Timecode date: " + junk);
+                else
+                {
+                    //Console.WriteLine ("UNIX Timecode: " + lastUnixTime);
+                    UnixTime.GetDateTime((long)lastUnixTime, out junk);
+                    Console.WriteLine("UNIX Timecode date: " + junk + " " + lastUnixTime);                    
+                }
 
                 //junk = new DateTime(2007,9,9,8,16,5,609);
                 //double junkme = UnixTime.GetUnixTime(junk);
@@ -344,10 +300,6 @@ namespace HousenCS.MITes
         private double dTimeStamp2 = 0;
         private double dLastTimeStamp1 = 0;
         private double dLastTimeStamp2 = 0;
-        //private int diffTime1 = 0;  
-        //private int diffTime2 = 0;
-        //private int diffMS1 = 0;
-        //private int diffMS2 = 0;
         private double lastTimeStampTime1 = 0;
         private double lastTimeStampTime2 = 0; 
 
@@ -390,13 +342,11 @@ namespace HousenCS.MITes
         /// <param name="someData">The array in which the resulting MITesData will be stored.</param>
         /// <param name="dataIndex">The current index of the array in which the MITesData will be stored. (This will append data onto the end of existing data if needed).</param>
         /// <param name="br1">A ByteReader object that has been opened to the proper file for receiver 1.</param>
-        /// <param name="br2">A ByteReader object that has been opened to the proper file for receiver 2.</param>
         /// <returns>The new index for the someData array.</returns>
-        public int DecodePLFormatMR(MITesData[] someData, int dataIndex, ByteReader br1, ByteReader br2)
+        public int DecodePLFormatMR(MITesData[] someData, int dataIndex, ByteReader br1)
         {
             bool isGoodPacketRead = false;
             isEndFile1 = false;
-	        isEndFile2 = false;
 
             int fileUsed = 0; 
 
@@ -404,20 +354,14 @@ namespace HousenCS.MITes
 
             if (dTimeStamp1 == 0)
                 dTimeStamp1 = ReadUnixTimeStamp(br1, dLastTimeStamp1);
-            if (dTimeStamp2 == 0)
-                dTimeStamp2 = ReadUnixTimeStamp(br2, dLastTimeStamp2);
 
             if ((dTimeStamp1 - dLastTimeStamp1) > (2 * 60 * 60 * 1000))
                 Console.WriteLine("Skip of more than two hours in file 1");
-            if ((dTimeStamp2 - dLastTimeStamp2) > (2 * 60 * 60 * 1000))
-                Console.WriteLine("Skip of more than two hours in file 2");
 
             debugCount++;
 
             DateTime dt1 = new DateTime();
             UnixTime.GetDateTime((long)dTimeStamp1, out dt1);
-            DateTime dt2 = new DateTime();
-            UnixTime.GetDateTime((long)dTimeStamp2, out dt2);
 
             //if (((dTimeStamp1 != MITesData.NONE) && (dTimeStamp2 != MITesData.NONE)) &&
             //    ((dt1.Second != dt2.Second) || (dt1.Minute != dt2.Minute)))
@@ -432,15 +376,9 @@ namespace HousenCS.MITes
                 isEndFile1 = true;
             }
 
-            if ((dTimeStamp2 == (double)MITesData.NONE) || (br2 == null))
+            if (isEndFile1)
             {
-                //Console.WriteLine("End of file 2: " + GetDateTime(lastGoodTime1) + " " + GetDateTime(lastGoodTime2));
-                isEndFile2 = true;
-            }
-
-            if (isEndFile1 && isEndFile2)
-            {
-                Console.WriteLine("End of both files.");
+                Console.WriteLine("End of file.");
                 return 0;                
             }
 
@@ -471,22 +409,10 @@ namespace HousenCS.MITes
             #endregion
 
             if ((dTimeStamp1 != -1) && (dLastTimeStamp1 != -1) && (dTimeStamp1 < dLastTimeStamp1))
-                Console.WriteLine("Jumpback1: " + debugCount);
-            if ((dTimeStamp2 != -1) && (dLastTimeStamp2 != -1) && (dTimeStamp2 < dLastTimeStamp2))
-                Console.WriteLine("Jumpback2: " + debugCount); 
+                Console.WriteLine("Jumpback: " + debugCount + " " + (dLastTimeStamp1 - dTimeStamp1)); 
 
             dLastTimeStamp1 = dTimeStamp1;
-            dLastTimeStamp2 = dTimeStamp2;
             lastTimeStampTime1 = Environment.TickCount;
-            lastTimeStampTime2 = Environment.TickCount;
-
-            //DateTime junkme = new DateTime();
-            //UnixTime.GetDateTime((long) dTimeStamp1, out junkme);
-            //Console.WriteLine("                               DTIMESTAMP1: " + junkme);
-
-            //UnixTime.GetDateTime((long)dTimeStamp2, out junkme);
-            //Console.WriteLine("                               DTIMESTAMP2: " + junkme);
-
 
             // Read packet that is first in time from whichever file. Leave other be  
 
@@ -494,43 +420,11 @@ namespace HousenCS.MITes
 
             brTemp = null; 
 
-            if ((!isEndFile1) && (!isEndFile2)) // both active 
+            if (!isEndFile1)
             {
-                if ((dTimeStamp1 <= dTimeStamp2) && (dTimeStamp1 != 0))
-                {
-                    lastGoodTime1 = dTimeStamp1;
-                        brTemp = br1;
-                    fileUsed = 1; 
-                }
-                else if (dTimeStamp2 != 0)
-                {
-                    lastGoodTime2 = dTimeStamp2;
-                    brTemp = br2;
-                    fileUsed = 2; 
-                }
-                //else
-                //{
-                //    Console.WriteLine("ERROR1 -- Should not be here!! ----------------------------");
-                //}
-            }
-            else
-            {
-                if ((dTimeStamp1 != 0) && (!isEndFile1))
-                {
-                    lastGoodTime1 = dTimeStamp1;
-                                        brTemp = br1;
-                    fileUsed = 1; 
-                }
-                else if ((dTimeStamp2 != 0) && (!isEndFile2))
-                {
-                    lastGoodTime2 = dTimeStamp2;
-                    brTemp = br2;
-                    fileUsed = 2; 
-                }
-                //else
-                //{
-                //    Console.WriteLine("ERROR2 -- Should not be here!! ----------------------------");
-                //}
+                lastGoodTime1 = dTimeStamp1;
+                brTemp = br1;
+                fileUsed = 1;
             }
 
             // Check if need to ignore data because we have a bad timestamp 
@@ -539,13 +433,7 @@ namespace HousenCS.MITes
             {
                 if (dTimeStamp1 == 0)
                     IgnorePacket(br1);
-                if (dTimeStamp2 == 0)
-                    IgnorePacket(br2);
             }
-            else if ((fileUsed == 1) && (dTimeStamp2 == 0))
-                IgnorePacket(br2);
-            else if ((fileUsed == 2) && (dTimeStamp1 == 0))
-                IgnorePacket(br1);
 
             if (fileUsed != 0)
             {
@@ -581,21 +469,6 @@ namespace HousenCS.MITes
 
                 dTimeStamp1 = 0; // Reset so gets read next time from file 
             }
-            else if (fileUsed == 2)
-            {
-                someData[dataIndex].timeStamp = UnixTime.IntTimeFromUnixTime(dTimeStamp2, aRefDate);
-                aMITesDecoder.SetUnixTime(someData[dataIndex], dTimeStamp2); // Set the time
-                someData[dataIndex].fileID = 2;
-
-                // If not a good timestamp (probably because haven't gotten marker yet) set to noise
-                if (dTimeStamp2 == 0)
-                {
-                    someData[dataIndex].type = (int)MITesTypes.NOISE;
-                    //Console.WriteLine("Losing data due to lack of timestamp sync.");
-                }
-                dTimeStamp2 = 0; // Reset so gets read next time from file                 
-
-            }
             else
             {
                 //Console.WriteLine("ERROR: no file used");
@@ -614,7 +487,7 @@ namespace HousenCS.MITes
         public bool GetSensorData(int numPackets)
 		{
 		    someMITesDataIndex = 0;
-		    int tmpIndex = DecodePLFormatMR(aMITesDecoder.someMITesData, someMITesDataIndex, br1, br2);
+		    int tmpIndex = DecodePLFormatMR(aMITesDecoder.someMITesData, someMITesDataIndex, br);
             if (tmpIndex == -1) // Data, but not valid timecodes 
             {
                 aMITesDecoder.someMITesDataIndex = 0;
@@ -631,9 +504,8 @@ namespace HousenCS.MITes
                         return false;
 
                     dLastTimeStamp1 = lastGoodTime1;
-                    dLastTimeStamp2 = lastGoodTime2;
 
-                    tmpIndex = DecodePLFormatMR(aMITesDecoder.someMITesData, someMITesDataIndex, br1, br2);
+                    tmpIndex = DecodePLFormatMR(aMITesDecoder.someMITesData, someMITesDataIndex, br);
  
                     if (tmpIndex == 0)
                     {
@@ -661,10 +533,8 @@ namespace HousenCS.MITes
 
 	    private void ShutdownFiles()
 		{
-            if (br1 != null)
-	    		br1.CloseFile();
-            if (br2 != null)
-                br2.CloseFile();
+            if (br != null)
+	    		br.CloseFile();
         }
 	}
 }

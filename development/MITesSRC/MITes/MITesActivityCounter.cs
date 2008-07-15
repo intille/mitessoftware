@@ -214,6 +214,23 @@ namespace HousenCS.MITes
 			return s;
 		}
 
+        public static String GetEmptyReport()
+        {
+            String s = "";
+            s += "," + MITesActivityLogger.NONE_STRING;
+            s += "," + MITesActivityLogger.NONE_STRING;
+            s += "," + MITesActivityLogger.NONE_STRING;
+            s += "," + MITesActivityLogger.NONE_STRING;
+
+            return s;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+
+
         /// <summary>
         /// 
         /// </summary>

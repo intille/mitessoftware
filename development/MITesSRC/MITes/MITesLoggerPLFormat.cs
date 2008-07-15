@@ -153,11 +153,11 @@ namespace HousenCS.MITes
         private int diffMS = 0;
         private byte diffMSByte = 0;
 
-        private void WriteTimeDiff(int aTime, int lastTime, double unixTime, bool isForceTimeCodeSave)
+        private void WriteTimeDiff(double aUnixTime, double lastUnixTime, bool isForceTimeCodeSave)
         {
             if (isActive)
             {
-                diffMS = aTime - lastTime;
+                diffMS = (int) (aUnixTime - lastUnixTime);
 
                 // Save a full timestamp if forced
                 // or time is > than 255 ms
@@ -167,7 +167,7 @@ namespace HousenCS.MITes
                     //    Console.WriteLine("Warning; Max on MS diff: " + diffMS);
                     diffMSByte = (byte)255;
                     bwPLFormat.WriteByte(diffMSByte);
-                    WriteTimeStampPLFormat(unixTime, bwPLFormat);
+                    WriteTimeStampPLFormat(aUnixTime, bwPLFormat);
                 }
                 else // diff MS in range and no forced timestamp save
                 {
@@ -177,10 +177,35 @@ namespace HousenCS.MITes
             }
         }
 
+        //private void WriteTimeDiff(int aTime, int lastTime, double unixTime, bool isForceTimeCodeSave)
+        //{
+        //    if (isActive)
+        //    {
+        //        diffMS = aTime - lastTime;
+
+        //        // Save a full timestamp if forced
+        //        // or time is > than 255 ms
+        //        if (isForceTimeCodeSave || (diffMS > 254))
+        //        {
+        //            //if (diffMS >= 254)
+        //            //    Console.WriteLine("Warning; Max on MS diff: " + diffMS);
+        //            diffMSByte = (byte)255;
+        //            bwPLFormat.WriteByte(diffMSByte);
+        //            WriteTimeStampPLFormat(unixTime, bwPLFormat);
+        //        }
+        //        else // diff MS in range and no forced timestamp save
+        //        {
+        //            diffMSByte = (byte)diffMS;
+        //            bwPLFormat.WriteByte(diffMSByte);
+        //        }
+        //    }
+        //}
+
         private int timeSaveCount = TIMESTAMP_AFTER_SAMPLES;
         private int aTime = 0;
         private double aUnixTime = 0;
         private int lastTime = 0;
+        private double lastUnixTime = 0;
         private bool isForceTimestampSave = true; 
 
         /// <summary>
@@ -200,15 +225,26 @@ namespace HousenCS.MITes
                     aTime = aMITesDecoder.someMITesData[i].timeStamp;
                     aUnixTime = aMITesDecoder.someMITesData[i].unixTimeStamp;
 
+                    if (aTime < lastTime)
+                    {
+                        Console.WriteLine("StepBack!: " + (lastTime-aTime));
+                    }
+                    if (aUnixTime < lastUnixTime)
+                    {
+                        Console.WriteLine("StepBackUnix!: " + (lastUnixTime - aUnixTime));
+                    }
+
                     // Roughly once per second save full timestamp, no matter what
                     if (isForceTimestampSave || (timeSaveCount == TIMESTAMP_AFTER_SAMPLES))
                     {
-                        WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        //WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        WriteTimeDiff(aUnixTime, lastUnixTime, true); // Force save
                         timeSaveCount = 0;
                     }
                     else
                     {
-                        WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        //WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        WriteTimeDiff(aUnixTime, lastUnixTime, false);
                         timeSaveCount++;
                     }
 
@@ -218,6 +254,7 @@ namespace HousenCS.MITes
                     SaveMITesData(aMITesDecoder.someMITesData[i]);
 
                     lastTime = aTime;
+                    lastUnixTime = aUnixTime; 
                 }
             }
         }

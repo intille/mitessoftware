@@ -115,6 +115,14 @@ namespace HousenCS.MITes
             resultLine += aMITesActivityCounter.GetReport(currentTime);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        public void AddEmptyReportLine()
+        {
+            resultLine += MITesActivityCounter.GetEmptyReport();
+        }
+
 		/// <summary>
 		/// 
 		/// </summary>
