@@ -175,8 +175,6 @@ namespace MITesDataCollection
         #endregion Definition of calibration objects
 
         private TextWriter tw;
-        //for simple data collection
-        private bool isCollectingSimpleData=false;
         private bool isCollectingDetailedData=false;
         private bool collectDataMode=false;
         private bool classifyDataMode=false;
@@ -199,6 +197,8 @@ namespace MITesDataCollection
             string szSound,
             IntPtr hModule,
             int flags);
+
+
         private bool isQuitting = false;
 
         private Hashtable sensorLabels;
@@ -254,7 +254,6 @@ namespace MITesDataCollection
             this.isClassifying = false;
             this.isExtracting = false;
             this.isCollectingDetailedData = false;
-            this.isCollectingSimpleData = false;
 
             //setup where the sensordata file will be stored
             this.dataDirectory = dataDirectory;
@@ -384,7 +383,6 @@ namespace MITesDataCollection
         {
             //intialize the mode of the software
             this.collectDataMode = true;
-            this.isCollectingSimpleData = false;
 #if (PocketPC)
             this.isCollectingDetailedData = false;
 #else
@@ -627,7 +625,6 @@ namespace MITesDataCollection
             //Initialize the software mode
             this.classifyDataMode = true;
             isExtracting = false;
-            isCollectingSimpleData = false;
             isCollectingDetailedData = false;
             isPlotting = true;
             isClassifying = true;
@@ -1545,18 +1542,6 @@ namespace MITesDataCollection
 
         private void menuItem21_Click(object sender, EventArgs e)
         {
-            if (this.isCollectingSimpleData == true)
-            {
-                this.isCollectingSimpleData = false;
-                this.menuItem21.Checked = false;
-
-            }
-            else
-            {
-                this.isCollectingSimpleData = true;
-                this.menuItem21.Checked = true;
-
-            }
         }
 
         private void menuItem1_Click(object sender, EventArgs e)
@@ -2136,6 +2121,8 @@ namespace MITesDataCollection
 
                 #region Classifying activities
 
+                Extractor.StoreMITesWindow();
+
                 if (isClassifying==true)
                 {
                     double lastTimeStamp = Extractor.StoreMITesWindow();
@@ -2482,14 +2469,18 @@ namespace MITesDataCollection
 
                 // Check HR values
                 int hr = aMITesHRAnalyzer.Update();
-                if (hr > 0)
+#if (PocketPC)
+    
+#else
+            if (hr > 0)
                 {
                     sumHR += hr;
                     hrCount++;
                 }
-              
-             
-     
+#endif
+
+
+
                 //Compute/get Activity Counts
                 for (int i = 0; (i < this.sensors.Sensors.Count); i++)
                 {

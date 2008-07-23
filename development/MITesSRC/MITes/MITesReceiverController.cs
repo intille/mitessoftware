@@ -119,13 +119,13 @@ namespace HousenCS.MITes
             Console.WriteLine("Receiver found on COM " + portNumber + "!");
 
             // Checked that port is valid, so go ahead and reopen it. 
-            spc = new SerialPortController(isUsingThreads, printWarnings, maxBytesBuffer);
+            //spc = new SerialPortController(isUsingThreads, printWarnings, maxBytesBuffer);
             Thread.Sleep(1000);
             spc.SetBaudRate(57600);
             spc.SetPort(portNumber);
             spc.SetParity(0); //none
             spc.SetStopBits(1);
-            isRunning = spc.PortOpen();
+            //isRunning = spc.PortOpen();
 
         }
 
@@ -196,12 +196,14 @@ namespace HousenCS.MITes
 				}
 			}
 
-			// Shutdown
-			if (isOpen)
-				spcTest.PortClose();
-			spcTest = null;
 
-			isRunning = false; 
+			// Shutdown
+			//if (isOpen)
+			//	spcTest.PortClose();
+			//spcTest = null;
+
+			//isRunning = false;
+            spc = spcTest;
 			return isValid;
 		}
 

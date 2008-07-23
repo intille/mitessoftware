@@ -9,6 +9,7 @@ using MITesFeatures;
 using MITesFeatures.core.conf;
 using System.Collections;
 using System.Text.RegularExpressions;
+using SOXML;
 
 namespace MITesFeatures
 {
@@ -17,6 +18,7 @@ namespace MITesFeatures
         private static double[] features;
         private static double[][] standardized;
         private static double[] means;
+        private static double[] variances;
         private static int[] inputFFT;
 
         private static bool autoMode = false;
@@ -693,8 +695,8 @@ namespace MITesFeatures
             if ((isAcceptableLossRate == true) && (isAcceptableConsecutiveLoss == true))
             {           
                 //Extract the features from the interpolated data
+                //Extractor.Extract(interpolated_data);
                 Extractor.Extract(interpolated_data);
-
                 
                 
                 //Output the data to the ARFF file
@@ -819,14 +821,14 @@ namespace MITesFeatures
                 }
                 
                 //if (lastTimeStamp>=
-                //if (current_activity.Equals("unknown") == false)
-               // {
+                if (current_activity.Equals("unknown") == false)
+                {
                     if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
                     {
                         string arffSample = Extractor.toString() + "," + current_activity;
                         tw.WriteLine(arffSample);
                     }
-                //}
+                }
 
             } while (isData = aMITesLoggerReader.GetSensorData(10));
 
@@ -1461,7 +1463,563 @@ namespace MITesFeatures
             features[inputRowSize] = total;
         }
 
-        
+
+
+
+
+
+        //input is a 2D array 3*SensorCount X 2^ FFT Interpolation Power e.g. for 3 MITes INT power=7  9 X 128
+        public static void Extract2(double[][] input)//,int fftInterpolationPower, int fftMaximumFrequencies)
+        {
+
+            int j = 0, i = 0, minOrientationIndex=0;
+            double sum = 0,  totalMean = 0, totalVariance=0, variance = 0,minOrientation=999999999999.0;
+            double[] min=new double[Extractor.inputRowSize];
+            double[] max=new double[Extractor.inputRowSize];
+
+            int ORIENTATIONS = 8;
+            int MOTION_DIRECTIONS = 3; // parallel to X, Y and Z axes
+            int MOTION_TYPES = 2; // low, high
+            int AXES=3;
+//            int[,,] orientations=new int[Extractor.extractorSensorCount,ORIENTATIONS,AXES];
+ //           int[, ,,] MaxOrientations = new int[Extractor.extractorSensorCount, ORIENTATIONS,AXES,MOTION_DIRECTIONS];
+ //           int[, ,,] MinOrientations = new int[Extractor.extractorSensorCount, ORIENTATIONS,AXES,MOTION_DIRECTIONS];
+
+            //for (i = 0; (i < Extractor.extractorSensorCount); i++)
+            //{
+            //    int sensor_id = Convert.ToInt32(((SXML.Sensor)Extractor.sannotation.Sensors[i]).ID);
+
+            //    for (j = 0; (j < ORIENTATIONS); j++)
+            //    {
+            //        for (int k = 0; (k < AXES); k++)
+            //        {
+            //            orientations
+            //        }
+            //    }
+            //}
+
+            int meansIndex = 0;
+            int varianceIndex = meansIndex + Extractor.extractorSensorCount + 1; // means 1 per sensors + add 1 for total mean
+            int orientationIndex = varianceIndex + Extractor.extractorSensorCount + 1; //variances 1 per sensor + add 1 for total variance
+            int closestOrientationIndex = orientationIndex + (Extractor.extractorSensorCount * ORIENTATIONS); // for 8 orientations, score each sensor to the orientations
+            int orientationSensorsIndex = closestOrientationIndex + Extractor.extractorSensorCount; // 1 discrete orientation per sensor
+            int sensorsCorrelationIndex = orientationSensorsIndex + (((Extractor.extractorSensorCount - 1) * Extractor.extractorSensorCount) / 2); // n* n-1 relative orientations between sensors
+            int sensorPercentMotionIndex = sensorsCorrelationIndex + ((Extractor.inputRowSize * Extractor.inputRowSize) - Extractor.inputRowSize) / 2; //number of correlation coefficients between axes
+            int sensorMotionTypeIndex = sensorPercentMotionIndex + (Extractor.extractorSensorCount * MOTION_DIRECTIONS * 3);
+
+
+            for (i = 0; (i < inputRowSize); i++)
+            {
+                min[i] = 999999999.0;
+                max[i] = -999999999.0;
+                sum = 0;
+
+                for (j = 0; (j < Extractor.inputColumnSize); j++)
+                {
+                    if (input[i][j] < min[i])
+                        min[i] = input[i][j];
+                    if (input[i][j] > max[i])
+                        max[i] = input[i][j];
+                    //inputFFT[j] = (int)(input[i][j]);
+                    sum += input[i][j];
+                }
+
+                means[i] = sum / Extractor.inputColumnSize;   //mean
+                totalMean += means[i];  //total mean
+
+               
+
+
+                //fill variance
+                variance = 0;
+                for (j = 0; (j < Extractor.inputColumnSize); j++)
+                {
+                    variance += Math.Pow(input[i][j] - means[i], 2);
+                    //***mean subtracted
+                    standardized[i][j] = input[i][j] - means[i]; //mean subtracted
+
+                }
+                variances[i]=variance / (Extractor.inputColumnSize - 1);
+                totalVariance += variances[i];
+
+                //***correlation coefficients
+                for (int k = i - 1; k >= 0; k--)
+                {
+                    for (int w = 0; (w < Extractor.inputColumnSize); w++)
+                        features[sensorsCorrelationIndex] += standardized[i][w] * standardized[k][w];
+                    features[sensorsCorrelationIndex] /= (Extractor.inputColumnSize - 1);
+                    features[sensorsCorrelationIndex] /= Math.Sqrt(variances[i]);  // ith std deviation
+                    features[sensorsCorrelationIndex] /= Math.Sqrt(variances[k]);  //kth std deviation 
+                    sensorsCorrelationIndex++;
+                }
+
+                if ((i + 1) % 3 == 0)
+                {
+                    int sensor_index=i/3;
+                    int sensor_id = Convert.ToInt32(((SXML.Sensor)sannotation.Sensors[sensor_index]).ID);
+                    SensorCalibration calibration=(SensorCalibration)calibrations[sensor_id];
+                    features[meansIndex++] = means[i - 2] + means[i - 1] + means[i];
+                    features[varianceIndex++] = variances[i - 2] + variances[i - 1] + variances[i];
+                    for (j = 0; (j < ORIENTATIONS); j++)
+                    {
+                        SensorOrientation orientation=(SensorOrientation)calibration.Orientations[j];
+                        //features[orientationIndex] = Math.Sqrt(Math.Pow((means[i - 2] - orientations[sensor_index, j, 0]), 2) +
+                        //    Math.Pow((means[i - 1] - orientations[sensor_index, j, 1]), 2) +
+                         //   Math.Pow((means[i - 2] - orientations[sensor_index, j, 2]), 2));
+                        features[orientationIndex] = Math.Sqrt( Math.Pow((means[i - 2] - orientation.X), 2) +
+                             Math.Pow((means[i - 1] - orientation.Y), 2) +
+                             Math.Pow((means[i - 2] - orientation.Z), 2));
+
+                        if (minOrientation > features[orientationIndex])
+                        {
+                            minOrientation = features[orientationIndex];
+                            minOrientationIndex = j;
+                        }
+
+                        orientationIndex++;
+                    }
+
+                    features[closestOrientationIndex++] = minOrientationIndex;
+                    SensorOrientation closestOrientation = (SensorOrientation)calibration.Orientations[minOrientationIndex];
+                    for (int k = sensor_index - 1; (k >= 0); k--)                     
+                    {
+                        features[orientationSensorsIndex++] = Math.Sqrt(
+                            Math.Pow((means[sensor_index*3] - means[k*3]),2.0) +
+                            Math.Pow((means[sensor_index * 3 +1] - means[k * 3 + 1]),2.0) +
+                            Math.Pow((means[sensor_index * 3 + 2] - means[k * 3 + 2]), 2.0));                        
+                    }
+
+                    for (int r = 0; (r < AXES); r++)
+                    {
+
+                        for (int k = 0; (k < MOTION_DIRECTIONS); k++)
+                        {
+                            SensorAcceleration acceleration = closestOrientation.Accelerations[k];
+                            double maxAxis = 0, minAxis = 0;
+                            if (r == 0)
+                            {
+                                maxAxis = acceleration.MaxX;
+                                minAxis = acceleration.MinX;
+                            }
+                            else if (r == 1)
+                            {
+                                maxAxis = acceleration.MaxY;
+                                minAxis = acceleration.MinY;
+                            }
+                            else
+                            {
+                                maxAxis = acceleration.MaxZ;
+                                minAxis = acceleration.MinZ;
+                            }
+
+
+                            features[sensorPercentMotionIndex] = (max[sensor_index * 3 + r] - min[sensor_index * 3 + r] )/ (maxAxis - minAxis);
+                            if (features[sensorPercentMotionIndex] <=0.20)
+                                features[sensorMotionTypeIndex++]=0;
+                            else if (features[sensorPercentMotionIndex] <= 0.50)
+                                features[sensorMotionTypeIndex++]=1;
+                            else 
+                                features[sensorMotionTypeIndex++] = 2;
+                            sensorPercentMotionIndex++;
+                        }
+                    }
+                }
+
+
+            }
+        }
+
+
+        public static void toARFF2(string aDataDirectory, string masterDirectory, int maxControllers)
+        {
+            MITesDecoder aMITesDecoder = new MITesDecoder();
+            MITesLoggerReader aMITesLoggerReader = new MITesLoggerReader(aMITesDecoder, aDataDirectory);
+            AXML.Annotation aannotation = null;
+            SXML.SensorAnnotation sannotation = null;
+            Hashtable calibrations = null;
+            AXML.Reader reader = new AXML.Reader(masterDirectory, aDataDirectory,"AnnotationIntervals.xml");
+            aannotation = reader.parse();
+            aannotation.DataDirectory = aDataDirectory;
+            SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);             
+            sannotation = sreader.parse(maxControllers);
+            SOXML.Reader calreader = new SOXML.Reader(aDataDirectory);
+            calibrations = calreader.parse();
+            Extractor.Initialize2(aMITesDecoder, aDataDirectory, aannotation, sannotation,calibrations);
+
+            TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");
+            tw.WriteLine("@RELATION wockets");
+            tw.WriteLine(Extractor.GetArffHeader2());
+            tw.Write("@ATTRIBUTE activity {unknown");
+            Hashtable recorded_activities = new Hashtable();
+            for (int i = 0; (i < aannotation.Data.Count); i++)
+            {
+                AXML.AnnotatedRecord record = ((AXML.AnnotatedRecord)aannotation.Data[i]);
+                string activity = "";
+                for (int j = 0; (j < record.Labels.Count); j++)
+                {
+                    if (j == record.Labels.Count - 1)
+                        activity += ((AXML.Label)record.Labels[j]).Name;
+                    else
+                        activity += ((AXML.Label)record.Labels[j]).Name + "_";
+                }
+                activity = activity.Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                activity = Regex.Replace(activity, "[_]+", "_");
+                activity = Regex.Replace(activity, "^[_]+", "");
+                activity = Regex.Replace(activity, "[_]+$", "");
+                //only output activity labels that have not been seen
+                if (recorded_activities.Contains(activity) == false)
+                {
+                    tw.Write("," + activity);
+                    recorded_activities[activity] = activity;
+                }
+            }
+            tw.WriteLine("}");
+            tw.WriteLine("@DATA");
+
+            bool isData = aMITesLoggerReader.GetSensorData(10);
+            int channel = 0, x = 0, y = 0, z = 0;
+            double unixtimestamp = 0.0;
+            int activityIndex = 0;
+            AXML.AnnotatedRecord annotatedRecord = ((AXML.AnnotatedRecord)aannotation.Data[activityIndex]);
+            string current_activity = "unknown";
+            do
+            {
+                //decode the frame
+                channel = aMITesDecoder.GetSomeMITesData()[0].channel;
+                x = aMITesDecoder.GetSomeMITesData()[0].x;
+                y = aMITesDecoder.GetSomeMITesData()[0].y;
+                z = aMITesDecoder.GetSomeMITesData()[0].z;
+                unixtimestamp = aMITesDecoder.GetSomeMITesData()[0].unixTimeStamp;
+                double lastTimeStamp = Extractor.StoreMITesWindow();
+                //DateTime dt = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+                //dt=dt.AddMilliseconds(unixtimestamp);
+                //DateTime dt2 = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+                //dt2 = dt2.AddMilliseconds(annotatedRecord.EndUnix);
+                if (unixtimestamp > annotatedRecord.EndUnix)
+                {
+                    current_activity = "unknown";
+                    if (activityIndex < aannotation.Data.Count - 1)
+                    {
+                        activityIndex++;
+                        annotatedRecord = ((AXML.AnnotatedRecord)aannotation.Data[activityIndex]);
+                    }
+                }
+
+                if ((lastTimeStamp >= annotatedRecord.StartUnix) &&
+                     (lastTimeStamp <= annotatedRecord.EndUnix) && current_activity.Equals("unknown"))
+                {
+                    current_activity = "";
+                    for (int j = 0; (j < annotatedRecord.Labels.Count); j++)
+                    {
+                        if (j == annotatedRecord.Labels.Count - 1)
+                            current_activity += ((AXML.Label)annotatedRecord.Labels[j]).Name;
+                        else
+                            current_activity += ((AXML.Label)annotatedRecord.Labels[j]).Name + "_";
+                    }
+                    current_activity = current_activity.Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                    current_activity = Regex.Replace(current_activity, "[_]+", "_");
+                    current_activity = Regex.Replace(current_activity, "^[_]+", "");
+                    current_activity = Regex.Replace(current_activity, "[_]+$", "");
+                }
+
+                //if (lastTimeStamp>=
+                if (current_activity.Equals("unknown") == false)
+                {
+                    if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
+                    {
+                        string arffSample = Extractor.toString() + "," + current_activity;
+                        tw.WriteLine(arffSample);
+                    }
+                }
+
+            } while (isData = aMITesLoggerReader.GetSensorData(10));
+
+            tw.Close();
+        }
+        //public static string
+
+
+
+        private static Hashtable calibrations;
+        public static void Initialize2(MITesDecoder aMITesDecoder, string aDataDirectory,
+            AXML.Annotation aannotation, SXML.SensorAnnotation sannotation,Hashtable calibrations)//, string masterDirectory)
+        {
+
+            Extractor.aannotation = aannotation;
+            Extractor.sannotation = sannotation;
+            Extractor.calibrations = calibrations;
+
+            // count the sensors for feature extraction and identify their indicies in
+            // sensor annotation - at the moment only accelerometers are used
+            Extractor.sensorIndicies = new Hashtable();
+            Extractor.extractorSensorCount = 0;
+            foreach (SXML.Sensor sensor in sannotation.Sensors)
+            {
+                int channel = Convert.ToInt32(sensor.ID);
+                if (channel > 0) // if accelerometer
+                {
+                    Extractor.sensorIndicies[channel] = extractorSensorCount;
+                    Extractor.extractorSensorCount++;
+                }
+            }
+
+
+            //load sensor data
+            //SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);
+            //Extractor.sannotation = sreader.parse();
+
+            //load configuration
+            ConfigurationReader creader = new ConfigurationReader(aDataDirectory);
+            Extractor.dconfiguration = creader.parse();
+
+
+            //load annotation data
+            //AXML.Reader reader = new AXML.Reader(masterDirectory, aDataDirectory + "\\" + AXML.Reader.DEFAULT_XML_FILE);
+            //Extractor.aannotation = reader.parse();          
+            //CHANGE: gathers training samples based on the first category only 
+            Extractor.trainingTime = new Hashtable();//int[((AXML.Category)Extractor.aannotation.Categories[0]).Labels.Count];
+            //for (int i = 0; (i < Extractor.trainingTime.Length); i++)
+            foreach (AXML.Label label in ((AXML.Category)Extractor.aannotation.Categories[0]).Labels)
+                Extractor.trainingTime.Add(label.Name, 0);
+            //Extractor.trainingTime[i] = 0;
+            Extractor.trainingCompleted = false;
+
+            Extractor.inputRowSize = Extractor.extractorSensorCount * 3;
+            Extractor.fftInterpolationPower = dconfiguration.FFTInterpolatedPower;
+            Extractor.fftMaximumFrequencies = dconfiguration.FFTMaximumFrequencies;
+            //Extractor.trainingTimePerClass = configuration.TrainingTime;
+            //Extractor.trainingWaitTime = configuration.TrainingWaitTime;         
+            Extractor.inputColumnSize = (int)Math.Pow(2, Extractor.fftInterpolationPower);
+
+
+            int MOTION_DIRECTIONS = 3;
+            int ORIENTATIONS = 8;
+            int meansIndex = 0;
+            int varianceIndex = meansIndex + Extractor.extractorSensorCount + 1; // means 1 per sensors + add 1 for total mean
+            int orientationIndex = varianceIndex + Extractor.extractorSensorCount + 1; //variances 1 per sensor + add 1 for total variance
+
+            int closestOrientationIndex = orientationIndex + (Extractor.extractorSensorCount * ORIENTATIONS); // for 8 orientations, score each sensor to the orientations
+            int orientationSensorsIndex = closestOrientationIndex + Extractor.extractorSensorCount; // 1 discrete orientation per sensor
+            int sensorsCorrelationIndex = orientationSensorsIndex + (Extractor.extractorSensorCount - 1) * Extractor.extractorSensorCount; // n* n-1 relative orientations between sensors
+            int sensorPercentMotionIndex = sensorsCorrelationIndex + ((Extractor.inputRowSize * Extractor.inputRowSize) - Extractor.inputRowSize) / 2; //number of correlation coefficients between axes
+            int sensorMotionTypeIndex = sensorPercentMotionIndex + (Extractor.extractorSensorCount * MOTION_DIRECTIONS * 3);
+
+
+            Extractor.num_features = Extractor.extractorSensorCount; // number of means
+            Extractor.num_features += 1; //total mean;
+            Extractor.num_features += Extractor.extractorSensorCount; // number of variances
+            Extractor.num_features += 1; //total variance;
+            
+            Extractor.num_features += Extractor.extractorSensorCount * ORIENTATIONS; // number of orientation scores
+            
+            Extractor.num_features += Extractor.extractorSensorCount; // best orientation
+            
+            Extractor.num_features += (((Extractor.extractorSensorCount - 1) * Extractor.extractorSensorCount)/2); // n* n-1 relative orientations between sensors
+            
+            Extractor.num_features += ((Extractor.inputRowSize * Extractor.inputRowSize) - Extractor.inputRowSize) / 2; //correlation coefficients off-di
+            Extractor.num_features += (Extractor.extractorSensorCount * MOTION_DIRECTIONS * 3); //percent of motion in each motion direction for the 3 axes
+            Extractor.num_features += (Extractor.extractorSensorCount * MOTION_DIRECTIONS * 3); //Type of motion in each motion direction for the 3 axes
+
+
+
+
+            Extractor.features = new double[Extractor.num_features];
+            //Extractor.arffAttriburesLabels = new string[Extractor.num_features];
+            //Extractor.attributeLocation = new Hashtable();
+
+            Extractor.standardized = new double[inputRowSize][];
+            for (int i = 0; (i < inputRowSize); i++)
+                Extractor.standardized[i] = new double[Extractor.inputColumnSize];//input[0].Length];
+            Extractor.means = new double[inputRowSize];
+            Extractor.variances = new double[inputRowSize];
+
+            //inputFFT = new int[Extractor.inputColumnSize];
+            //FFT.Initialize(fftInterpolationPower, fftMaximumFrequencies);
+            Extractor.aMITesDecoder = aMITesDecoder;
+
+            //Create the ARFF File header
+            string arffHeader = "@RELATION wockets\n\n" + Extractor.GetArffHeader2();//sannotation.Sensors.Count * 3, configuration.FFTMaximumFrequencies);
+            arffHeader += "@ATTRIBUTE activity {";
+            foreach (AXML.Label label in ((AXML.Category)Extractor.aannotation.Categories[0]).Labels)
+                arffHeader += label.Name.Replace(' ', '_') + ",";
+            arffHeader += "unknown}\n";
+            arffHeader += "\n@DATA\n\n";
+
+            //Calculating windowing parameters
+
+            //total number of points per interpolated window
+            Extractor.INTERPOLATED_SAMPLING_RATE_PER_WINDOW = (int)Math.Pow(2, dconfiguration.FFTInterpolatedPower); //128;  
+
+            //space between interpolated samples
+            Extractor.INTERPOLATED_SAMPLES_SPACING = (double)dconfiguration.WindowTime / INTERPOLATED_SAMPLING_RATE_PER_WINDOW;
+
+
+            //expected sampling rate per MITes
+            //Extractor.EXPECTED_SAMPLING_RATE = dconfiguration.ExpectedSamplingRate / sannotation.Sensors.Count; //samples per second
+            //expected samples per window
+            //Extractor.EXPECTED_WINDOW_SIZE = (int)(EXPECTED_SAMPLING_RATE * (dconfiguration.WindowTime / 1000.0)); // expectedSamplingRate per window
+            //what would be considered a good sampling rate
+            //Extractor.EXPECTED_GOOD_SAMPLING_RATE = EXPECTED_WINDOW_SIZE - (int)(dconfiguration.MaximumNonconsecutiveFrameLoss * EXPECTED_WINDOW_SIZE); //number of packets lost per second                      
+            //space between samples
+            //Extractor.EXPECTED_SAMPLES_SPACING = (double)dconfiguration.WindowTime / EXPECTED_WINDOW_SIZE;
+            Extractor.EXPECTED_SAMPLING_RATES = new int[Extractor.extractorSensorCount];
+            Extractor.EXPECTED_WINDOW_SIZES = new int[Extractor.extractorSensorCount];
+            Extractor.EXPECTED_GOOD_SAMPLING_RATES = new int[Extractor.extractorSensorCount];
+            Extractor.EXPECTED_SAMPLES_SPACING = new double[Extractor.extractorSensorCount];
+
+            //foreach (SXML.Sensor sensor in sannotation.Sensors)
+            foreach (DictionaryEntry sensorEntry in Extractor.sensorIndicies)
+            {
+                //Get the channel and index in data array for only
+                // extractor sensors (sensors that will be used to compute
+                // features i.e. accelerometers)
+                int channel = (int)sensorEntry.Key;
+                int sensorIndex = (int)sensorEntry.Value;
+                SXML.Sensor sensor = ((SXML.Sensor)sannotation.Sensors[(int)sannotation.SensorsIndex[channel]]);
+                int receiverID = Convert.ToInt32(sensor.Receiver);
+
+                Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] = dconfiguration.ExpectedSamplingRate / sannotation.NumberSensors[receiverID];
+                Extractor.EXPECTED_WINDOW_SIZES[sensorIndex] = (int)(Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] * (dconfiguration.WindowTime / 1000.0));
+                Extractor.EXPECTED_GOOD_SAMPLING_RATES[sensorIndex] = Extractor.EXPECTED_WINDOW_SIZES[sensorIndex] - (int)(dconfiguration.MaximumNonconsecutiveFrameLoss * Extractor.EXPECTED_WINDOW_SIZES[sensorIndex]);
+                Extractor.EXPECTED_SAMPLES_SPACING[sensorIndex] = (double)dconfiguration.WindowTime / Extractor.EXPECTED_WINDOW_SIZES[sensorIndex];
+            }
+
+
+
+            //window counters and delimiters
+            Extractor.next_window_end = 0;
+            Extractor.total_window_count = 0;
+            Extractor.num_feature_windows = 0;
+
+            //data quality variables
+            Extractor.isAcceptableLossRate = true;
+            Extractor.isAcceptableConsecutiveLoss = true;
+            Extractor.unacceptable_window_count = 0;
+            Extractor.unacceptable_consecutive_window_loss_count = 0;
+
+
+            //2 D array that stores Sensor axes + time stamps on each row  X expected WINDOW SIZE
+            Extractor.data = new double[Extractor.extractorSensorCount * 4][]; // 1 row for each axis
+
+            // 2D array that stores Sensor axes X INTERPOLATED WINDOW SIZE
+            Extractor.interpolated_data = new double[Extractor.extractorSensorCount * 3][];
+
+            // array to store the y location for each axes as data is received
+            // will be different for every sensor of course
+            Extractor.y_index = new int[Extractor.extractorSensorCount];
+
+
+            //Initialize expected data array
+
+            foreach (DictionaryEntry sensorEntry in Extractor.sensorIndicies)
+            {
+                //Get the channel and index in data array for only
+                // extractor sensors (sensors that will be used to compute
+                // features i.e. accelerometers)
+                int channel = (int)sensorEntry.Key;
+                int sensorIndex = (int)sensorEntry.Value;
+                int adjusted_sensor_index = sensorIndex * 4;
+
+                //Initialize 4 rows x,y,z timestamp
+                for (int j = 0; j < 4; j++)
+                {
+                    Extractor.data[adjusted_sensor_index] = new double[EXPECTED_WINDOW_SIZES[sensorIndex]];
+                    for (int k = 0; (k < EXPECTED_WINDOW_SIZES[sensorIndex]); k++)
+                        Extractor.data[adjusted_sensor_index][k] = 0;
+                    adjusted_sensor_index++;
+                }
+
+            }
+
+
+            //Here it is equal across all sensors, so we do not need to consider
+            //the sampling rate of each sensor separately
+            for (int j = 0; (j < (Extractor.extractorSensorCount * 3)); j++)
+            {
+                Extractor.interpolated_data[j] = new double[INTERPOLATED_SAMPLING_RATE_PER_WINDOW];
+                for (int k = 0; (k < INTERPOLATED_SAMPLING_RATE_PER_WINDOW); k++)
+                    Extractor.interpolated_data[j][k] = 0;
+            }
+
+            //Initialize y index for each sensor
+            for (int j = 0; (j < Extractor.extractorSensorCount); j++)
+                Extractor.y_index[j] = 0;
+
+
+        }
+        public static string GetArffHeader2()
+        {
+            int ORIENTATIONS = 8;
+            int MOTION_DIRECTIONS = 3; // parallel to X, Y and Z axes
+            int MOTION_TYPES = 2; // low, high
+            string SENSOR_MEAN_ATTRIBUTES = "";
+            string TOTAL_MEAN_ATTRIBUTE = "";
+            string SENSOR_VARIANCE_ATTRIBUTES = "";
+            string TOTAL_VARIANCE_ATTRIBUTE = "";
+            string ORIENTATION_SENSOR_FIXED_ATTRIBUTES = "";
+            string CLOSEST_ORIENTATION_TYPE_ATTRIBUTES=""; // 1 per sensor
+            string ORIENTATION_SENSOR_SENSOR_ATTRIBUTES = "";            
+            string SENSOR_AXES_CORRELATION_ATTRIBUTES = "";
+            string SENSORS_PERCENT_MOTION = ""; // 1 per sensor
+            string SENSORS_MOTION_TYPE_ATTRIBUTES = "";
+
+
+            int meansIndex = 0;
+            int varianceIndex = meansIndex + Extractor.extractorSensorCount + 1; // means 1 per sensors + add 1 for total mean
+            int orientationIndex= varianceIndex + Extractor.extractorSensorCount +1; //variances 1 per sensor + add 1 for total variance
+            int closestOrientationIndex = orientationIndex + (Extractor.extractorSensorCount * ORIENTATIONS); // for 8 orientations, score each sensor to the orientations
+            int orientationSensorsIndex = closestOrientationIndex + Extractor.extractorSensorCount; // 1 discrete orientation per sensor
+            int sensorsCorrelationIndex = orientationSensorsIndex + (((Extractor.extractorSensorCount - 1) * Extractor.extractorSensorCount) / 2); // n* n-1 relative orientations between sensors
+            int sensorPercentMotionIndex = sensorsCorrelationIndex + ((Extractor.inputRowSize * Extractor.inputRowSize) - Extractor.inputRowSize) / 2; //number of correlation coefficients between axes
+            int sensorMotionTypeIndex = sensorPercentMotionIndex + (Extractor.extractorSensorCount * MOTION_DIRECTIONS * 3);
+
+
+            for (int i = 0; (i < Extractor.extractorSensorCount); i++)
+            {
+                SENSOR_MEAN_ATTRIBUTES += "@ATTRIBUTE Mean" + i + " NUMERIC\n";
+                SENSOR_VARIANCE_ATTRIBUTES += "@ATTRIBUTE Variance" + i + " NUMERIC\n";
+
+                for (int j = 0; (j < ORIENTATIONS); j++)
+                {
+                    ORIENTATION_SENSOR_FIXED_ATTRIBUTES += "@ATTRIBUTE ORIENTATION_SENSOR" + i + "_ORIENTATION"+j+" NUMERIC\n";
+                }
+
+                CLOSEST_ORIENTATION_TYPE_ATTRIBUTES+="@ATTRIBUTE CLOSEST_ORIENTATION" + i + " NUMERIC\n";
+
+                for (int j = i + 1; (j < Extractor.extractorSensorCount); j++)                    
+                        ORIENTATION_SENSOR_SENSOR_ATTRIBUTES += "@ATTRIBUTE ORIENTATION" + i +"_"+j +" NUMERIC\n";                                    
+
+                for (int j=0;(j<MOTION_DIRECTIONS);j++){
+                    SENSORS_PERCENT_MOTION += "@ATTRIBUTE MOTION_PERCENT_S" + i + "_D" + j+"_X NUMERIC\n";
+                    SENSORS_PERCENT_MOTION += "@ATTRIBUTE MOTION_PERCENT_S" + i + "_D" + j + "_Y NUMERIC\n";
+                    SENSORS_PERCENT_MOTION += "@ATTRIBUTE MOTION_PERCENT_S" + i + "_D" + j + "_Z NUMERIC\n";
+
+                    SENSORS_MOTION_TYPE_ATTRIBUTES += "@ATTRIBUTE MOTION_TYPE_S" + i + "_D" + j + "_X NUMERIC\n";
+                    SENSORS_MOTION_TYPE_ATTRIBUTES += "@ATTRIBUTE MOTION_TYPE_S" + i + "_D" + j + "_Y NUMERIC\n";
+                    SENSORS_MOTION_TYPE_ATTRIBUTES += "@ATTRIBUTE MOTION_TYPE_S" + i + "_D" + j + "_Z NUMERIC\n";                     
+                }
+
+                //for (int k = i - 1; (k >= 0); k--)
+                  //  SENSOR_AXES_CORRELATION_ATTRIBUTES += "@ATTRIBUTE CORRELATION_" + k + "_" + i + " NUMERIC\n";
+
+            }
+            TOTAL_MEAN_ATTRIBUTE = "@ATTRIBUTE TotalMean  NUMERIC\n";
+            TOTAL_VARIANCE_ATTRIBUTE = "@ATTRIBUTE TotalVariance  NUMERIC\n";
+
+            for (int i = 0; (i < inputRowSize); i++)
+            {
+                for (int k = i - 1; k >= 0; k--)
+                {
+                    SENSOR_AXES_CORRELATION_ATTRIBUTES += "@ATTRIBUTE CORRELATION_" + k + "_" + i + " NUMERIC\n";
+                }
+            }
+           return SENSOR_MEAN_ATTRIBUTES + TOTAL_MEAN_ATTRIBUTE + SENSOR_VARIANCE_ATTRIBUTES +
+               TOTAL_VARIANCE_ATTRIBUTE +ORIENTATION_SENSOR_FIXED_ATTRIBUTES + 
+               CLOSEST_ORIENTATION_TYPE_ATTRIBUTES + ORIENTATION_SENSOR_SENSOR_ATTRIBUTES + 
+               SENSOR_AXES_CORRELATION_ATTRIBUTES + SENSORS_PERCENT_MOTION+ SENSORS_MOTION_TYPE_ATTRIBUTES;
+
+        }
+
         //public static string GetArffHeader(int inputRowSize, int fftMaximumFrequencies)
         public static string GetArffHeader()
         {
@@ -1541,8 +2099,8 @@ namespace MITesFeatures
             int i = 0;           
 
             for (i = 0; (i < features.Length - 1); i++)
-                s += features[i].ToString("F3") + ",";
-            s += features[i].ToString("F3");
+                s += features[i].ToString("F2") + ",";
+            s += features[i].ToString("F2");
             return s;
 
         }
