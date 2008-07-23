@@ -55,9 +55,9 @@ namespace MITesDataCollection
             this.button4.Text = Constants.MAIN_FORM_BUTTON3;
             this.button1.Text = Constants.MAIN_FORM_BUTTON4;
 
-            this.button4.Enabled = true;
-            this.button3.Enabled = true;
-            this.button1.Enabled = true;
+            this.button4.Enabled = false;
+            this.button3.Enabled = false;
+            this.button1.Enabled = false;
                   
         }
 

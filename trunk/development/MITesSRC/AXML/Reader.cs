@@ -31,6 +31,14 @@ namespace AXML
             //this.caller = caller;
         }
 
+
+        public Reader(string masterDirectory, string dataDirectory, string filename)//, System.Windows.Forms.Form caller)
+        {
+            this.xmlFile = dataDirectory + "\\" + filename;
+            this.xsdFile = null;
+            //this.caller = caller;
+        }
+
         public Annotation parse()
         {
             Annotation annotation = new Annotation();
