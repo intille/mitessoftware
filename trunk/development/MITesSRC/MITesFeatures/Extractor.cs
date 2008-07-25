@@ -1646,7 +1646,7 @@ namespace MITesFeatures
             calibrations = calreader.parse();
             Extractor.Initialize2(aMITesDecoder, aDataDirectory, aannotation, sannotation,calibrations);
 
-            TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");
+            TextWriter tw = new StreamWriter(aDataDirectory + "\\output2.arff");
             tw.WriteLine("@RELATION wockets");
             tw.WriteLine(Extractor.GetArffHeader2());
             tw.Write("@ATTRIBUTE activity {unknown");
