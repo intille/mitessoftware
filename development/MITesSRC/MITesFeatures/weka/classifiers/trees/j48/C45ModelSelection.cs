@@ -15,7 +15,7 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.8 $y
 	/// </version>
-
+    [Serializable()]  
 	public class C45ModelSelection:ModelSelection
 	{
 		

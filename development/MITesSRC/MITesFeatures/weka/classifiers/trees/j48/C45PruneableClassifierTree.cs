@@ -16,7 +16,7 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.11 $
 	/// </version>
-	
+    [Serializable()]  
 	public class C45PruneableClassifierTree:ClassifierTree
 	{
 		/// <summary> Computes estimated errors for tree.</summary>

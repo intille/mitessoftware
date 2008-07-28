@@ -4,6 +4,9 @@
 *
 */
 using System;
+using System.Runtime.Serialization.Formatters.Binary;
+using System.Runtime.Serialization;
+
 namespace weka.core
 {
 	
@@ -16,8 +19,8 @@ namespace weka.core
 	/// <version>  $Revision: 1.2 $
 	/// </version>
 	//UPGRADE_ISSUE: Class hierarchy differences between 'java.util.Properties' and 'System.Collections.Specialized.NameValueCollection' may cause compilation errors. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1186'"
-
-	public class ProtectedProperties:System.Collections.Specialized.NameValueCollection
+    [Serializable()]   
+	public class ProtectedProperties:System.Collections.Specialized.NameValueCollection,ISerializable
 	{
 		
 		// the properties need to be open during construction of the object
@@ -144,5 +147,25 @@ namespace weka.core
 			
 			throw new System.NotSupportedException("ProtectedProperties cannot be modified!");
 		}
+
+        //public ProtectedProperties someObject;
+           //Deserialization constructor.
+        public ProtectedProperties(SerializationInfo info, StreamingContext context)
+        {
+          closed = (bool)info.GetValue("closed", typeof(bool));
+          //Allows MyClass2 to deserialize itself
+          //someObject = new ProtectedProperties(info, context);
+       }
+
+        //Serialization function.
+        public override void GetObjectData(SerializationInfo info, StreamingContext context)
+        {
+            info.AddValue("closed", closed);
+            //Allows MyClass2 to serialize itself
+           // someObject.GetObjectData(info, context);
+        }
+
+
+
 	}
 }
