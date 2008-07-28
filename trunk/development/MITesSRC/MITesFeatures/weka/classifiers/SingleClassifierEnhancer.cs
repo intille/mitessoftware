@@ -19,7 +19,7 @@ namespace weka.classifiers
 	/// </author>
 	/// <version>  $Revision: 1.2.2.1 $
 	/// </version>
-	[Serializable]
+    [Serializable()]  
 	public abstract class SingleClassifierEnhancer:Classifier
 	{
 		//UPGRADE_NOTE: Respective javadoc comments were merged.  It should be changed in order to comply with .NET documentation conventions. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1199'"

@@ -21,7 +21,7 @@ namespace weka.classifiers
 	/// </author>
 	/// <version>  $Revision: 1.9.2.1 $
 	/// </version>
-	[Serializable]
+    [Serializable()]  
 	public class CostMatrix:Matrix
 	{
 		

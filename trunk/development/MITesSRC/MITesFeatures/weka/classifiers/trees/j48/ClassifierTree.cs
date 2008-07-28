@@ -17,7 +17,7 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.17 $
 	/// </version>
-
+    [Serializable()]  
 	public class ClassifierTree : Drawable, ITree
 	{
 		//code of alain espinosa

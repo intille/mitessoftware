@@ -29,6 +29,7 @@ namespace MITesFeatures.Utils
 	/// This is subclassed to provide specific token types,
 	/// such as CharToken, FloatToken, etc.
 	/// </summary>
+    /// 
 	abstract public class Token
 	{
 		#region Properties

@@ -15,7 +15,7 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.5 $
 	/// </version>
-
+    [Serializable()]  
 	public abstract class ModelSelection
 	{
 		
