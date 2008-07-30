@@ -11,12 +11,14 @@ namespace AXML
         private int start_hour;
         private int start_minute;
         private int start_second;
+        private int start_millisecond;
         private double start_unix;
         private string start_date;
         private string end_date;
         private int end_hour;
         private int end_minute;
         private int end_second;
+        private int end_millisecond;
         private double end_unix;
         private float quality;
 
@@ -130,6 +132,29 @@ namespace AXML
         }
 
 
+        public int StartMillisecond
+        {
+            get
+            {
+                return this.start_millisecond;
+            }
+            set
+            {
+                this.start_millisecond = value;
+            }
+        }
+
+        public int EndMillisecond
+        {
+            get
+            {
+                return this.end_millisecond;
+            }
+            set
+            {
+                this.end_millisecond = value;
+            }
+        }
 
         public int EndHour
         {
@@ -173,8 +198,8 @@ namespace AXML
             string xml = "";
             xml += "<" + Constants.LABEL_ELEMENT + " " + Constants.STARTDATE_ATTRIBUTE + "=\"" + this.start_date + "\" " +
                 Constants.ENDDATE_ATTRIBUTE + "=\"" + this.end_date + "\" " + Constants.STARTTIME_ATTRIBUTE + "=\"" +
-                this.start_hour + ":" + this.start_minute + ":" + this.start_second + "\" " + Constants.ENDTIME_ATTRIBUTE + "=\"" +
-                this.end_hour + ":" + this.end_minute + ":" + this.end_second + "\">";
+                this.start_hour + ":" + this.start_minute + ":" + this.start_second + "." + this.start_millisecond + "\" " + Constants.ENDTIME_ATTRIBUTE + "=\"" +
+                this.end_hour + ":" + this.end_minute + ":" + this.end_second + "." + this.end_millisecond + "\">";
 
             foreach (Label label in this.labels)
             {
