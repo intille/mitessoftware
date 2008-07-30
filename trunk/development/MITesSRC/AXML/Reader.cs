@@ -245,6 +245,7 @@ namespace AXML
                                 annotatedRecord.StartHour = startDT.Hour;
                                 annotatedRecord.StartMinute = startDT.Minute;
                                 annotatedRecord.StartSecond = startDT.Second;
+                                annotatedRecord.StartMillisecond = startDT.Millisecond;
                                 TimeSpan ts = startDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0,0));
                                 //TimeSpan ts = startDT - new DateTime(1970, 1, 1, 0, 0, 0, 0);
                                 annotatedRecord.StartUnix = ts.TotalMilliseconds;
@@ -255,6 +256,7 @@ namespace AXML
                                 annotatedRecord.EndHour = endDT.Hour;
                                 annotatedRecord.EndMinute = endDT.Minute;
                                 annotatedRecord.EndSecond = endDT.Second;
+                                annotatedRecord.EndMillisecond = endDT.Millisecond;
                                 ts = endDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0,0));
                                 //ts = endDT - new DateTime(1970, 1, 1, 0, 0, 0, 0, 0);
                                 annotatedRecord.EndUnix = ts.TotalMilliseconds;    
