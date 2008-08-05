@@ -31,7 +31,9 @@ namespace weka.filters.unsupervised.instance
 	/// <version>  $Revision: 1.3.2.1 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("This filter takes a dataset and removes a subset of it.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class RemoveRange:Filter, UnsupervisedFilter
 	{
 		/// <summary>Range of instances requested by the user. </summary>

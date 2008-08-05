@@ -240,8 +240,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.CreateTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = fi.CreationTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = fi.CreationTime.ToUniversalTime();
 #else
 						result.DateTime = fi.CreationTimeUtc;
 #endif
@@ -252,8 +252,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.LastAccessTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = fi.LastAccessTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = fi.LastAccessTime.ToUniversalTime();
 #else
 						result.DateTime = fi.LastAccessTimeUtc;
 #endif
@@ -264,8 +264,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.LastWriteTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = fi.LastWriteTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = fi.LastWriteTime.ToUniversalTime();
 #else
 						result.DateTime = fi.LastWriteTimeUtc;
 #endif
@@ -342,8 +342,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.CreateTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = di.CreationTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = di.CreationTime.ToUniversalTime();
 #else
 						result.DateTime = di.CreationTimeUtc;
 #endif
@@ -354,8 +354,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.LastAccessTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = di.LastAccessTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = di.LastAccessTime.ToUniversalTime();
 #else
 						result.DateTime = di.LastAccessTimeUtc;
 #endif
@@ -366,8 +366,8 @@ namespace ICSharpCode.SharpZipLib.Zip
 						break;
 
 					case TimeSetting.LastWriteTimeUtc:
-#if NETCF_1_0 || NETCF_2_0
-						result.DateTime = di.LastWriteTime.ToUniversalTime();
+#if PocketPC
+                        result.DateTime = di.LastWriteTime.ToUniversalTime();
 #else
 						result.DateTime = di.LastWriteTimeUtc;
 #endif

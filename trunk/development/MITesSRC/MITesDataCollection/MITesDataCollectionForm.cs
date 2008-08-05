@@ -291,7 +291,9 @@ namespace MITesDataCollection
 #if (PocketPC)
                     Application.Exit();
 #else
+                   
                     Environment.Exit(0);
+                    Application.Exit();
 #endif
                 }
             }
@@ -355,7 +357,13 @@ namespace MITesDataCollection
                 isStartedReceiver = true;
             else
             {
+#if (PocketPC)
                 Application.Exit();
+#else
+                Environment.Exit(0);
+#endif
+                
+                
             }
 
             //terminate the progress thread before starting the receivers
@@ -408,30 +416,38 @@ namespace MITesDataCollection
             //load the activity and sensor configuration files
             progressMessage="Loading XML protocol and sensors ...";
             AXML.Reader reader = new AXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
             if (reader.validate() == false)
             {
                 throw new Exception("Error Code 0: XML format error - activities.xml does not match activities.xsd!");
             }
             else
             {
+#endif
                 this.annotation = reader.parse();
                 this.annotation.DataDirectory = dataDirectory;
 
 
                 SXML.Reader sreader = new SXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
+
                 if (sreader.validate() == false)
                 {
                     throw new Exception("Error Code 0: XML format error - sensors.xml does not match sensors.xsd!");
                 }
                 else
                 {
+#endif
                     this.sensors = sreader.parse(Constants.MAX_CONTROLLERS);
                    
                     progressMessage+=" Completed\r\n";
+#if (!PocketPC)
                 }
             }
+#endif
 
-            //calculate how many plots to be drawn
+
+                    //calculate how many plots to be drawn
             if (this.sensors.IsHR)
                 this.maxPlots = this.sensors.Sensors.Count - 1;
             else
@@ -460,7 +476,7 @@ namespace MITesDataCollection
                 {
                     MessageBox.Show("Exiting: You picked a configuration with "+this.sensors.TotalReceivers +" receivers. Please make sure they are attached to the computer.");
 #if (PocketPC)
-                        Application.Exit();
+                        Application.Exit();                    
 #else
                     Environment.Exit(0);
 #endif
@@ -643,30 +659,37 @@ namespace MITesDataCollection
             //read the activity configuration file
             progressMessage = "Loading XML protocol and sensors ...";
             AXML.Reader reader = new AXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
             if (reader.validate() == false)
             {
                 throw new Exception("Error Code 0: XML format error - activities.xml does not match activities.xsd!");
             }
             else
             {
+#endif
                 this.annotation = reader.parse();
                 this.annotation.DataDirectory = dataDirectory;
 
 
                 SXML.Reader sreader = new SXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
                 if (sreader.validate() == false)
                 {
                     throw new Exception("Error Code 0: XML format error - sensors.xml does not match sensors.xsd!");
                 }
                 else
                 {
+#endif
                     this.sensors = sreader.parse(Constants.MAX_CONTROLLERS);
 
                     progressMessage += " Completed\r\n";
+#if (!PocketPC)
+
                 }
             }
+#endif
 
-            //calculate how many plots should be shown
+                    //calculate how many plots should be shown
             if (this.sensors.IsHR)
                 this.maxPlots = this.sensors.Sensors.Count - 1;
             else
@@ -862,7 +885,12 @@ namespace MITesDataCollection
                 isStartedReceiver = true;
             else
             {
+#if (PocketPC)
                 Application.Exit();
+#else
+                Environment.Exit(0);
+#endif
+                
             }
 
             //Terminate the progress thread
@@ -1586,7 +1614,11 @@ namespace MITesDataCollection
                 this.hrCSV.Close();
 #endif
                 Extractor.Cleanup();
+#if (PocketPC)
                 Application.Exit();
+#else
+                Environment.Exit(0);
+#endif
             }
         }
 
@@ -1778,6 +1810,7 @@ namespace MITesDataCollection
             this.form2.Show();
             this.form3.Show();
             this.form4.Show();
+            this.form5.Show();
             this.form1.DesktopLocation = this.form1.Location = new Point(Constants.SCREEN_LEFT_MARGIN, Constants.SCREEN_TOP_MARGIN);
             this.form3.DesktopLocation = this.form3.Location = new Point(Constants.SCREEN_LEFT_MARGIN , Constants.SCREEN_TOP_MARGIN + Constants.SCREEN_TOP_MARGIN + this.form1.Height);
 
@@ -2121,7 +2154,7 @@ namespace MITesDataCollection
 
                 #region Classifying activities
 
-                Extractor.StoreMITesWindow();
+                //Extractor.StoreMITesWindow();
 
                 if (isClassifying==true)
                 {
@@ -2324,7 +2357,11 @@ namespace MITesDataCollection
                                         tw.WriteLine(this.sensors.toXML());
                                         tw.Close();
                                         MessageBox.Show("Calibration... Completed");
+#if (PocketPC)
                                         Application.Exit();
+#else
+                                        Environment.Exit(0);
+#endif
                                     }
 
                                 }
@@ -2412,26 +2449,29 @@ namespace MITesDataCollection
                                 }
 
                             }
+                            else if (isCollectingDetailedData)//detailed data - not calibrating
+                            {
 #if (PocketPC)
 #else
-                            if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
-                            {
-                                if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x > 0) && (y > 0) && (z > 0))
+                                if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
                                 {
-                                    averageX[channel] = averageX[channel] + Math.Abs(prevX[channel] - x);
-                                    averageRawX[channel] = averageRawX[channel] + x;
-                                    averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
-                                    averageRawY[channel] = averageRawY[channel] + y;
-                                    averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
-                                    averageRawZ[channel] = averageRawZ[channel] + z;
-                                    acCounters[channel] = acCounters[channel] + 1;
-                                }
+                                    if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x > 0) && (y > 0) && (z > 0))
+                                    {
+                                        averageX[channel] = averageX[channel] + Math.Abs(prevX[channel] - x);
+                                        averageRawX[channel] = averageRawX[channel] + x;
+                                        averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
+                                        averageRawY[channel] = averageRawY[channel] + y;
+                                        averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
+                                        averageRawZ[channel] = averageRawZ[channel] + z;
+                                        acCounters[channel] = acCounters[channel] + 1;
+                                    }
 
-                                prevX[channel] = x;
-                                prevY[channel] = y;
-                                prevZ[channel] = z;
-                            }
+                                    prevX[channel] = x;
+                                    prevY[channel] = y;
+                                    prevZ[channel] = z;
+                                }
 #endif
+                            }
                         }
                     }
 
@@ -2441,8 +2481,8 @@ namespace MITesDataCollection
 
 
                 sum += this.mitesDecoders[0].GetLastByteNum();
-                aMITesLogger.SaveRawData();
-                aMITesLoggerPLFormat.SaveRawData(); 
+                //aMITesLogger.SaveRawData();
+               // aMITesLoggerPLFormat.SaveRawData(); 
                 if (flushTimer == 0)
                 {
                     aMITesLogger.FlushBytes();

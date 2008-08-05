@@ -459,11 +459,11 @@ namespace ICSharpCode.SharpZipLib.Zip
 		public const int ENDSIG = 'P' | ('K' << 8) | (5 << 16) | (6 << 24);
 		#endregion
 		
-#if NETCF_1_0 || NETCF_2_0
+#if PocketPC
 		// This isnt so great but is better than nothing.
         // Trying to work out an appropriate OEM code page would be good.
         // 850 is a good default for english speakers particularly in Europe.
-		static int defaultCodePage = CultureInfo.CurrentCulture.TextInfo.ANSICodePage;
+		static int defaultCodePage = 850;
 #else
 		static int defaultCodePage = Thread.CurrentThread.CurrentCulture.TextInfo.OEMCodePage;
 #endif

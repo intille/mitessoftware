@@ -16,7 +16,9 @@ namespace weka.classifiers.trees.j48
 	/// <version>  $Revision: 1.6 $
 	/// </version>
     /// 
+#if !PocketPC
     [Serializable()]  
+#endif
 	public sealed class NoSplit:ClassifierSplitModel
 	{
 		

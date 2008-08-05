@@ -18,13 +18,17 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.7 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Queue:System.Object
 	{
 		
 		//UPGRADE_NOTE: Field 'EnclosingInstance' was added to class 'QueueXmlNode' to access its enclosing instance. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1019'"
 		/// <summary> Represents one node in the queue.</summary>
-		[Serializable]
+#if !PocketPC
+        [Serializable]
+#endif
 		protected internal class QueueXmlNode
 		{
 			private void  InitBlock(Queue enclosingInstance)

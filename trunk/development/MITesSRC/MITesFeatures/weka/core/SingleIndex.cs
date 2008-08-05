@@ -24,7 +24,9 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.5 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class SingleIndex
 	{
 		/// <summary> Sets the value of "last".

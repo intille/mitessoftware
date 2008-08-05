@@ -21,7 +21,10 @@ namespace weka.classifiers
 	/// </author>
 	/// <version>  $Revision: 1.9.2.1 $
 	/// </version>
+    /// 
+#if !PocketPC
     [Serializable()]  
+#endif
 	public class CostMatrix:Matrix
 	{
 		

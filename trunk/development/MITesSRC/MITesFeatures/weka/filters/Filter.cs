@@ -46,7 +46,9 @@ namespace weka.filters
 	/// <version>  $Revision: 1.24.2.1 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.CategoryAttribute("Filters")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public abstract class Filter
 	{
 		/// <summary> Returns an array containing the indices of all string attributes in the
@@ -675,6 +677,8 @@ namespace weka.filters
 		/// <exception cref="Exception">if something goes wrong or the user requests help on
 		/// command options
 		/// </exception>
+        /// 
+#if (!PocketPC)
 		public static void  filterFile(Filter filter, System.String[] options)
 		{
 			
@@ -857,7 +861,7 @@ namespace weka.filters
 				output.Close();
 			}
 		}
-		
+	
 		/// <summary> Method for testing filters ability to process multiple batches.
 		/// 
 		/// </summary>
@@ -1078,5 +1082,6 @@ namespace weka.filters
 				secondOutput.Close();
 			}
 		}
-	}
+    #endif
+    }
 }

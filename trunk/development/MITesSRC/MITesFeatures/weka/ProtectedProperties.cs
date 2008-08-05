@@ -4,9 +4,10 @@
 *
 */
 using System;
+#if !PocketPC
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Runtime.Serialization;
-
+#endif
 namespace weka.core
 {
 	
@@ -19,8 +20,12 @@ namespace weka.core
 	/// <version>  $Revision: 1.2 $
 	/// </version>
 	//UPGRADE_ISSUE: Class hierarchy differences between 'java.util.Properties' and 'System.Collections.Specialized.NameValueCollection' may cause compilation errors. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1186'"
+#if PocketPC
+    public class ProtectedProperties : System.Collections.Specialized.NameValueCollection
+#else
     [Serializable()]   
 	public class ProtectedProperties:System.Collections.Specialized.NameValueCollection,ISerializable
+#endif
 	{
 		
 		// the properties need to be open during construction of the object
@@ -148,6 +153,7 @@ namespace weka.core
 			throw new System.NotSupportedException("ProtectedProperties cannot be modified!");
 		}
 
+#if !PocketPC
         //public ProtectedProperties someObject;
            //Deserialization constructor.
         public ProtectedProperties(SerializationInfo info, StreamingContext context)
@@ -165,6 +171,7 @@ namespace weka.core
            // someObject.GetObjectData(info, context);
         }
 
+#endif
 
 
 	}

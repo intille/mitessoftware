@@ -53,7 +53,9 @@ namespace weka.filters.unsupervised.instance
 	/// <version>  $Revision: 1.7.2.1 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Filters instances according to the value of an attribute.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class RemoveWithValues:Filter, UnsupervisedFilter, StreamableFilter
 	{
 		/// <summary> Returns true if selection attribute is nominal.

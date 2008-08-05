@@ -32,7 +32,10 @@ namespace weka.filters.unsupervised.instance
 	/// 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Produces a random subsample of a dataset using sampling with replacement.")  </attribute>
-	[Serializable]
+
+#if !PocketPC    
+    [Serializable]
+#endif
 	public class Resample:Filter, UnsupervisedFilter
 	{
 		/// <summary>The subsample size, percent of original set, default 100% </summary>

@@ -57,7 +57,7 @@ namespace MITesDataCollection
 
             this.button4.Enabled = false;
             this.button3.Enabled = false;
-            this.button1.Enabled = false;
+            this.button1.Enabled = true;
                   
         }
 
@@ -72,7 +72,7 @@ namespace MITesDataCollection
         private void InitializeComponent()
         {
             this.components = new System.ComponentModel.Container();
-            this.mainMenu1 = new System.Windows.Forms.MainMenu(this.components);
+            this.mainMenu1 = new System.Windows.Forms.MainMenu();
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
@@ -82,12 +82,11 @@ namespace MITesDataCollection
             // 
             // mainMenu1
             // 
-            this.mainMenu1.MenuItems.AddRange(new System.Windows.Forms.MenuItem[] {
-            this.menuItem1});
+            this.mainMenu1.MenuItems.Add(this.menuItem1);
             // 
             // menuItem1
             // 
-            this.menuItem1.Index = 0;
+           
             this.menuItem1.Text = "Quit";
             this.menuItem1.Click += new System.EventHandler(this.menuItem1_Click);
             // 
@@ -127,7 +126,7 @@ namespace MITesDataCollection
             this.button1.Size = new System.Drawing.Size(195, 29);
             this.button1.TabIndex = 11;
             this.button1.Text = "Calibrate";
-            this.button1.Visible = false;
+            this.button1.Visible = true;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // MainForm

@@ -16,7 +16,9 @@ namespace weka.estimators
 	/// </author>
 	/// <version>  $Revision: 1.5 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class NormalEstimator : Estimator
 	{
 		

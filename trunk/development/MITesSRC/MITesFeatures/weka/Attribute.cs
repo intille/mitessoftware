@@ -60,7 +60,9 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.32.2.3 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Attribute : Copyable
 	{
 

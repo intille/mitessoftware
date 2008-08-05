@@ -24,7 +24,9 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.14 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Range
 	{
 		/// <summary> Sets the value of "last".

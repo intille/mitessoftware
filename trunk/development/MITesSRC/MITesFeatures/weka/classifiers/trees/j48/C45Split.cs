@@ -16,7 +16,9 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.9.2.1 $
 	/// </version>
+#if !PocketPC
     [Serializable()]  
+#endif
 	public class C45Split:ClassifierSplitModel
 	{
 		/// <summary> Sets split point to greatest value in given data smaller or equal to

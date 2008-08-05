@@ -7,7 +7,9 @@ using weka.core;
 using weka.classifiers;
 using weka.support;
 using System.IO;
+#if !PocketPC
 using System.Runtime.Serialization.Formatters.Binary; 
+#endif
 namespace weka.classifiers.trees
 {
 	
@@ -57,7 +59,9 @@ namespace weka.classifiers.trees
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Class for generating an unpruned or a pruned C4.5 decision tree. For more information, see Ross Quinlan (1993). 'C4.5: Programs for Machine Learning', Morgan Kaufmann Publishers, San Mateo, CA. ")  </attribute>
 
+    #if !PocketPC
     [Serializable()]  
+    #endif
 	public class J48:Classifier, Drawable, Matchable, Sourcable, WeightedInstancesHandler, Summarizable, AdditionalMeasureProducer, ITree
 	{
 		//code of alain
@@ -570,7 +574,12 @@ namespace weka.classifiers.trees
 			
 			m_noCleanup = v;
 		}
-
+#if PocketPC
+        override public System.Object Clone()
+        {
+            return null;
+        }
+#else
 		//UPGRADE_TODO: The following method was automatically generated and it must be implemented in order to preserve the class logic. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1232'"
 		override public System.Object Clone()
 		{
@@ -584,5 +593,6 @@ namespace weka.classifiers.trees
 
             return obj;
 		}
+#endif
 	}
 }

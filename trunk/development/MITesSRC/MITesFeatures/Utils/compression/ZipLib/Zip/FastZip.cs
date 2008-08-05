@@ -526,10 +526,10 @@ namespace ICSharpCode.SharpZipLib.Zip
 							if (events_ != null) {
 								continueRunning_ = events_.OnCompletedFile(entry.Name);
 							}
-						}
+                        }
 
-#if !NETCF_1_0 && !NETCF_2_0
-						if ( restoreDateTimeOnExtract_ ) {
+#if !PocketPC
+                        if ( restoreDateTimeOnExtract_ ) {
 							File.SetLastWriteTime(targetName, entry.DateTime);
 						}
 						

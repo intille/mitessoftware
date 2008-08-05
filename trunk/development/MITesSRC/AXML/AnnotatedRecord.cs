@@ -223,5 +223,30 @@ namespace AXML
             
             return csv;
         }
+
+        public AnnotatedRecord copy()
+        {
+            AnnotatedRecord ann = new AnnotatedRecord();
+            foreach (Label lab in labels)
+            {
+                ann.Labels.Add(lab);
+            }
+            ann.StartHour = start_hour;
+            ann.StartMinute = start_minute;
+            ann.StartSecond = start_second;
+            ann.StartMillisecond = start_millisecond;
+            ann.StartUnix = start_unix;
+            ann.StartDate = start_date;
+            ann.EndDate = end_date;
+            ann.EndHour = end_hour;
+            ann.EndMinute = end_minute;
+            ann.EndSecond = end_second;
+            ann.EndMillisecond = end_millisecond;
+            ann.EndUnix = end_unix;
+            ann.Quality = quality;
+
+            return ann;
+        }
+
     }
 }

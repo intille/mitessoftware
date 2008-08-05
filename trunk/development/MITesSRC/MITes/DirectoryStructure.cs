@@ -23,7 +23,12 @@ namespace HousenCS.MITes
         public static string ExecutionDirectory()
         {
            
+#if (PocketPC)
+            string exeDir = Path.GetDirectoryName(System.Reflection.Assembly.GetExecutingAssembly().GetModules()[0].FullyQualifiedName);
+#else
+
             string exeDir = System.Reflection.Assembly.GetCallingAssembly().Location;
+#endif
             return exeDir.Substring(0, exeDir.LastIndexOf('\\'));
             //return System.Reflection.Assembly.GetCallingAssembly().Location;
         }

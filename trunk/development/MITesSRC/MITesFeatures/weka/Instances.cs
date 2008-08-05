@@ -42,7 +42,9 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.58.2.3 $ 
 	/// </version>
+#if !PocketPC
     [Serializable]
+#endif
 	public class Instances
 	{
 		/// <summary> Sets the class attribute.

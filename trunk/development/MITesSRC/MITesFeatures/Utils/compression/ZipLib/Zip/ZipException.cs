@@ -38,7 +38,7 @@
 
 using System;
 
-#if !NETCF_1_0 && !NETCF_2_0
+#if !PocketPC
 using System.Runtime.Serialization;
 #endif
 
@@ -47,13 +47,13 @@ namespace ICSharpCode.SharpZipLib.Zip
 	
 	/// <summary>
 	/// Represents exception conditions specific to Zip archive handling
-	/// </summary>
-#if !NETCF_1_0 && !NETCF_2_0
+    /// </summary>
+#if !PocketPC
 	[Serializable]
 #endif
-	public class ZipException : SharpZipBaseException
-	{
-#if !NETCF_1_0 && !NETCF_2_0
+    public class ZipException : SharpZipBaseException
+    {
+#if !PocketPC
 		/// <summary>
 		/// Deserialization constructor 
 		/// </summary>
@@ -65,7 +65,7 @@ namespace ICSharpCode.SharpZipLib.Zip
 		}
 #endif
 
-		/// <summary>
+        /// <summary>
 		/// Initializes a new instance of the ZipException class.
 		/// </summary>
 		public ZipException()

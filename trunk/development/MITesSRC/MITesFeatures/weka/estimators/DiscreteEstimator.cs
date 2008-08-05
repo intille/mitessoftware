@@ -16,7 +16,9 @@ namespace weka.estimators
 	/// </author>
 	/// <version>  $Revision: 1.6 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class DiscreteEstimator : Estimator
 	{
 		/// <summary> Gets the number of symbols this estimator operates with

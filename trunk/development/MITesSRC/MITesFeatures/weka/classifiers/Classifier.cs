@@ -21,7 +21,9 @@ namespace weka.classifiers
 	/// <version>  $Revision: 1.11.2.1 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.CategoryAttribute("Classifiers")  </attribute>
+#if !PocketPC
     [Serializable()]  
+#endif
 	public abstract class Classifier : System.ICloneable
 	{
 		//UPGRADE_NOTE: Respective javadoc comments were merged.  It should be changed in order to comply with .NET documentation conventions. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1199'"

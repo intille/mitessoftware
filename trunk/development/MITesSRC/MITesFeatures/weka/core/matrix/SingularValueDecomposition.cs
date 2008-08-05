@@ -29,7 +29,9 @@ namespace weka.core.matrix
 	/// </author>
 	/// <version>  $Revision: 1.1.2.2 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class SingularValueDecomposition
 	{
 		/// <summary> Return the one-dimensional array of singular values</summary>

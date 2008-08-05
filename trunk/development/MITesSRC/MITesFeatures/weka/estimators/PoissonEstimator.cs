@@ -16,8 +16,9 @@ namespace weka.estimators
 	/// </author>
 	/// <version>  $Revision: 1.4 $
 	/// </version>
-	
+#if !PocketPC	
 	[Serializable]
+#endif
 	public class PoissonEstimator : Estimator
 	{
 		

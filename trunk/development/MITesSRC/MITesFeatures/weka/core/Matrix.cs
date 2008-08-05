@@ -28,7 +28,9 @@ namespace weka.core
 	/// <deprecated> Use instead <code>weka.core.matrix.Matrix</code> - only for
 	/// backwards compatibility. 
 	/// </deprecated>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Matrix : System.ICloneable
 	{
 		/// <summary> Returns true if the matrix is symmetric.

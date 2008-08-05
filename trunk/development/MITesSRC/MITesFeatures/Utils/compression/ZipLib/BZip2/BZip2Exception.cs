@@ -35,7 +35,7 @@
 
 using System;
 
-#if !NETCF_1_0 && !NETCF_2_0
+#if !PocketPC
 using System.Runtime.Serialization;
 #endif
 
@@ -45,14 +45,14 @@ namespace ICSharpCode.SharpZipLib.BZip2
 {
 	/// <summary>
 	/// BZip2Exception represents exceptions specific to Bzip2 algorithm
-	/// </summary>
-#if !NETCF_1_0 && !NETCF_2_0
+    /// </summary>
+#if !PocketPC
 	[Serializable]
-#endif	
-	public class BZip2Exception : SharpZipBaseException
-	{
+#endif
+    public class BZip2Exception : SharpZipBaseException
+    {
 
-#if !NETCF_1_0 && !NETCF_2_0
+#if !PocketPC
 		/// <summary>
 		/// Deserialization constructor 
 		/// </summary>
@@ -64,7 +64,7 @@ namespace ICSharpCode.SharpZipLib.BZip2
 		{
 		}
 #endif
-		/// <summary>
+        /// <summary>
 		/// Initialise a new instance of BZip2Exception.
 		/// </summary>
 		public BZip2Exception()
