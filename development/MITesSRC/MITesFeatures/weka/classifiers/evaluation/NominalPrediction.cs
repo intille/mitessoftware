@@ -15,7 +15,10 @@ namespace weka.classifiers.evaluation
 	/// </author>
 	/// <version>  $Revision: 1.9 $
 	/// </version>
+    /// 
+#if !PocketPC
 	[Serializable]
+#endif
 	public class NominalPrediction : Prediction
 	{
 		

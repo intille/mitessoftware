@@ -16,7 +16,9 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.8 $
 	/// </version>
+#if !PocketPC
     [Serializable()]  
+#endif
 	public abstract class ClassifierSplitModel : System.ICloneable
 	{
 		

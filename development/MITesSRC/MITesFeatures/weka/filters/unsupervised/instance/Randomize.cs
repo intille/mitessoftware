@@ -27,7 +27,9 @@ namespace weka.filters.unsupervised.instance
 	/// <version>  $Revision: 1.2.2.1 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("This filter randomly shuffles the order of instances passed through it.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Randomize:Filter, UnsupervisedFilter
 	{
 		/// <summary>The random number seed </summary>

@@ -17,7 +17,9 @@ namespace weka.classifiers.rules
 	/// <version>  $Revision: 1.11 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Class for building and using a 0-R classifier. Predicts the mean (for a numeric class) or the mode (for a nominal class).")  </attribute>
-	[Serializable]
+#if !PocketPC	
+    [Serializable]
+#endif
 	public class ZeroR:Classifier, WeightedInstancesHandler
 	{
 		/// <summary>The class value 0R predicts. </summary>

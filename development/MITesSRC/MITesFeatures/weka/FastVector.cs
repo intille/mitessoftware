@@ -15,8 +15,9 @@ namespace weka.core
 	/// </author>
 	/// <version>  $Revision: 1.11 $ 
 	/// </version>
-
+#if !PocketPC
     [Serializable]
+#endif
 	public class FastVector : Copyable
 	{
 		/// <summary> Sets the vector's capacity to the given value.

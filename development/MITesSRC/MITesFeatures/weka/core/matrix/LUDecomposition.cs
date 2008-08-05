@@ -28,8 +28,10 @@ namespace weka.core.matrix
 	/// </author>
 	/// <version>  $Revision: 1.1.2.2 $
 	/// </version>
-	
+
+#if !PocketPC	
 	[Serializable]
+#endif
 	public class LUDecomposition
 	{
 		/// <summary> Is the matrix nonsingular?</summary>

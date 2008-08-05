@@ -34,7 +34,9 @@ namespace weka.filters.unsupervised.attribute
 	/// <version>  $Revision: 1.4.2.1 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("An instance filter that deletes a range of attributes from the dataset.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Remove:Filter, UnsupervisedFilter, StreamableFilter
 	{
 		/// <summary>Stores which columns to select as a funky range </summary>

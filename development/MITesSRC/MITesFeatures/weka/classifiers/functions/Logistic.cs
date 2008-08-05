@@ -67,7 +67,9 @@ namespace weka.classifiers.functions
 	/// <version>  $Revision: 1.32 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Second implementation for building and using a multinomial logistic regression model with a ridge estimator.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class Logistic:Classifier, WeightedInstancesHandler
 	{
 		//UPGRADE_NOTE: Respective javadoc comments were merged.  It should be changed in order to comply with .NET documentation conventions. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1199'"

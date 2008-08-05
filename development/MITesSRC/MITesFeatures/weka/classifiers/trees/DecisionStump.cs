@@ -22,7 +22,9 @@ namespace weka.classifiers.trees
 	/// <version>  $Revision: 1.18 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Class for building and using a decision stump. Usually used in conjunction with a boosting algorithm.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class DecisionStump:Classifier, WeightedInstancesHandler, Sourcable
 	{
 		/// <summary>The attribute used for classification. </summary>

@@ -7,8 +7,9 @@ using weka.core;
 //UPGRADE_TODO: The package 'weka.estimators' could not be found. If it was not included in the conversion, there may be compiler issues. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1262'"
 using weka.estimators;
 using ICSharpCode.SharpZipLib.GZip;
+#if !PocketPC
 using System.Runtime.Serialization.Formatters.Binary;
-
+#endif
 
 namespace weka.classifiers
 {
@@ -401,7 +402,8 @@ namespace weka.classifiers
 		{
 			
 			crossValidateModel(Classifier.forName(classifierString, options), data, numFolds, random);
-		}
+        }
+#if !PocketPC
 		
 		/// <summary> Evaluates a classifier with the options given in an array of
 		/// strings. <p/>
@@ -482,10 +484,10 @@ namespace weka.classifiers
 				throw new System.Exception("Can't find class with name " + classifierString + '.');
 			}
 			return evaluateModel(classifier, options);
-		}
-		
-		
-		/// <summary> Evaluates a classifier with the options given in an array of
+        }
+
+
+        /// <summary> Evaluates a classifier with the options given in an array of
 		/// strings. <p/>
 		/// 
 		/// Valid options are: <p/>
@@ -1009,8 +1011,8 @@ namespace weka.classifiers
 			return text.ToString();
 		}
 		
-		
-		/// <summary> Attempts to load a cost matrix.
+#endif
+        /// <summary> Attempts to load a cost matrix.
 		/// 
 		/// </summary>
 		/// <param name="costFileName">the filename of the cost matrix

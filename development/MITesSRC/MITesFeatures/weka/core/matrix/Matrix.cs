@@ -59,8 +59,9 @@ namespace weka.core.matrix
 	/// </author>
 	/// <version>  $Revision: 1.2.2.4 $
 	/// </version>
-	
+#if !PocketPC	
 	[Serializable]
+#endif
 	public class Matrix : System.ICloneable
 	{
 		/// <summary> Access the internal two-dimensional array.</summary>
@@ -1390,7 +1391,7 @@ namespace weka.core.matrix
 			}
 			return A;
 		}
-		
+		#if !PocketPC
 		/// <summary> Print the matrix to stdout.   Line the elements up in columns
 		/// with a Fortran-like 'Fw.d' style format.
 		/// </summary>
@@ -1405,6 +1406,7 @@ namespace weka.core.matrix
 			temp_writer.AutoFlush = true;
 			print(temp_writer, w, d);
 		}
+#endif
 		
 		/// <summary> Print the matrix to the output stream.   Line the elements up in
 		/// columns with a Fortran-like 'Fw.d' style format.
@@ -1434,7 +1436,7 @@ namespace weka.core.matrix
             format.GroupingUsed = false;
 			print(output, format, w + 2);
 		}
-		
+		#if !PocketPC
 		/// <summary> Print the matrix to stdout.  Line the elements up in columns.
 		/// Use the format object, and right justify within columns of width
 		/// characters.
@@ -1454,6 +1456,7 @@ namespace weka.core.matrix
 			temp_writer.AutoFlush = true;
 			print(temp_writer, format, width);
 		}
+#endif
 		
 		// DecimalFormat is a little disappointing coming from Fortran or C's printf.
 		// Since it doesn't pad on the left, the elements will come out different

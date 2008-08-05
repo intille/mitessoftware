@@ -18,7 +18,9 @@ namespace weka.filters
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("A simple instance filter that passes all instances directly through.")  </attribute>
 	/// <attribute>  System.ComponentModel.BrowsableAttribute(false)  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class AllFilter:Filter
 	{
 		/// <summary> Returns a string describing this filter

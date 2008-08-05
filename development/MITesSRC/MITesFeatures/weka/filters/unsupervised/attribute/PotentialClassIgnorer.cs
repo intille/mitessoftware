@@ -20,7 +20,10 @@ namespace weka.filters.unsupervised.attribute
 	/// </author>
 	/// <version>  $Revision: 1.2 $ 
 	/// </version>
+    /// 
+#if !PocketPC
 	[Serializable]
+#endif
 	public abstract class PotentialClassIgnorer:Filter
 	{
 		/// <summary> Set the IgnoreClass value. Set this to true if the

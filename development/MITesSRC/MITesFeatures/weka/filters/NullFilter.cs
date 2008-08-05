@@ -18,7 +18,10 @@ namespace weka.filters
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("A simple instance filter that allows no instances to pass through.")  </attribute>
 	/// <attribute>  System.ComponentModel.BrowsableAttribute(false)  </attribute>
-	[Serializable]
+
+#if !PocketPC    
+    [Serializable]
+#endif
 	public class NullFilter:Filter
 	{
 		/// <summary> Sets the format of the input instances.

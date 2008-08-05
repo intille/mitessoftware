@@ -30,7 +30,9 @@ namespace weka.filters.unsupervised.instance
 	/// <version>  $Revision: 1.3.2.1 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("This filter removes a given percentage of a dataset.")  </attribute>
-	[Serializable]
+#if !PocketPC	
+    [Serializable]
+#endif
 	public class RemovePercentage:Filter, UnsupervisedFilter
 	{
 		/// <summary>Percentage of instances to select. </summary>

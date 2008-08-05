@@ -16,7 +16,9 @@ namespace weka.estimators
 	/// </author>
 	/// <version>  $Revision: 1.4 $
 	/// </version>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class MahalanobisEstimator : Estimator
 	{
 		

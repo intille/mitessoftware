@@ -24,7 +24,9 @@ namespace weka.filters.unsupervised.attribute
 	/// <version>  $Revision: 1.5 $
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("This filter removes attributes that do not vary at all or that vary too much.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class RemoveUseless:Filter, UnsupervisedFilter
 	//,OptionHandler 
 	{

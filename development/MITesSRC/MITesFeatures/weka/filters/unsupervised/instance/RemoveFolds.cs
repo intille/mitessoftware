@@ -36,7 +36,9 @@ namespace weka.filters.unsupervised.instance
 	/// <version>  $Revision: 1.1.2.1 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("This filter takes a dataset and outputs a specified fold for cross validation.")  </attribute>
-	[Serializable]
+#if !PocketPC
+    [Serializable]
+#endif
 	public class RemoveFolds:Filter, UnsupervisedFilter
 	{
 		/// <summary>Indicates if inverse of selection is to be output. </summary>

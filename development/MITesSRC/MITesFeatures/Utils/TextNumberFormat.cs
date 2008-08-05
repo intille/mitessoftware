@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Text;
 using System.Collections;
 using System.Data;
+#if !PocketPC
 using System.Data.OleDb;
+#endif
 using System.Globalization;
 using System.IO;
 using System.Reflection;
@@ -123,11 +125,12 @@ namespace MITesFeatures.Utils
             }
         }
 
+        #if !PocketPC
         public static CultureInfo[] GetAvailableCultures()
         {
             return CultureInfo.GetCultures(CultureTypes.AllCultures);
         }
-
+#endif
         public override int GetHashCode()
         {
             return GetHashCode();

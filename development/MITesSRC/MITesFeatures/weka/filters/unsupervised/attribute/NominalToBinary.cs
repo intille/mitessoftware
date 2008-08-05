@@ -31,7 +31,10 @@ namespace weka.filters.unsupervised.attribute
 	/// <version>  $Revision: 1.6 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Converts all nominal attributes into binary numeric attributes.")  </attribute>
+    /// 
+#if !PocketPC
 	[Serializable]
+#endif
 	public class NominalToBinary:Filter, UnsupervisedFilter
 	//,OptionHandler 
 	{

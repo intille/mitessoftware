@@ -490,7 +490,7 @@ namespace ICSharpCode.SharpZipLib.Tar
 					userName = value.Substring(0, Math.Min(UNAMELEN, value.Length));
 				}
 				else {
-#if NETCF_1_0 || NETCF_2_0
+#if PocketPC
 					string currentUser = "PocketPC";
 #else
 					string currentUser = Environment.UserName;

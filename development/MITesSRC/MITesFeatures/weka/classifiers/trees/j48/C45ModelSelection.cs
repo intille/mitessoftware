@@ -15,7 +15,9 @@ namespace weka.classifiers.trees.j48
 	/// </author>
 	/// <version>  $Revision: 1.8 $y
 	/// </version>
+#if !PocketPC
     [Serializable()]  
+#endif
 	public class C45ModelSelection:ModelSelection
 	{
 		

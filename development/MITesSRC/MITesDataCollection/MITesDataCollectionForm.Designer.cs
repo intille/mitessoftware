@@ -623,10 +623,10 @@ namespace MITesDataCollection
             this.tabPage1.Width = this.panel1.Width = this.tabPage2.Width = this.panel2.Width = this.tabPage3.Width = this.panel3.Width = this.tabPage4.Width = this.panel4.Width = this.tabControl1.ClientSize.Width;//-Constants.SCREEN_LEFT_MARGIN-Constants.SCREEN_RIGHT_MARGIN;
             this.tabPage1.Height = this.panel1.Height = this.tabPage2.Height = this.panel2.Height = this.tabPage3.Height = this.panel3.Height = this.tabPage4.Height = this.panel4.Height = this.tabControl1.ClientSize.Height;
 #else
-            this.form1.Width = this.form2.Width = this.form3.Width = this.form4.Width = this.ClientSize.Width;
-            this.form1.Height= this.form2.Height = this.form3.Height = this.form4.Height = this.ClientSize.Height;
-            this.panel1.Width = this.panel2.Width = this.panel4.Width = this.form1.ClientSize.Width - Constants.SCREEN_LEFT_MARGIN - Constants.SCREEN_RIGHT_MARGIN;
-            this.panel2.Height = this.panel4.Height = this.form1.ClientSize.Height;
+            this.form1.Width = this.form2.Width = this.form3.Width = this.form4.Width = this.form5.Width = this.ClientSize.Width;
+            this.form1.Height = this.form2.Height = this.form3.Height = this.form4.Height = this.form5.Height = this.ClientSize.Height;
+            this.panel1.Width = this.panel2.Width = this.panel4.Width = this.panel5.Width = this.form1.ClientSize.Width - Constants.SCREEN_LEFT_MARGIN - Constants.SCREEN_RIGHT_MARGIN;
+            this.panel2.Height = this.panel4.Height = this.panel5.Height = this.form1.ClientSize.Height;
 
             this.panel1.Height = (int) (System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height * 0.70);
             this.panel3.Width = (int)(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height * 0.20); this.panel3.Height = (int)(System.Windows.Forms.Screen.PrimaryScreen.Bounds.Height * 0.20);
@@ -819,6 +819,7 @@ namespace MITesDataCollection
             this.form2.ClientSize = new Size(this.panel2.Width, this.panel2.Height);
             this.form3.ClientSize = new Size(this.panel3.Width, this.panel3.Height);
             this.form4.ClientSize = new Size(this.panel4.Width, this.panel4.Height);
+            this.form5.ClientSize = new Size(this.panel5.Width, this.panel5.Height);
 #endif
 
 

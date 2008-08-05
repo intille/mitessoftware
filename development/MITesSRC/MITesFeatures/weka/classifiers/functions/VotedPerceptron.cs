@@ -42,7 +42,9 @@ namespace weka.classifiers.functions
 	/// <version>  $Revision: 1.17 $ 
 	/// </version>
 	/// <attribute>  System.ComponentModel.DescriptionAttribute("Implements the voted perceptron algorithm by Freund and Schapire.")  </attribute>
-	[Serializable]
+#if !PocketPC	
+    [Serializable]
+#endif
 	public class VotedPerceptron:Classifier
 	//implements OptionHandler 
 	{
