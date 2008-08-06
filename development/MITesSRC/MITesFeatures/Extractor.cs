@@ -719,6 +719,200 @@ namespace MITesFeatures
            
         }
 
+        public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string sourceFile, int annotators)
+        {
+            int featureVectorIndex = 0;
+            MITesDecoder aMITesDecoder = new MITesDecoder();
+            MITesLoggerReader aMITesLoggerReader = new MITesLoggerReader(aMITesDecoder, aDataDirectory);           
+            SXML.SensorAnnotation sannotation = null;
+
+            AXML.Annotation[] aannotation = new AXML.Annotation[annotators];
+            AXML.Reader[] readers=new AXML.Reader[annotators];
+            AXML.Annotation intersection = null;
+            AXML.Annotation[] difference = new AXML.Annotation[annotators];
+            for (int i = 0; (i < annotators); i++)
+            {
+                readers[i] = new AXML.Reader(masterDirectory, aDataDirectory, sourceFile + i + ".xml");
+                aannotation[i] = readers[i].parse();
+                aannotation[i].DataDirectory = aDataDirectory;
+                if (intersection == null)
+                    intersection = aannotation[i];
+                else
+                    intersection = intersection.Intersect(aannotation[i]);
+            }
+
+            for (int i = 0; (i < annotators); i++)           
+                difference[i] = aannotation[i].Difference(intersection);
+            
+
+            SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);           
+            sannotation = sreader.parse(maxControllers);
+  
+            Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation[0], sannotation);
+            
+
+            TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");
+            tw.WriteLine("@RELATION wockets");
+            tw.WriteLine(Extractor.GetArffHeader());
+
+
+            tw.WriteLine("@ATTRIBUTE INDEX NUMERIC");
+            tw.WriteLine("@ATTRIBUTE ANNOTATORS_AGREE NUMERIC");
+
+            for (int k = 0; (k < annotators); k++)
+            {
+                tw.Write("@ATTRIBUTE annotator"+k+" {unknown");
+                Hashtable recorded_activities = new Hashtable();
+                for (int i = 0; (i < aannotation[0].Data.Count); i++)
+                {
+                    AXML.AnnotatedRecord record = ((AXML.AnnotatedRecord)aannotation[0].Data[i]);
+                    string activity = "";
+                    for (int j = 0; (j < record.Labels.Count); j++)
+                    {
+                        if (j == record.Labels.Count - 1)
+                            activity += ((AXML.Label)record.Labels[j]).Name;
+                        else
+                            activity += ((AXML.Label)record.Labels[j]).Name + "_";
+                    }
+                    activity = activity.Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                    activity = Regex.Replace(activity, "[_]+", "_");
+                    activity = Regex.Replace(activity, "^[_]+", "");
+                    activity = Regex.Replace(activity, "[_]+$", "");
+                    //only output activity labels that have not been seen
+                    if (recorded_activities.Contains(activity) == false)
+                    {
+                        tw.Write("," + activity);
+                        recorded_activities[activity] = activity;
+                    }
+                }
+                tw.WriteLine("}");
+            }
+            tw.WriteLine("@DATA");
+
+            bool isData = aMITesLoggerReader.GetSensorData(10);
+            int channel = 0, x = 0, y = 0, z = 0;
+            double unixtimestamp = 0.0;
+
+            int[] differenceIndex = new int[annotators];
+            AXML.AnnotatedRecord[] annotatedRecord = new AXML.AnnotatedRecord[annotators];
+            int intersectionIndex = 0;
+            string intersection_activity = "unknown";
+            AXML.AnnotatedRecord intersectionRecord = ((AXML.AnnotatedRecord)intersection.Data[intersectionIndex]);
+            string[] current_activity = new string[annotators];
+            for (int i = 0; (i < annotators); i++)
+            {
+                differenceIndex[i] = 0;
+                annotatedRecord[i] = ((AXML.AnnotatedRecord)difference[i].Data[differenceIndex[i]]);
+                current_activity[i] = "unknown";
+            }
+                
+                
+            do
+            {
+                //decode the frame
+                channel = aMITesDecoder.GetSomeMITesData()[0].channel;
+                x = aMITesDecoder.GetSomeMITesData()[0].x;
+                y = aMITesDecoder.GetSomeMITesData()[0].y;
+                z = aMITesDecoder.GetSomeMITesData()[0].z;
+                unixtimestamp = aMITesDecoder.GetSomeMITesData()[0].unixTimeStamp;
+                double lastTimeStamp = Extractor.StoreMITesWindow();
+
+                for (int i = 0; (i < annotators); i++)
+                {
+                    if (unixtimestamp > annotatedRecord[i].EndUnix)
+                    {
+                        current_activity[i] = "unknown";
+                        if (differenceIndex[i] < difference[i].Data.Count - 1)
+                        {
+                            differenceIndex[i] = differenceIndex[i]+1;
+                            annotatedRecord[i] = ((AXML.AnnotatedRecord)difference[i].Data[differenceIndex[i]]);
+                        }
+                    }
+                }
+
+
+                if (unixtimestamp > intersectionRecord.EndUnix)
+                {
+                    intersection_activity = "unknown";
+                    if (intersectionIndex < intersection.Data.Count - 1)
+                    {
+                        intersectionIndex = intersectionIndex + 1;
+                        intersectionRecord = ((AXML.AnnotatedRecord)intersection.Data[intersectionIndex]);
+                    }
+                }
+
+                for (int i = 0; (i < annotators); i++)
+                {
+                    if ((lastTimeStamp >= annotatedRecord[i].StartUnix) &&
+                         (lastTimeStamp <= annotatedRecord[i].EndUnix) && current_activity[i].Equals("unknown"))
+                    {
+                        current_activity[i] = "";
+                        for (int j = 0; (j < annotatedRecord[i].Labels.Count); j++)
+                        {
+                            if (j == annotatedRecord[i].Labels.Count - 1)
+                                current_activity[i] += ((AXML.Label)annotatedRecord[i].Labels[j]).Name;
+                            else
+                                current_activity[i] += ((AXML.Label)annotatedRecord[i].Labels[j]).Name + "_";
+                        }
+                        current_activity[i] = current_activity[i].Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                        current_activity[i] = Regex.Replace(current_activity[i], "[_]+", "_");
+                        current_activity[i] = Regex.Replace(current_activity[i], "^[_]+", "");
+                        current_activity[i] = Regex.Replace(current_activity[i], "[_]+$", "");
+                    }
+                }
+
+                if ((lastTimeStamp >= intersectionRecord.StartUnix) &&
+                     (lastTimeStamp <= intersectionRecord.EndUnix) && intersection_activity.Equals("unknown"))
+                {
+                    intersection_activity = "";
+                    for (int j = 0; (j < intersectionRecord.Labels.Count); j++)
+                    {
+                        if (j == intersectionRecord.Labels.Count - 1)
+                            intersection_activity += ((AXML.Label)intersectionRecord.Labels[j]).Name;
+                        else
+                            intersection_activity += ((AXML.Label)intersectionRecord.Labels[j]).Name + "_";
+                    }
+                    intersection_activity = intersection_activity.Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                    intersection_activity = Regex.Replace(intersection_activity, "[_]+", "_");
+                    intersection_activity = Regex.Replace(intersection_activity, "^[_]+", "");
+                    intersection_activity = Regex.Replace(intersection_activity, "[_]+$", "");
+                }
+
+
+                //if (current_activity.Equals("unknown") == false)
+                //{
+                    if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
+                    {
+                        
+                        string activity_suffix = ","+ featureVectorIndex;
+
+                        if (intersection_activity.Equals("unknown") == true) //disagreement or agreement unknown
+                        {
+                            //if ( (current_activity[0] == "unknown") && (current_activity[1] == "unknown"))
+                             //   continue;
+
+                            activity_suffix += ",0";
+                            for (int i = 0; (i < annotators); i++)
+                                activity_suffix += "," + current_activity[i];
+                        }
+                        else
+                        {
+                            activity_suffix += ",1";
+                            for (int i = 0; (i < annotators); i++)
+                                activity_suffix += "," + intersection_activity;
+                        }
+                        string arffSample = Extractor.toString() + activity_suffix;
+                        tw.WriteLine(arffSample);
+                        featureVectorIndex++;
+
+                    }
+                //}
+
+            } while (isData = aMITesLoggerReader.GetSensorData(10));
+
+            tw.Close();
+        }
+
         public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers)
         {
             MITesDecoder aMITesDecoder = new MITesDecoder();
@@ -827,6 +1021,7 @@ namespace MITesFeatures
                     {
                         string arffSample = Extractor.toString() + "," + current_activity;
                         tw.WriteLine(arffSample);
+                        
                     }
                 }
 

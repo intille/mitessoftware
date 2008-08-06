@@ -213,10 +213,10 @@ namespace AXML
 
 
 
-        public Annotation Difference(Annotation a)
+        public Annotation Difference(Annotation b)
         {
-            a = a.copy();
-            ArrayList intersection = Intersect(a).Data;
+            Annotation a = this.copy();
+            ArrayList intersection = b.Data; //Intersect(a).Data;
             Annotation output = this.copy();
             ArrayList tempOutput = new ArrayList();
             ArrayList aData = a.Data;
