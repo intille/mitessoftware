@@ -90,6 +90,17 @@ namespace AXML
             }
         }
 
+        public void RemoveData(string[] labels)
+        {
+            for (int i = 0; (i < labels.Length); i++)
+            {
+                for (int j = this.data.Count-1; (j >=0 ); j--)
+                {
+                    if (((Label)((AnnotatedRecord)this.data[j]).Labels[0]).Name.Contains(labels[i]))
+                        this.data.RemoveAt(j);
+                }
+            }
+        }
         public string ToXML()
         {
             string xml = "";

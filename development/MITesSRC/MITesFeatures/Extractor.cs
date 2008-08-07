@@ -719,7 +719,7 @@ namespace MITesFeatures
            
         }
 
-        public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string sourceFile, int annotators)
+        public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string sourceFile, int annotators,string[] filter)
         {
             int featureVectorIndex = 0;
             MITesDecoder aMITesDecoder = new MITesDecoder();
@@ -730,10 +730,13 @@ namespace MITesFeatures
             AXML.Reader[] readers=new AXML.Reader[annotators];
             AXML.Annotation intersection = null;
             AXML.Annotation[] difference = new AXML.Annotation[annotators];
+
+
             for (int i = 0; (i < annotators); i++)
             {
                 readers[i] = new AXML.Reader(masterDirectory, aDataDirectory, sourceFile + i + ".xml");
                 aannotation[i] = readers[i].parse();
+                aannotation[i].RemoveData(filter);
                 aannotation[i].DataDirectory = aDataDirectory;
                 if (intersection == null)
                     intersection = aannotation[i];
@@ -888,10 +891,11 @@ namespace MITesFeatures
 
                         if (intersection_activity.Equals("unknown") == true) //disagreement or agreement unknown
                         {
-                            //if ( (current_activity[0] == "unknown") && (current_activity[1] == "unknown"))
-                             //   continue;
-
-                            activity_suffix += ",0";
+                            
+                            if ( (current_activity[0] == "unknown") && (current_activity[1] == "unknown"))
+                                activity_suffix += ",1";
+                            else
+                                activity_suffix += ",0";
                             for (int i = 0; (i < annotators); i++)
                                 activity_suffix += "," + current_activity[i];
                         }
