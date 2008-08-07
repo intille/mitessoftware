@@ -100,7 +100,7 @@ namespace MITesFeatures
                 testFoldsFilter.set_NumFolds(DEFAULT_FOLDS);
                 testFoldsFilter.inputFormat(randomData);
                 testFoldsFilter.set_InvertSelection(false);
-                trainingFoldsFilter.set_Fold(i);
+                testFoldsFilter.set_Fold(i);
                 Instances test = Filter.useFilter(randomData, testFoldsFilter);
                 for (int j = 1; (j <= numberIncrements); j++)
                 {
