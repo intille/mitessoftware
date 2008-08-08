@@ -250,7 +250,7 @@ namespace AXML
                                 //TimeSpan ts = startDT - new DateTime(1970, 1, 1, 0, 0, 0, 0);
                                 annotatedRecord.StartUnix = ts.TotalMilliseconds;
                                 //for some data might require day light savings adjustment
-                                //annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
+                                annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
 
                                 annotatedRecord.EndDate = endDT.ToString("MM-dd-yyyy");
                                 annotatedRecord.EndHour = endDT.Hour;
@@ -260,7 +260,7 @@ namespace AXML
                                 ts = endDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0,0));
                                 //ts = endDT - new DateTime(1970, 1, 1, 0, 0, 0, 0, 0);
                                 annotatedRecord.EndUnix = ts.TotalMilliseconds;    
-                                //annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
+                                annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
 
 
                                 //parsing values
