@@ -40,6 +40,10 @@ namespace SXML
         public const string DISPLAY_TYPE_ATTRIBUTE = "displaytype";
         public const string DISPLAY_X = "x";
         public const string DISPLAY_Y = "y";
+
+        //Sensor Classes
+        public const string MITES = "MITes";
+        public const string HTC_DIAMOND = "HTC DIAMOND";
         
 
     }

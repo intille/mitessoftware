@@ -309,6 +309,8 @@ namespace HousenCS.MITes
 		private int[] someIDMappings = new int[MITesData.MAX_MITES_CHANNELS];
 		private bool[] isSeenID = new bool[MITesData.MAX_MITES_CHANNELS];
 
+ 
+
 		private void ResetIsSeenID()
 		{
 			for (int i = 0; i < isSeenID.Length; i++)
@@ -360,7 +362,116 @@ namespace HousenCS.MITes
 			return MITesData.NONE;
 		}
 
+        public void setBuiltinPlotVals(int[] sensorData, int startPlotIndex)
+        {
 
+            for (int j = 0; (j < sensorData.Length); j = j + 3)
+            {
+                if (sensorData[j*3]>0)
+                    plotVals[startPlotIndex+j, 0, col] = sensorData[j * 3];
+                else
+                    plotVals[startPlotIndex+j, 0, col] = MITesData.EMPTY;
+
+                if (sensorData[j * 3 +1] > 0)
+                    plotVals[startPlotIndex+j, 1, col] = sensorData[j * 3 + 1];
+                else
+                    plotVals[startPlotIndex+j, 1, col] = MITesData.EMPTY;
+
+                if (sensorData[j * 3 + 2] > 0)
+                    plotVals[startPlotIndex + j, 2, col] = sensorData[j * 3 + 2];
+                else
+                    plotVals[startPlotIndex+j, 2, col] = MITesData.EMPTY;
+            }
+        }
+        public int setPlotVals(int[] bufferX,int[] bufferY, int[] bufferZ,int readIndex,int writeIndex,int startPlotIndex)
+            {
+			int[] returnVals = GetReturnVals();
+			int numVals = GetReturnValsIndex();
+            int startCol = col;
+			for (int j = 0; j < numVals; j = j+4)
+			{
+				if (returnVals[j] != MITesDecoder.STATIC_CHANNEL)
+				{
+					id = GetSensorIDMap(returnVals[j]);
+					if (id == MITesData.NONE)
+						Warning("GetSensorIDMap returned NONE!");
+
+					if (id < maxPlots)
+					{
+						x = returnVals[j+1];
+						y = returnVals[j+2];
+						z = returnVals[j+3];
+		
+						if (InValidRange(x))
+							plotVals[id,0,col] = x;
+						else
+							plotVals[id,0,col] = MITesData.EMPTY;
+		
+						if (InValidRange(y))
+							plotVals[id,1,col] = y;
+						else
+							plotVals[id,1,col] = MITesData.EMPTY;
+		
+						if (InValidRange(z))
+							plotVals[id,2,col] = z;
+						else
+							plotVals[id,2,col] = MITesData.EMPTY;
+
+         
+						if (checkIsSeenID(id)) // Set isSeenID array
+						{
+							aPanel.Invalidate(new System.Drawing.Rectangle(col-1,0,2,plotAreaSize.Height));
+							col++;
+                            if (col >= plotAreaSize.Width)
+                            {
+                                startCol = 0;
+                                col = 0;
+                            }
+		
+							resetPlotVals(col);
+						}
+					}
+					else
+					{
+						if (errorPrintCount == 0)
+							Console.WriteLine ("WARNING! Not plotting data from Sensor ID:" + returnVals[j]);
+						errorPrintCount++;
+						if (errorPrintCount > 1000)
+							errorPrintCount = 0;
+					}
+				}
+			}
+
+            col = startCol;
+            while (readIndex != writeIndex)
+            {
+                if (bufferX[readIndex] > 0)
+                    plotVals[startPlotIndex, 0, col] = bufferX[readIndex];
+                else
+                    plotVals[startPlotIndex, 0, col] = MITesData.EMPTY;
+
+                if (bufferY[readIndex] > 0)
+                    plotVals[startPlotIndex, 1, col] = bufferY[readIndex];
+                else
+                    plotVals[startPlotIndex, 1, col] = MITesData.EMPTY;
+
+                if (bufferZ[readIndex] > 0)
+                    plotVals[startPlotIndex, 2, col] = bufferZ[readIndex];
+                else
+                    plotVals[startPlotIndex, 2, col] = MITesData.EMPTY;
+
+                aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
+                col++;
+                if (col >= plotAreaSize.Width)              
+                    col = 0;
+                resetPlotVals(col);
+                readIndex = (readIndex + 1) % 24;
+
+            }
+
+			SetReturnValsIndex(0);
+            return readIndex;
+		}
 
 		/// <summary>
 		/// 
@@ -399,6 +510,8 @@ namespace HousenCS.MITes
 						else
 							plotVals[id,2,col] = MITesData.EMPTY;
 			
+                        
+
 						if (checkIsSeenID(id)) // Set isSeenID array
 						{
 							aPanel.Invalidate(new System.Drawing.Rectangle(col-1,0,2,plotAreaSize.Height));

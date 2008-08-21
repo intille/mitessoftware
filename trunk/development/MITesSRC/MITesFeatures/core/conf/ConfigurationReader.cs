@@ -65,6 +65,22 @@ namespace MITesFeatures.core.conf
                             {
                                 configuration.Mode =iAttribute.Value;
                             }
+                            else if (iAttribute.Name == Constants.SOFTWARE_CONNECTION_ATTRIBUTE)
+                            {
+                                configuration.Connection = iAttribute.Value;
+                            }
+                            else if (iAttribute.Name == Constants.SOFTWARE_CONNECTION_PASSKEY)
+                            {
+                                configuration.Passkey = iAttribute.Value;
+                            }
+                            else if (iAttribute.Name == Constants.SOFTWARE_CONNECTION_MAC)
+                            {
+                                configuration.Mac = iAttribute.Value;
+
+                                for (int i = 0; (i < Constants.MAC_SIZE); i++)
+                                    configuration.MacAddress[i] = (byte) (System.Int32.Parse(iAttribute.Value.Substring(i * 2, 2), System.Globalization.NumberStyles.AllowHexSpecifier) & 0xff);
+
+                            }
                         }
                     }
 

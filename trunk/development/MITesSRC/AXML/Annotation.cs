@@ -90,6 +90,7 @@ namespace AXML
             }
         }
 
+#if (!PocketPC)
         public void RemoveData(string[] labels)
         {
             for (int i = 0; (i < labels.Length); i++)
@@ -101,6 +102,7 @@ namespace AXML
                 }
             }
         }
+#endif
         public string ToXML()
         {
             string xml = "";
@@ -163,6 +165,7 @@ namespace AXML
 
         public Annotation Intersect(Annotation a)
         {
+            int z = 0;
             a = a.copy();
             Annotation output = this.copy();
             ArrayList aData = a.Data;
@@ -178,25 +181,33 @@ namespace AXML
                 foreach (AXML.AnnotatedRecord record2 in myData)
                 {
                     String label2 = ((AXML.Label)record2.Labels[0]).Name;
+
+                  //  if ((record2.StartMillisecond == 13) && (record2.StartSecond == 3) &&
+                   //     (record1.StartMillisecond == 107) && (record1.StartSecond == 0))
+                   //    z++;
                     if (label1 == label2)   //if the field name matches, process data entry
                     {
                         //move on to next iteration since there will never be intersection
-                        if (record1.EndUnix < record2.StartUnix || record2.EndUnix < record1.StartUnix)
+                        if ((record1.EndUnix < record2.StartUnix) || (record2.EndUnix < record1.StartUnix))
                             continue;
                         //if intersection exists
                         else
                         {
-                            AXML.AnnotatedRecord newrecord = record1;
+                            AXML.AnnotatedRecord newrecord = record1.copy();
 
                             //pick the highest start time and lowest end time out of the pair
                             if (record1.StartUnix < record2.StartUnix)
                             {
+                               
                                 newrecord.StartHour = record2.StartHour;
                                 newrecord.StartMinute = record2.StartMinute;
                                 newrecord.StartSecond = record2.StartSecond;
                                 newrecord.StartMillisecond = record2.StartMillisecond;
                                 newrecord.StartUnix = record2.StartUnix;
+                              
                             }
+                           
+                           
                             if (record1.EndUnix > record2.EndUnix)
                             {
                                 newrecord.EndHour = record2.EndHour;
@@ -236,8 +247,8 @@ namespace AXML
 
             while (intersectCounter < intersection.Count && originalCounter < aData.Count)
             {
-                AXML.AnnotatedRecord temp = (AXML.AnnotatedRecord)intersection[intersectCounter];
-                AXML.AnnotatedRecord original = (AXML.AnnotatedRecord)aData[originalCounter];
+                AXML.AnnotatedRecord temp = ((AXML.AnnotatedRecord)intersection[intersectCounter]).copy();
+                AXML.AnnotatedRecord original = ((AXML.AnnotatedRecord)aData[originalCounter]).copy();
 
                 //no intersection so add original data
                 if (original.EndUnix < temp.StartUnix || temp.EndUnix < original.StartUnix)
@@ -254,7 +265,7 @@ namespace AXML
                     double end2 = original.EndUnix;
                     if (start1 == end1 && start2 != end2) //use start2 and end2 as constraints
                     {
-                        AXML.AnnotatedRecord ann = original;
+                        AXML.AnnotatedRecord ann = original.copy();
                         ann.StartHour = temp.EndHour;
                         ann.StartMinute = temp.EndMinute;
                         ann.StartSecond = temp.EndSecond;
@@ -264,7 +275,7 @@ namespace AXML
                     }
                     else if (start1 != end1 && start2 == end2)  //use start1 and end1 as constraints
                     {
-                        AXML.AnnotatedRecord ann = original;
+                        AXML.AnnotatedRecord ann = original.copy();
                         ann.EndHour = temp.StartHour;
                         ann.EndMinute = temp.StartMinute;
                         ann.EndSecond = temp.StartSecond;
@@ -274,7 +285,7 @@ namespace AXML
                     }
                     else if (start1 != end1 && start2 != end2)//use both start1 & end1, start2 & end2
                     {
-                        AXML.AnnotatedRecord ann1 = original;
+                        AXML.AnnotatedRecord ann1 = original.copy();
 
                         int oriHour = original.EndHour;
                         int oriMinute = original.EndMinute;

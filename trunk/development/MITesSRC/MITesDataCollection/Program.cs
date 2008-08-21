@@ -89,12 +89,13 @@ namespace MITesDataCollection
             if (MainForm.SelectedForm == Constants.MAIN_SELECTED_COLLECT_DATA)
             {
                 //check all required paramters were selected
-                if ((ActivityProtocolForm.SelectedProtocol.FileName == "") || (SensorConfigurationForm.SelectedSensors.FileName == "") ||
-                    (WhereStoreDataForm.SelectedFolder == ""))
+                if ((ActivityProtocolForm.SelectedProtocol==null)||(ActivityProtocolForm.SelectedProtocol.FileName == "") ||(SensorConfigurationForm.SelectedSensors==null)|| (SensorConfigurationForm.SelectedSensors.FileName == "") ||
+                    (WhereStoreDataForm.SelectedFolder == "") || (WhereStoreDataForm.SelectedFolder==null))
                 {
                     MessageBox.Show("Exiting: You need to select an activity protocol, sensor configuration and a directory to store your data");
 #if (PocketPC)
-                        Application.Exit();
+                    Application.Exit();
+                    System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
                         Environment.Exit(0);
 #endif
@@ -113,6 +114,7 @@ namespace MITesDataCollection
                         MessageBox.Show("Exiting: Please choose an empty storage directory");
 #if (PocketPC)
                         Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
                         Environment.Exit(0);
 #endif
@@ -129,6 +131,7 @@ namespace MITesDataCollection
                         MessageBox.Show("Exiting: Please choose an empty storage directory");
 #if (PocketPC)
                         Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
                         Environment.Exit(0);
 #endif
@@ -145,6 +148,7 @@ namespace MITesDataCollection
                         MessageBox.Show("Exiting: Please choose an empty storage directory");
 #if (PocketPC)
                         Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
                         Environment.Exit(0);
 #endif
@@ -165,7 +169,18 @@ namespace MITesDataCollection
                 Application.Run(new MITesDataCollectionForm(TroubleshootModel.SelectedFolder, TroubleshootModel.SelectedFile, true));      
                 //Choice #4: Calibrate the sensors in a setup
             else if (MainForm.SelectedForm == Constants.MAIN_SELECTED_CALIBRATE)
-                Application.Run(new MITesDataCollectionForm(CalibrateSensors.Sensors,"/test"));                        
+                Application.Run(new MITesDataCollectionForm(CalibrateSensors.Sensors,"/test"));
+
+
+#if (PocketPC)
+            Application.Exit();
+            System.Diagnostics.Process.GetCurrentProcess().Kill();    
+#else
+            Environment.Exit(0);
+#endif
+        
         }
+
+
     }
 }

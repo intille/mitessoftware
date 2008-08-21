@@ -20,6 +20,14 @@ namespace MITesFeatures.core.conf
         public static string SOFTWARE_MODE_RELEASE = "release";
         public static string SOFTWARE_MODE_TEST = "test";
 
+        public static string SOFTWARE_CONNECTION_ATTRIBUTE = "connection";
+        public static string SOFTWARE_CONNECTION_USB = "usb";
+        public static string SOFTWARE_CONNECTION_BLUETOOTH = "bluetooth";
+        public static string SOFTWARE_CONNECTION_PASSKEY = "passkey";
+        public static string SOFTWARE_CONNECTION_MAC = "mac";
+        public static int MAC_SIZE = 6;
+        
+
         public static string QUALITY_WINDOW_SIZE = "window_size";
 
         public static string WINDOW_TIME_ATTRIBUTE = "time";

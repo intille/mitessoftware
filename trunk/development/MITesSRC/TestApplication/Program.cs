@@ -17,27 +17,27 @@ namespace TestApplication
     {
         static void Main(string[] args)
         {
-           /* AXML.Reader areader1 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "Copy of ActivityLabels.xml");
-            AXML.Reader areader2 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "ActivityLabels.xml");
-            AXML.Annotation annotation1 = areader1.parse();
-            AXML.Annotation annotation2 = areader2.parse();
-            AXML.Annotation interesection = annotation1.Intersect(annotation2);
-            AXML.Annotation difference = annotation1.Difference(annotation2);
-            
-            TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\intersection.xml");
-            tw.WriteLine(interesection.ToXML());
-            tw.Close();
-            tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\Difference.xml");
-            tw.WriteLine(difference.ToXML());
-            tw.Close();
-            */
+            /* AXML.Reader areader1 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "Copy of ActivityLabels.xml");
+             AXML.Reader areader2 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "ActivityLabels.xml");
+             AXML.Annotation annotation1 = areader1.parse();
+             AXML.Annotation annotation2 = areader2.parse();
+             AXML.Annotation interesection = annotation1.Intersect(annotation2);
+             AXML.Annotation difference = annotation1.Difference(annotation2);
+           
+             TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\intersection.xml");
+             tw.WriteLine(interesection.ToXML());
+             tw.Close();
+             tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\Difference.xml");
+             tw.WriteLine(difference.ToXML());
+             tw.Close();
+             */
 
 
- 
+
 
             //Generates an Arff file from a PlaceLab format file
-            Extractor.toARFF(@"C:\MITesData\SamplePLFormat",
-             "..\\NeededFiles\\Master\\",3);
+            //Extractor.toARFF(@"C:\MITesData\SamplePLFormat",
+            // "..\\NeededFiles\\Master\\", 3);
 
 
             /* AXML.Reader areader1 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "Copy of ActivityLabels.xml");
@@ -46,7 +46,7 @@ namespace TestApplication
   AXML.Annotation annotation2 = areader2.parse();
   AXML.Annotation interesection = annotation1.Intersect(annotation2);
   AXML.Annotation difference = annotation1.Difference(annotation2);
-            
+           
   TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\intersection.xml");
   tw.WriteLine(interesection.ToXML());
   tw.Close();
@@ -56,9 +56,13 @@ namespace TestApplication
   */
 
 
-            string[] filter = new string[2];
+            string[] filter = new string[5];
             filter[0] = "maybe";
             filter[1] = "good";
+            filter[2] = "annotation";
+            filter[3] = "setup";
+            filter[4] = "not";
+   
 
             //Generates an Arff file from a PlaceLab format file
             Extractor.toARFF(@"C:\MITesData\SamplePLFormat",
@@ -189,7 +193,7 @@ namespace TestApplication
                         cMatricies[k].addElement((int)predicted, (int)predicted, 1.0);
                     else
                         cMatricies[k].addElement((int)newinstance[k].classValue(), (int)predicted, 1.0);
-                    //annotator_activities += "," + newinstance.dataset().classAttribute().value_Renamed((int)annotationID);                       
+                    //annotator_activities += "," + newinstance.dataset().classAttribute().value_Renamed((int)annotationID);                      
                 }
 
                 labeledData[instanceID, k] = (int)predicted;
@@ -199,6 +203,7 @@ namespace TestApplication
 
             //Evaluation eval = new Evaluation(agreementData);
             //eval.evaluateModel(tree, disagreementData);//.crossValidateModel(tree, data, 10, new Random(1));
+
 
 
 
@@ -236,10 +241,10 @@ namespace TestApplication
                 Instances test = Filter.useFilter(randomData, testFoldsFilter);
 
                 //ready for training and testing
-                tree = new J48();         // new instance of tree
+                tree = new J48(); // new instance of tree
                 tree.set_MinNumObj(10);
                 tree.set_ConfidenceFactor((float)0.25);
-                tree.buildClassifier(training);   // build classifier
+                tree.buildClassifier(training); // build classifier
 
 
                 for (int j = 0; (j < test.numInstances()); j++)
@@ -264,7 +269,7 @@ namespace TestApplication
                     {
                         int annotationID = (int)originalData.instance(instanceID).value_Renamed(data.numAttributes() - 1 - k);
                         labeledData[instanceID, k] = (int)annotationID;
-                        //annotator_activities += "," + newinstance.dataset().classAttribute().value_Renamed((int)annotationID);                       
+                        //annotator_activities += "," + newinstance.dataset().classAttribute().value_Renamed((int)annotationID);
                     }
                     labeledData[instanceID, k] = (int)predicted;
 
@@ -277,19 +282,36 @@ namespace TestApplication
             for (int i = 0; (i < className.Length); i++)
             {
                 TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\" + className[i] + ".csv");
+                TextWriter twavg = new StreamWriter(@"C:\MITesData\SamplePLFormat\average-" + className[i] + ".csv");
                 for (int j = 0; (j < data.numInstances()); j++)
                 {
                     tw.Write(j + ",");
-                    for (int k = 0; (k < 2 + 1); k++)
+                    twavg.Write(j + ",");
+                    double sum = 0;
+                    for (int k = 0; (k < annotaters + 1); k++)
                     {
-                        if (labeledData[j, k] == i) //annotator matches the class we are outputing                        
+                        if (labeledData[j, k] == i){ //annotator matches the class we are outputing
                             tw.Write(1 + ",");
+
+                            if (k<annotaters)
+                                sum+=1;
+                        }
                         else
                             tw.Write(0 + ",");
+                        
                     }
+                    
+                    twavg.Write(((double)(sum/annotaters)).ToString("0.00") + ","); //average annotaters
+                    if (labeledData[j, annotaters] == i)
+                        twavg.Write("1"); //classifeir
+                    else
+                        twavg.Write("0");
+
                     tw.WriteLine();
+                    twavg.WriteLine();
                 }
                 tw.Close();
+                twavg.Close();
             }
 
 
@@ -334,17 +356,17 @@ namespace TestApplication
             //double totalMatrix2=0 ,correctMatrix2=0;
             //for (int i = 0; (i < className.Length); i++)
             //{
-            //    for (int j = 0; (j < className.Length); j++)
-            //    {
-            //        if (i == j)
-            //        {
-            //            correctMatrix1 += cMatrix1.getRow(i)[j];
-            //            correctMatrix2 += cMatrix2.getRow(i)[j];
-            //        }
-            //        totalMatrix1 += cMatrix1.getRow(i)[j];
-            //        totalMatrix2 += cMatrix2.getRow(i)[j];
-            //        totalMatrix.addElement(i, j, cMatrix1.getRow(i)[j] + cMatrix2.getRow(i)[j]);
-            //    }
+            // for (int j = 0; (j < className.Length); j++)
+            // {
+            // if (i == j)
+            // {
+            // correctMatrix1 += cMatrix1.getRow(i)[j];
+            // correctMatrix2 += cMatrix2.getRow(i)[j];
+            // }
+            // totalMatrix1 += cMatrix1.getRow(i)[j];
+            // totalMatrix2 += cMatrix2.getRow(i)[j];
+            // totalMatrix.addElement(i, j, cMatrix1.getRow(i)[j] + cMatrix2.getRow(i)[j]);
+            // }
             //}
 
 
@@ -399,6 +421,7 @@ namespace TestApplication
             tw2.WriteLine("Agreement\n------------------\n");
             tw2.WriteLine("RecognitionRate:" + ((double)(agreementCorrectMatrix / agreementTotalMatrix) * 100).ToString("0.00") + "%\n");
             tw2.WriteLine(cMatrix2.toString());
+
 
             tw2.WriteLine("Combined\n------------------\n");
             for (int i = 0; (i < annotaters); i++)
@@ -457,3 +480,4 @@ namespace TestApplication
         }
     }
 }
+

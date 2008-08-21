@@ -195,9 +195,17 @@ namespace SXML
 
                         }
 
-                        annotation.Sensors.Add(sensor);
-                        sensor.Index = annotation.Sensors.IndexOf(sensor);
-                        annotation.SensorsIndex.Add(Convert.ToInt32(sensor.ID), sensor.Index);   
+                        if (sensor.SensorClass == Constants.MITES)
+                        {
+                            annotation.Sensors.Add(sensor);
+                            sensor.Index = annotation.Sensors.IndexOf(sensor);
+                            annotation.SensorsIndex.Add(Convert.ToInt32(sensor.ID), sensor.Index);
+                        }
+                        else
+                        {
+                            annotation.HasBuiltinSensors = true;
+                            annotation.BuiltinSensors.Add(sensor);
+                        }
                     }
 
                                                       
