@@ -232,11 +232,12 @@ namespace MITesFeatures
 
 
         public static void Initialize(MITesDecoder aMITesDecoder, string aDataDirectory,
-            AXML.Annotation aannotation, SXML.SensorAnnotation sannotation)//, string masterDirectory)
+            AXML.Annotation aannotation, SXML.SensorAnnotation sannotation, GeneralConfiguration configuration)//, string masterDirectory)
         {
            
             Extractor.aannotation = aannotation;
             Extractor.sannotation = sannotation;
+            Extractor.dconfiguration = configuration;
 
             // count the sensors for feature extraction and identify their indicies in
             // sensor annotation - at the moment only accelerometers are used
@@ -258,8 +259,8 @@ namespace MITesFeatures
             //Extractor.sannotation = sreader.parse();
 
             //load configuration
-            ConfigurationReader creader = new ConfigurationReader(aDataDirectory);
-            Extractor.dconfiguration = creader.parse();
+ //           ConfigurationReader creader = new ConfigurationReader(aDataDirectory);
+ //           Extractor.dconfiguration = creader.parse();
 
 
             //load annotation data
@@ -718,18 +719,20 @@ namespace MITesFeatures
 
            
         }
-
+#if (!PocketPC)
         public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string sourceFile, int annotators,string[] filter)
         {
             int featureVectorIndex = 0;
             MITesDecoder aMITesDecoder = new MITesDecoder();
             MITesLoggerReader aMITesLoggerReader = new MITesLoggerReader(aMITesDecoder, aDataDirectory);           
             SXML.SensorAnnotation sannotation = null;
+            MITesFeatures.core.conf.GeneralConfiguration configuration = null;
 
             AXML.Annotation[] aannotation = new AXML.Annotation[annotators];
             AXML.Reader[] readers=new AXML.Reader[annotators];
             AXML.Annotation intersection = null;
             AXML.Annotation[] difference = new AXML.Annotation[annotators];
+
 
 
             for (int i = 0; (i < annotators); i++)
@@ -744,14 +747,20 @@ namespace MITesFeatures
                     intersection = intersection.Intersect(aannotation[i]);
             }
 
-            for (int i = 0; (i < annotators); i++)           
+    
+            for (int i = 0; (i < annotators); i++)            
                 difference[i] = aannotation[i].Difference(intersection);
+
             
+
 
             SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);           
             sannotation = sreader.parse(maxControllers);
+
+            MITesFeatures.core.conf.ConfigurationReader creader = new MITesFeatures.core.conf.ConfigurationReader(aDataDirectory);
+            configuration = creader.parse();
   
-            Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation[0], sannotation);
+            Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation[0], sannotation,configuration);
             
 
             TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");
@@ -765,6 +774,7 @@ namespace MITesFeatures
             for (int k = 0; (k < annotators); k++)
             {
                 tw.Write("@ATTRIBUTE annotator"+k+" {unknown");
+                //tw.Write("@ATTRIBUTE annotator" + k + " {");
                 Hashtable recorded_activities = new Hashtable();
                 for (int i = 0; (i < aannotation[0].Data.Count); i++)
                 {
@@ -836,6 +846,7 @@ namespace MITesFeatures
 
                 if (unixtimestamp > intersectionRecord.EndUnix)
                 {
+               
                     intersection_activity = "unknown";
                     if (intersectionIndex < intersection.Data.Count - 1)
                     {
@@ -862,7 +873,11 @@ namespace MITesFeatures
                         current_activity[i] = Regex.Replace(current_activity[i], "^[_]+", "");
                         current_activity[i] = Regex.Replace(current_activity[i], "[_]+$", "");
                     }
+                    else
+                        current_activity[i] = "unknown";
+                 
                 }
+
 
                 if ((lastTimeStamp >= intersectionRecord.StartUnix) &&
                      (lastTimeStamp <= intersectionRecord.EndUnix) && intersection_activity.Equals("unknown"))
@@ -880,49 +895,59 @@ namespace MITesFeatures
                     intersection_activity = Regex.Replace(intersection_activity, "^[_]+", "");
                     intersection_activity = Regex.Replace(intersection_activity, "[_]+$", "");
                 }
+              
 
 
-                //if (current_activity.Equals("unknown") == false)
-                //{
-                    if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
+                if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
+                {
+
+                    string activity_suffix = "," + featureVectorIndex;
+                
+
+                    if (intersection_activity.Equals("unknown") == true) //disagreement or agreement unknown
                     {
                         
-                        string activity_suffix = ","+ featureVectorIndex;
 
-                        if (intersection_activity.Equals("unknown") == true) //disagreement or agreement unknown
-                        {
-                            
-                            if ( (current_activity[0] == "unknown") && (current_activity[1] == "unknown"))
-                                activity_suffix += ",1";
-                            else
-                                activity_suffix += ",0";
-                            for (int i = 0; (i < annotators); i++)
-                                activity_suffix += "," + current_activity[i];
-                        }
-                        else
-                        {
+                        if ((current_activity[0] == "unknown") && (current_activity[1] == "unknown"))
                             activity_suffix += ",1";
-                            for (int i = 0; (i < annotators); i++)
-                                activity_suffix += "," + intersection_activity;
-                        }
-                        string arffSample = Extractor.toString() + activity_suffix;
+                        else
+                            activity_suffix += ",0";
+                        for (int i = 0; (i < annotators); i++)
+                            activity_suffix += "," + current_activity[i];
+                    }
+                    else
+                    {
+                        activity_suffix += ",1";
+                        for (int i = 0; (i < annotators); i++)
+                            activity_suffix += "," + intersection_activity;
+                    }
+                    
+                    string arffSample = Extractor.toString() + activity_suffix;
+                   //if (activity_suffix.Contains("unknown") == false)
+                   //{
+              
+                   // if (!(current_activity[0] == "unknown") && !(current_activity[1] == "unknown"))
+                     //{
                         tw.WriteLine(arffSample);
                         featureVectorIndex++;
+                     //}
+                  
 
-                    }
-                //}
+                }
+               
 
             } while (isData = aMITesLoggerReader.GetSensorData(10));
 
             tw.Close();
         }
-
+#endif
         public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers)
         {
             MITesDecoder aMITesDecoder = new MITesDecoder();
             MITesLoggerReader aMITesLoggerReader = new MITesLoggerReader(aMITesDecoder, aDataDirectory);
             AXML.Annotation aannotation=null;
             SXML.SensorAnnotation sannotation=null;
+            GeneralConfiguration configuration = new ConfigurationReader(aDataDirectory).parse();
             AXML.Reader reader = new AXML.Reader(masterDirectory, aDataDirectory);
            // if (reader.validate() == false)            
             //    throw new Exception("Error Code 0: XML format error - activities.xml does not match activities.xsd!");            
@@ -939,7 +964,7 @@ namespace MITesFeatures
                 
             //}
 
-            Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation, sannotation);
+            Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation, sannotation,configuration);
 
      
             TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");            

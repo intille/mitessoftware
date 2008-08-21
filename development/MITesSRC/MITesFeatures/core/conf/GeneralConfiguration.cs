@@ -20,10 +20,61 @@ namespace MITesFeatures.core.conf
         private int smooth_windows;
 
         private string mode;
+        private string connection;
+        private string passkey;
+        private string mac;
+        private byte[] macAddress;
+
         private int qualityWindowSize;
 
         public GeneralConfiguration()
         {
+            this.macAddress = new byte[Constants.MAC_SIZE];
+        }
+
+
+        public byte[] MacAddress
+        {
+            get
+            {
+                return this.macAddress;
+            }
+        }
+        public string Mac
+        {
+            get
+            {
+                return this.mac;
+            }
+            set
+            {
+                this.mac = value;
+            }
+        }
+
+        public string Connection
+        {
+            get
+            {
+                return this.connection;
+            }
+            set
+            {
+                this.connection = value;
+            }
+        }
+
+
+        public string Passkey
+        {
+            get
+            {
+                return this.passkey;
+            }
+            set
+            {
+                this.passkey = value;
+            }
         }
 
         public string Mode

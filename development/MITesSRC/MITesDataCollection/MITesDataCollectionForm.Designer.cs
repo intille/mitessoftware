@@ -350,37 +350,39 @@ namespace MITesDataCollection
 
 
 
+            if (isCalibrating)
+            {
 
 
-            //tabpage5
-            this.label17 = new System.Windows.Forms.Label();
-            this.pictureBox2 = new System.Windows.Forms.PictureBox();
-            this.button2 = new System.Windows.Forms.Button();
-            // 
-            // label17
-            // 
-            this.label17.Location = new System.Drawing.Point(12, 35);
-            this.label17.Name = "label17";
-            this.label17.Size = new System.Drawing.Size(80, 70);
-            this.label17.Text = "Please place the sensor horizontal on a flat surface.";
-            // 
-            // pictureBox1
-            // 
-            this.pictureBox2.Location = new System.Drawing.Point(118, 10);
-            this.pictureBox2.Name = "pictureBox2";
-            this.pictureBox2.Size = new System.Drawing.Size(96, 96);
-            this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
-            this.pictureBox2.Image = this.horizontalMITes;
-            // 
-            // button1
-            // 
-            this.button2.Location = new System.Drawing.Point(76, 106);
-            this.button2.Name = "button2";
-            this.button2.Size = new System.Drawing.Size(72, 20);
-            this.button2.Text = "Start";
-            this.button2.Click += new System.EventHandler(this.button2_Click);
+                //tabpage5
+                this.label17 = new System.Windows.Forms.Label();
+                this.pictureBox2 = new System.Windows.Forms.PictureBox();
+                this.button2 = new System.Windows.Forms.Button();
+                // 
+                // label17
+                // 
+                this.label17.Location = new System.Drawing.Point(12, 35);
+                this.label17.Name = "label17";
+                this.label17.Size = new System.Drawing.Size(80, 70);
+                this.label17.Text = "Please place the sensor horizontal on a flat surface.";
+                // 
+                // pictureBox1
+                // 
+                this.pictureBox2.Location = new System.Drawing.Point(118, 10);
+                this.pictureBox2.Name = "pictureBox2";
+                this.pictureBox2.Size = new System.Drawing.Size(96, 96);
+                this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
+                this.pictureBox2.Image = this.horizontalMITes;
+                // 
+                // button1
+                // 
+                this.button2.Location = new System.Drawing.Point(76, 106);
+                this.button2.Name = "button2";
+                this.button2.Size = new System.Drawing.Size(72, 20);
+                this.button2.Text = "Start";
+                this.button2.Click += new System.EventHandler(this.button2_Click);
 
-
+            }
 
 
 

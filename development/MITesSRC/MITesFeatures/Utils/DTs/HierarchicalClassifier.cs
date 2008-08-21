@@ -8,6 +8,7 @@ using AXML;
 using SXML;
 using System.Xml;
 using System.Xml.Schema;
+using MITesFeatures.core.conf;
 
 namespace MITesFeatures.Utils.DTs
 {
@@ -18,11 +19,12 @@ namespace MITesFeatures.Utils.DTs
         private Hashtable classifiers;
 
 
-        public HierarchicalClassifier(MITesDecoder aMITesDecoder, Annotation aannotation, SensorAnnotation sannotation, string dataDirectory)
+
+        public HierarchicalClassifier(MITesDecoder aMITesDecoder, Annotation aannotation, SensorAnnotation sannotation, string dataDirectory,GeneralConfiguration configuration)
         {
             this.classifiers = new Hashtable();
             this.dataDirectory = dataDirectory;
-            Extractor.Initialize(aMITesDecoder, dataDirectory, aannotation, sannotation);
+            Extractor.Initialize(aMITesDecoder, dataDirectory, aannotation, sannotation,configuration);
         }
 
 
