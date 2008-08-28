@@ -43,6 +43,7 @@ namespace SXML
 
         //Sensor Classes
         public const string MITES = "MITes";
+        public const string BUILTIN = "BUILTIN";
         public const string HTC_DIAMOND = "HTC DIAMOND";
         
 

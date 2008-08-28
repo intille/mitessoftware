@@ -118,7 +118,7 @@ namespace MITesDataCollection
         #region Definition of Builtin accelerometer objects
         private PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder htcDecoder;
         private Thread htcThread;
-        private bool htcQuitting=false;
+
 
         #endregion Definition of Builtin accelerometer objects
 #endif
@@ -223,50 +223,17 @@ namespace MITesDataCollection
         private bool isQuitting = false;
 
         private Hashtable sensorLabels;
+
         private System.Windows.Forms.Label[] labels;
         private System.Windows.Forms.Label[] expectedLabels;
         private System.Windows.Forms.Label[] samplesPerSecond;
 
-        #region Builtin Accelerometer Polling Thread
 #if (PocketPC)
-        private int[] bufferX;
-        private int[] bufferY;
-        private int[] bufferZ;
-        int writeIndex = 0;
-        int readIndex = 0;
-        private bool builtInDataReady = false;
-        private void PollBuiltInSensors()
-        {
-            bufferX = new int[24];
-            bufferY = new int[24];
-            bufferZ = new int[24];
-            writeIndex = 0;
-            while (true)
-            {
-                Thread.Sleep(40);
-                if ((this.htcQuitting==false) && (this.sensors.HasBuiltinSensors == true))
-                {
-                    foreach (Sensor builtinSensor in this.sensors.BuiltinSensors)
-                    {
-                        if (builtinSensor.SensorClass == SXML.Constants.HTC_DIAMOND)
-                        {
-
-                            this.htcDecoder.GetSensorData();
-                            bufferX[writeIndex] = this.htcDecoder.LastData.X;
-                            bufferY[writeIndex] = this.htcDecoder.LastData.Y;
-                            bufferZ[writeIndex] = this.htcDecoder.LastData.Z;
-                            writeIndex = (writeIndex+1) % 24;
-                            // this.htcDecoder.Reset();
-                            this.builtInDataReady = true;
-                        }
-                    }
-
-                }
-            }
-        }
-
+        private Hashtable builtInlabels;
+        private Hashtable builtInExpectedLabels;
+        private Hashtable builtInSamplesPerSecond;
 #endif
-        #endregion Builtin Accelerometer Polling Thread
+
 
         private bool progressThreadQuit=false;
         //This method is executed as a seperate thread to manage the progress
@@ -628,7 +595,7 @@ namespace MITesDataCollection
             foreach (Sensor builtInSensor in this.sensors.BuiltinSensors)
             {
                 progressMessage += "Initializing ... " + builtInSensor.SensorClass + "\r\n";
-                if (builtInSensor.SensorClass == SXML.Constants.HTC_DIAMOND)
+                if (builtInSensor.Type == SXML.Constants.HTC_DIAMOND)
                     this.htcDecoder = new PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder();
             }
 
@@ -787,8 +754,11 @@ namespace MITesDataCollection
             //Terminate the progress thread
             t.Abort();
 
+
             //Initialize the interface
 #if (PocketPC)
+           
+            this.tabControl1.TabPages.RemoveAt(4);
             this.tabControl1.SelectedIndex = 0;
 #else
             this.ShowForms();
@@ -798,7 +768,7 @@ namespace MITesDataCollection
 #if (PocketPC)
             if (this.sensors.HasBuiltinSensors)
             {
-                this.htcThread = new Thread(new ThreadStart(PollBuiltInSensors));
+                this.htcThread = new Thread(new ThreadStart(this.htcDecoder.PollBuiltInSensors));
                 this.htcThread.Start();
             }
 #endif
@@ -874,9 +844,9 @@ namespace MITesDataCollection
 
                     //calculate how many plots should be shown
             if (this.sensors.IsHR)
-                this.maxPlots = this.sensors.Sensors.Count - 1;
+                this.maxPlots = this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count - 1;
             else
-                this.maxPlots = this.sensors.Sensors.Count;
+                this.maxPlots = this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count;
 
 
             //Initialize different interface components
@@ -1300,8 +1270,8 @@ namespace MITesDataCollection
 
                 //Intialize Labels 40% of the screen
 
-                int num_rows = (int)((this.sensors.Sensors.Count + 2) / 2); //additional row for HR and total sampling rate
-                int textBoxHeight = ((int)(0.40 * this.tabPage1.ClientSize.Height) - ((this.sensors.Sensors.Count - 1) * Constants.WIDGET_SPACING)) / num_rows;
+                int num_rows = (int)((this.sensors.Sensors.Count +this.sensors.BuiltinSensors.Count + 2) / 2); //additional row for HR and total sampling rate
+                int textBoxHeight = ((int)(0.40 * this.tabPage1.ClientSize.Height) - ((this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count - 1) * Constants.WIDGET_SPACING)) / num_rows;
                 int textBoxWidth = ((this.tabPage1.ClientSize.Width - (3 * Constants.WIDGET_SPACING)) / 2);
                 int currentTextY = (int)(this.tabPage1.Height * 0.60);
                 int leftTextX = Constants.WIDGET_SPACING;
@@ -1309,14 +1279,21 @@ namespace MITesDataCollection
                 int currentTextX = Constants.WIDGET_SPACING;
                 this.button1.Width = textBoxWidth;
                 this.button1.Height = textBoxHeight;
-                Font textFont = this.button1.Font =
+                
+                Font textFont;
+                if (this.sensors.HasBuiltinSensors)
+                    textFont = this.button1.Font =
+                    GUI.CalculateBestFitFont(this.button1.Parent.CreateGraphics(), Constants.MIN_FONT,
+                       Constants.MAX_FONT, this.button1.Size, "Diamond Touch:Still", this.button1.Font, (float)0.9, (float)0.9);
+                else
+                    textFont = this.button1.Font =
                     GUI.CalculateBestFitFont(this.button1.Parent.CreateGraphics(), Constants.MIN_FONT,
                        Constants.MAX_FONT, this.button1.Size, "textBoxAC11", this.button1.Font, (float)0.9, (float)0.9);
 
                 System.Windows.Forms.Label t;
                 foreach (Sensor sensor in this.sensors.Sensors)
                 {
-                    
+
                     string labelKey = "MITes" + sensor.ID;
 
                     t=(System.Windows.Forms.Label)this.sensorLabels[labelKey];
@@ -1331,7 +1308,25 @@ namespace MITesDataCollection
                         currentTextY += (textBoxHeight + Constants.WIDGET_SPACING);
                     }                    
                 }
-          
+
+
+                foreach (Sensor sensor in this.sensors.BuiltinSensors)
+                {
+
+                    string labelKey = sensor.Type;
+                    t = (System.Windows.Forms.Label)this.sensorLabels[labelKey];
+                    t.Font = textFont;
+                    t.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
+                    t.Location = new System.Drawing.Point(currentTextX, currentTextY);
+                    if (currentTextX == leftTextX)
+                        currentTextX = rightTextX;
+                    else
+                    {
+                        currentTextX = leftTextX;
+                        currentTextY += (textBoxHeight + Constants.WIDGET_SPACING);
+                    }
+                }
+
                 t = (System.Windows.Forms.Label)this.sensorLabels["SampRate"];
                 t.Font = textFont;
                 t.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
@@ -1825,7 +1820,7 @@ namespace MITesDataCollection
                 if (this.sensors.HasBuiltinSensors)
                 {
 
-                    this.htcQuitting = true;
+                    this.htcDecoder.isQuitting = true;
 
                     Thread.Sleep(100);
                     this.htcThread.Abort();
@@ -2021,6 +2016,20 @@ namespace MITesDataCollection
 
             }
 
+            foreach (Sensor sensor in this.sensors.BuiltinSensors)
+            {
+                string key = sensor.Type;
+                double result = this.htcDecoder.ActivityCount;
+                if (result == 0)
+                    ((System.Windows.Forms.Label)this.sensorLabels[key]).Text = sensor.Type + ": none";
+                else
+                {
+                    ((System.Windows.Forms.Label)this.sensorLabels[key]).Text = sensor.Type + ": " + Math.Round(result, 2);
+
+                    if (result < 3.0)
+                        ((System.Windows.Forms.Label)this.sensorLabels[key]).Text = sensor.Type + ": still";
+                }
+            }
         }
 
         #endregion Helper Methods
@@ -2050,7 +2059,7 @@ namespace MITesDataCollection
             this.form2.Show();
             this.form3.Show();
             this.form4.Show();
-            this.form5.Show();
+            //this.form5.Show();
             this.form1.DesktopLocation = this.form1.Location = new Point(Constants.SCREEN_LEFT_MARGIN, Constants.SCREEN_TOP_MARGIN);
             this.form3.DesktopLocation = this.form3.Location = new Point(Constants.SCREEN_LEFT_MARGIN , Constants.SCREEN_TOP_MARGIN + Constants.SCREEN_TOP_MARGIN + this.form1.Height);
 
@@ -2115,7 +2124,11 @@ namespace MITesDataCollection
                 aMITesPlotter.SetAccelResultsData();
 #if (PocketPC)
             if (this.sensors.HasBuiltinSensors)
-                readIndex=aMITesPlotter.setPlotVals(bufferX,bufferY,bufferZ,readIndex,writeIndex,this.sensors.Sensors.Count);
+                this.htcDecoder.ReadIndex=aMITesPlotter.setPlotVals(this.htcDecoder.BufferX,this.htcDecoder.BufferY,this.htcDecoder.BufferZ,this.htcDecoder.ReadIndex,this.htcDecoder.WriteIndex,this.sensors.Sensors.Count);            
+            else
+                aMITesPlotter.setPlotVals();
+#else
+            aMITesPlotter.setPlotVals();
 #endif
         }
 
@@ -2263,6 +2276,25 @@ namespace MITesDataCollection
                         this.goodTimer.start();
                 }
             }
+
+#if (PocketPC)
+
+
+            foreach (SXML.Sensor sensor in this.sensors.BuiltinSensors)
+            {
+                ((System.Windows.Forms.Label)this.builtInExpectedLabels[sensor.Type]).Text = ((double)(this.htcDecoder.SamplingRate*100.0/PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder.MaximumSamplingRate)).ToString("0.00") + "%";
+                ((System.Windows.Forms.Label)this.builtInSamplesPerSecond[sensor.Type]).Text = this.htcDecoder.SamplingRate + "/" + PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder.MaximumSamplingRate;
+            }
+
+            if (this.tabControl1.TabIndex == 0)
+            {
+#endif
+                ReportActivityCounts();
+                ReportHR();
+
+#if (PocketPC)
+            }
+#endif
         }
 
 
@@ -2740,7 +2772,7 @@ namespace MITesDataCollection
 
                 sum += this.mitesDecoders[0].GetLastByteNum();
                 //aMITesLogger.SaveRawData();
-               // aMITesLoggerPLFormat.SaveRawData(); 
+                aMITesLoggerPLFormat.SaveRawData(); 
                 if (flushTimer == 0)
                 {
                     aMITesLogger.FlushBytes();
@@ -2810,16 +2842,7 @@ namespace MITesDataCollection
                             ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).ComputeEpoch();
                     }
 
-#if (PocketPC)
-                    if (this.tabControl1.TabIndex == 0)
-                    {
-#endif
-                        ReportActivityCounts();
-                        ReportHR();
-                    
-#if (PocketPC)
-                    }
-#endif
+
 
                     if (!isWrittenKey) // Write the key once at the top of the file
                     {
@@ -2857,6 +2880,8 @@ namespace MITesDataCollection
             // Graph accelerometer data for multiple recievers
             if (isPlotting)
                 GraphAccelerometerValues();
+
+
         }
 
         #endregion Timer Methods

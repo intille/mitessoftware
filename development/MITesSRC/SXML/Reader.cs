@@ -195,13 +195,13 @@ namespace SXML
 
                         }
 
-                        if (sensor.SensorClass == Constants.MITES)
+                        if (sensor.SensorClass.ToLower()==Constants.MITES.ToLower())
                         {
                             annotation.Sensors.Add(sensor);
                             sensor.Index = annotation.Sensors.IndexOf(sensor);
                             annotation.SensorsIndex.Add(Convert.ToInt32(sensor.ID), sensor.Index);
                         }
-                        else
+                        else if (sensor.SensorClass.ToLower()== Constants.BUILTIN.ToLower())
                         {
                             annotation.HasBuiltinSensors = true;
                             annotation.BuiltinSensors.Add(sensor);
