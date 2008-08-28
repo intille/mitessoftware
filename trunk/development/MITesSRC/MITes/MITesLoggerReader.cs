@@ -395,6 +395,8 @@ namespace HousenCS.MITes
             br.ReadByte(tempByte);
             aMITesDecoder.packet[4] = tempByte[0];
 
+            //if the packet is for an HTC phone (i.e. packet[1]>=50)... read 1 additional byte
+
             aMITesDecoder.DecodeLastPacket(someData[dataIndex], false); // Don't swap bytes
 
             //Console.WriteLine("FileUsed: " + fileUsed);
