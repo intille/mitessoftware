@@ -266,34 +266,45 @@ namespace HousenCS.MITes
         /// <param name="data"></param>
         public void SaveRawBytes(GenericAccelerometerData[] data, int readIndex, int writeIndex)
         {
+
             if (isActive)
             {
                 // Create and open the writer to the correct binary file in
                 // the correct directory
                 DetermineFilePath();
 
-                while (readIndex<writeIndex)
+                for (int i = 0; i < aMITesDecoder.someMITesDataIndex; i++)
                 {
+                    aTime = aMITesDecoder.someMITesData[i].timeStamp;
+                    aUnixTime = aMITesDecoder.someMITesData[i].unixTimeStamp;
 
-                    aTime = data[readIndex].Timestamp;
-                    aUnixTime = data[readIndex].Unixtimestamp;
+                    if (aTime < lastTime)
+                    {
+                        Console.WriteLine("StepBack!: " + (lastTime - aTime));
+                    }
+                    if (aUnixTime < lastUnixTime)
+                    {
+                        Console.WriteLine("StepBackUnix!: " + (lastUnixTime - aUnixTime));
+                    }
 
                     // Roughly once per second save full timestamp, no matter what
                     if (isForceTimestampSave || (timeSaveCount == TIMESTAMP_AFTER_SAMPLES))
                     {
-                        WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        //WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        WriteTimeDiff(aUnixTime, lastUnixTime, true); // Force save
                         timeSaveCount = 0;
                     }
                     else
                     {
-                        WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        //WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        WriteTimeDiff(aUnixTime, lastUnixTime, false);
                         timeSaveCount++;
                     }
 
                     isForceTimestampSave = false;
 
                     // Actually save the data! 
-                    //SaveMITesData(aMITesDecoder.someMITesData[i]);
+                   // SaveMITesData(aMITesDecoder.someMITesData[i]);
 
                     if (isActive && (bwPLFormat != null))
                     {
@@ -308,6 +319,7 @@ namespace HousenCS.MITes
                     readIndex = (readIndex + 1) % data.Length;
                 }
             }
+
         }
     }
 }
