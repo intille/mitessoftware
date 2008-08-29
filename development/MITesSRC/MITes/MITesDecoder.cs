@@ -39,7 +39,7 @@ namespace HousenCS.MITes
         /// <summary>
         /// The byte size of each packet from the receiver. 
         /// </summary>
-        public static readonly int PACKET_SIZE = 5;
+        public static readonly int PACKET_SIZE = 6;
 
         /// <summary>
         /// The maximum valid channel that the receiver can use.  
@@ -49,7 +49,7 @@ namespace HousenCS.MITes
         private static readonly int NO_HEADER_SEEN = -9;
         private static readonly int FIRST_HEADER_SEEN = -10;
         private int packetPosition = NO_HEADER_SEEN;
-        private int x, y, z, xyz;
+        private int x, y, z, xyz,xyz2;
 
         /// <summary>
         /// Storage for packet to be decoded. 
@@ -337,16 +337,29 @@ namespace HousenCS.MITes
 
             aMITesData.channel = packet[0];
             //Console.WriteLine ("Channel: " + packet[0]);
-            aMITesData.type = (int)MITesTypes.ACCEL; // Type label used for Accelerometers
+            
 
             x = packet[1];
             y = packet[2];
             z = packet[3];
             xyz = packet[4];
+            xyz2 = packet[5];
 
-            aMITesData.x = (short)(x | ((xyz & 0xC0) << 2));
-            aMITesData.y = (short)(y | ((xyz & 0x30) << 4));
-            aMITesData.z = (short)(z | ((xyz & 0x0C) << 6));
+            if (aMITesData.channel == MAX_CHANNEL)
+            {
+                aMITesData.type = (byte)(xyz2 & 0x0F); 
+                aMITesData.x = (short)(x | ((xyz & 0xF0) << 4));
+                aMITesData.y = (short)(y | ((xyz & 0x0F) << 8));
+                aMITesData.z = (short)(z | ((xyz2 & 0xF0) << 4));
+
+            }
+            else
+            {
+                aMITesData.type = (int)MITesTypes.ACCEL; // Type label used for Accelerometers
+                aMITesData.x = (short)(x | ((xyz & 0xC0) << 2));
+                aMITesData.y = (short)(y | ((xyz & 0x30) << 4));
+                aMITesData.z = (short)(z | ((xyz & 0x0C) << 6));
+            }
 
             //Debug(aMITesData.channel + ": x " + x + " y " + y + " z " + z);
             //Console.WriteLine(aMITesData.channel + ": x " + x + " y " + y + " z " + z);
@@ -580,6 +593,8 @@ namespace HousenCS.MITes
                     return true;
                 if (channel == 17)
                     return true;
+                if (channel == 83)
+                    return true;
                 return false;
             }
             else
@@ -600,7 +615,13 @@ namespace HousenCS.MITes
             aMITesData.rawBytes[2] = packet[2];
             aMITesData.rawBytes[3] = packet[3];
             aMITesData.rawBytes[4] = packet[4];
+
+            if (packet[0]==MITesDecoder.MAX_CHANNEL)
+                aMITesData.rawBytes[5] = packet[5];
+            else
+                aMITesData.rawBytes[5] = 0;
            
+            
            //System.IO.TextWriter tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
             //tw.WriteLine("D: " + packet[0] + " " + packet[1] + " " + packet[2] + " " + packet[3] + " " + packet[4]);
             //tw.Close();

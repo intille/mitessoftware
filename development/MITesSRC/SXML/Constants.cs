@@ -29,6 +29,7 @@ namespace SXML
         public const string TYPE_ATTRIBUTE = "type";
         public const string ID_ATTRIBUTE = "id";
         public const string TEXT_ATTRIBUTE = "text";
+        public const string SR_ATTRIBUTE = "sr";
         public const string ON_ATTRIBUTE = "on";
         public const string OFF_ATTRIBUTE = "off";
         public const string XMEAN_ATTRIBUTE = "xmean";
@@ -44,7 +45,6 @@ namespace SXML
         //Sensor Classes
         public const string MITES = "MITes";
         public const string BUILTIN = "BUILTIN";
-        public const string HTC_DIAMOND = "HTC DIAMOND";
         
 
     }

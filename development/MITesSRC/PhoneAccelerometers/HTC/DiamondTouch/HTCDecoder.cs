@@ -6,10 +6,11 @@ using HousenCS.MITes;
 
 namespace PhoneAccelerometers.HTC.DiamondTouch
 {
-    public class HTCDecoder
+    public class HTCDecoder 
     {
         private PhoneAccelerometers.HTC.DiamondTouch.HTCGSensor diamondTouchSensor;        
-        private SensorData lastData;
+        //private SensorData lastData;
+       
         private int samplingRate;
         private double activityCount;
         private double prevX;
@@ -19,23 +20,25 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
         private double averageY;
         private double averageZ;
         private int lastSamplingRate = 0;
-        public static int MaximumSamplingRate = 25;
-
 
 
         #region Builtin Accelerometer Polling Thread
 #if (PocketPC)
-        private int[] bufferX;
-        private int[] bufferY;
-        private int[] bufferZ;
+        //private int[] bufferX;
+        //private int[] bufferY;
+        //private int[] bufferZ;
+        private GenericAccelerometerData[] dataBuffer;
+        
         int writeIndex = 0;
         int readIndex = 0;
         private bool htcQuitting = false;
         public void PollBuiltInSensors()
         {
-            bufferX = new int[24];
-            bufferY = new int[24];
-            bufferZ = new int[24];
+
+            //bufferX = new int[24];
+            //bufferY = new int[24];
+            //bufferZ = new int[24];
+            this.dataBuffer = new GenericAccelerometerData[Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE];
             writeIndex = 0;
             double lastTime = UnixTime.GetUnixTime();
             while (true)
@@ -49,10 +52,9 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
                     double currentTime = UnixTime.GetUnixTime();
                     if ((currentTime - lastTime) > 1000)
                     {
-                        this.lastSamplingRate = this.samplingRate;
+                        this.lastSamplingRate = this.samplingRate;                        
                         this.activityCount = this.averageX + this.averageY + this.averageZ / 3;
                         this.activityCount /= this.samplingRate;
-
                         this.averageX = 0;
                         this.averageY = 0;
                         this.averageZ = 0;
@@ -62,11 +64,11 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
                     else
                         this.samplingRate = this.samplingRate + 1;
 
-                    GetSensorData();
-                    bufferX[writeIndex] = this.LastData.X;
-                    bufferY[writeIndex] = this.LastData.Y;
-                    bufferZ[writeIndex] = this.LastData.Z;
-                    writeIndex = (writeIndex + 1) % 24;
+                   this.dataBuffer[this.writeIndex]=GetSensorData();
+                   // bufferX[writeIndex] = this.LastData.X;
+                   // bufferY[writeIndex] = this.LastData.Y;
+                   // bufferZ[writeIndex] = this.LastData.Z;
+                    writeIndex = (writeIndex + 1) % Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;
                     // this.htcDecoder.Reset();
 
                 }
@@ -76,6 +78,14 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
 #endif
         #endregion Builtin Accelerometer Polling Thread
 
+
+        public GenericAccelerometerData[] PolledData
+        {
+            get
+            {
+                return this.dataBuffer;
+            }
+        }
         public bool isQuitting
         {
             get
@@ -113,36 +123,15 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
                 this.writeIndex = value;
             }
         }
-        public int[] BufferX
-        {
-            get
-            {
-                return this.bufferX;
-            }
-        }
-        public int[] BufferY
-        {
-            get
-            {
-                return this.bufferY;
-            }
-        }
-        public int[] BufferZ
-        {
-            get
-            {
-                return this.bufferZ;
-            }
-        }
+
         public HTCDecoder()
         {
             this.diamondTouchSensor =  new HTCGSensor();
             //this.diamondTouchSensor2 = new HTCGSensor();
-            SensorData data = new SensorData();
-            data.X = 0;
-            data.Y = 0;
-            data.Z = 0;
-            this.lastData = data;
+            //SensorData data = new SensorData();
+            //data.X = 0;
+            //data.Y = 0;
+            //data.Z = 0;
             this.samplingRate = 0;
             this.activityCount = 0;
             this.prevX = 0;
@@ -171,11 +160,14 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
         }
 
 
-        public SensorData GetSensorData()
+        public GenericAccelerometerData GetSensorData()
         {
-
+            GenericAccelerometerData data = new GenericAccelerometerData(Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID);
             HTCGSensorData gData = this.diamondTouchSensor.GetRawSensorData();
-            SensorData data = new SensorData();
+            data.Timestamp = Environment.TickCount;
+            data.Unixtimestamp = UnixTime.GetUnixTime(Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID);
+            data.Type = Constants.DIAMOND_TOUCH_ACCELEROMETER;
+            data.MaximumSamplingRate = Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;          
 
             averageX = averageX + Math.Abs(prevX - gData.TiltX);
             averageX = averageY + Math.Abs(prevY - gData.TiltY);
@@ -184,28 +176,14 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
             prevY = gData.TiltY;
             prevZ = gData.TiltZ;
 
-            data.X = ((int)((gData.TiltX+1000) ))/4;
-            data.Y = ((int)((gData.TiltY+1000) ))/4;
-            data.Z = ((int)((gData.TiltZ+1000) ))/4;
-
-
-            if ((data.X > 0) && (data.Y > 0) && (data.Z > 0))
-            {
-                this.lastData = data;
-                this.samplingRate++;
-            }
-           
-            return this.lastData;
+            data.X = (int)(gData.TiltX+1500);
+            data.Y = (int)(gData.TiltY+1500);
+            data.Z = (int)(gData.TiltZ+1500);
+                     
+            return data;
 
         }
 
-        public SensorData LastData
-        {
-            get
-            {
-                return this.lastData;
-            }
-        }
         public void Reset()
         {
           //  this.diamondTouchSensor = new HTCGSensor();

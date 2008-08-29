@@ -383,7 +383,7 @@ namespace HousenCS.MITes
                     plotVals[startPlotIndex+j, 2, col] = MITesData.EMPTY;
             }
         }
-        public int setPlotVals(int[] bufferX,int[] bufferY, int[] bufferZ,int readIndex,int writeIndex,int startPlotIndex)
+        public int setPlotVals(GenericAccelerometerData[] builtInData,int readIndex,int writeIndex,int startPlotIndex)
             {
 			int[] returnVals = GetReturnVals();
 			int numVals = GetReturnValsIndex();
@@ -444,19 +444,19 @@ namespace HousenCS.MITes
 
             col = startCol;
             while (readIndex != writeIndex)
-            {
-                if (bufferX[readIndex] > 0)
-                    plotVals[startPlotIndex, 0, col] = bufferX[readIndex];
+            {                
+                if (builtInData[readIndex].X > 0)
+                    plotVals[startPlotIndex, 0, col] = builtInData[readIndex].X/5;
                 else
                     plotVals[startPlotIndex, 0, col] = MITesData.EMPTY;
 
-                if (bufferY[readIndex] > 0)
-                    plotVals[startPlotIndex, 1, col] = bufferY[readIndex];
+                if (builtInData[readIndex].Y > 0)
+                    plotVals[startPlotIndex, 1, col] = builtInData[readIndex].Y/5;
                 else
                     plotVals[startPlotIndex, 1, col] = MITesData.EMPTY;
 
-                if (bufferZ[readIndex] > 0)
-                    plotVals[startPlotIndex, 2, col] = bufferZ[readIndex];
+                if (builtInData[readIndex].Z > 0)
+                    plotVals[startPlotIndex, 2, col] = builtInData[readIndex].Z/5;
                 else
                     plotVals[startPlotIndex, 2, col] = MITesData.EMPTY;
 
@@ -465,7 +465,7 @@ namespace HousenCS.MITes
                 if (col >= plotAreaSize.Width)              
                     col = 0;
                 resetPlotVals(col);
-                readIndex = (readIndex + 1) % 24;
+                readIndex = (readIndex + 1) % builtInData[readIndex].MaximumSamplingRate;
 
             }
 

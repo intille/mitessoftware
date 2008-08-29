@@ -110,7 +110,7 @@ namespace HousenCS.MITes
         /// <summary>
         /// A packet always consists of 5 bytes. 
         /// </summary>
-        public static readonly int NUM_RAW_BYTES = 5;
+        public static readonly int NUM_RAW_BYTES = 6;
 
         /// <summary>
         /// The maximum number of MITes channels possible is 86 (due to FCC regulations, otherwise would be 256). In practice, chanels 

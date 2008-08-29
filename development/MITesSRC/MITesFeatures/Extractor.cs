@@ -254,6 +254,8 @@ namespace MITesFeatures
             }
 
 
+
+
             //load sensor data
             //SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);
             //Extractor.sannotation = sreader.parse();
@@ -344,7 +346,11 @@ namespace MITesFeatures
                 SXML.Sensor sensor = ((SXML.Sensor)sannotation.Sensors[(int)sannotation.SensorsIndex[channel]]);
                 int receiverID = Convert.ToInt32(sensor.Receiver);
 
-                Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] = dconfiguration.ExpectedSamplingRate / sannotation.NumberSensors[receiverID];
+                if (channel == MITesDecoder.MAX_CHANNEL)  //Built in sensor
+                    Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] = sensor.SamplingRate; //used sensor sampling rate
+                else
+                    Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] = dconfiguration.ExpectedSamplingRate / sannotation.NumberSensors[receiverID];
+                
                 Extractor.EXPECTED_WINDOW_SIZES[sensorIndex] = (int)(Extractor.EXPECTED_SAMPLING_RATES[sensorIndex] * (dconfiguration.WindowTime / 1000.0));
                 Extractor.EXPECTED_GOOD_SAMPLING_RATES[sensorIndex] = Extractor.EXPECTED_WINDOW_SIZES[sensorIndex] - (int)(dconfiguration.MaximumNonconsecutiveFrameLoss * Extractor.EXPECTED_WINDOW_SIZES[sensorIndex]);
                 Extractor.EXPECTED_SAMPLES_SPACING[sensorIndex] = (double)dconfiguration.WindowTime / Extractor.EXPECTED_WINDOW_SIZES[sensorIndex];
@@ -426,8 +432,9 @@ namespace MITesFeatures
 
             for (int i = 0; i < Extractor.aMITesDecoder.someMITesDataIndex; i++)
             {
-                if ((aMITesDecoder.someMITesData[i].type != (int)MITesTypes.NOISE) &&
-                     (aMITesDecoder.someMITesData[i].type == (int)MITesTypes.ACCEL))
+                if ((aMITesDecoder.someMITesData[i].channel==MITesDecoder.MAX_CHANNEL) ||  //built in
+                    ((aMITesDecoder.someMITesData[i].type != (int)MITesTypes.NOISE) &&
+                     (aMITesDecoder.someMITesData[i].type == (int)MITesTypes.ACCEL)))
                 {
                     int channel = 0, x = 0, y = 0, z = 0;
                     channel = (int)aMITesDecoder.someMITesData[i].channel;
@@ -673,7 +680,8 @@ namespace MITesFeatures
                     {
                         interpolated_data[interpolated_axes_index][k] = cs.interpolate(k * INTERPOLATED_SAMPLES_SPACING);
                         //check that the intrepolated values make sense.
-                        if ((interpolated_data[interpolated_axes_index][k] <= 0) || (interpolated_data[interpolated_axes_index][k] > 1024))
+                        //if ((interpolated_data[interpolated_axes_index][k] <= 0) || (interpolated_data[interpolated_axes_index][k] > 1024))
+                        if ((interpolated_data[interpolated_axes_index][k] <= 0) || (interpolated_data[interpolated_axes_index][k] > 3000))
                         {
                           //  errorFlag = 1;
                             return false;
