@@ -25,12 +25,26 @@ namespace SXML
         private double zmean;
         private double zstd;
         private int index;
+        private int samplingRate;
 
 
         public Sensor()
         {
+            this.samplingRate = -1; //only used for builtin sensors
         }
 
+        public int SamplingRate
+        {
+            get
+            {
+                return this.samplingRate;
+            }
+
+            set
+            {
+                this.samplingRate = value;
+            }
+        }
         public int Index
         {
             get

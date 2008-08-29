@@ -133,6 +133,10 @@ namespace SXML
                                 {
                                     sensor.Description = jAttribute.Value;
                                 }
+                                else if ((jNode.Name == Constants.DESCRIPTION_ELEMENT) && (jAttribute.Name == Constants.SR_ATTRIBUTE))
+                                {
+                                    sensor.SamplingRate = Convert.ToInt32(jAttribute.Value);
+                                }
                                 else if ((jNode.Name == Constants.DISPLAY_ELEMENT) && (jAttribute.Name == Constants.DISPLAY_TYPE_ATTRIBUTE))
                                 {
                                     sensor.DisplayType = jAttribute.Value;
@@ -195,17 +199,22 @@ namespace SXML
 
                         }
 
-                        if (sensor.SensorClass.ToLower()==Constants.MITES.ToLower())
-                        {
-                            annotation.Sensors.Add(sensor);
-                            sensor.Index = annotation.Sensors.IndexOf(sensor);
-                            annotation.SensorsIndex.Add(Convert.ToInt32(sensor.ID), sensor.Index);
-                        }
-                        else if (sensor.SensorClass.ToLower()== Constants.BUILTIN.ToLower())
+                       //if (sensor.SensorClass.ToLower()==Constants.MITES.ToLower())
+                        //{
+                        if (sensor.SensorClass == Constants.BUILTIN)
                         {
                             annotation.HasBuiltinSensors = true;
-                            annotation.BuiltinSensors.Add(sensor);
+                            annotation.TotalBuiltInSensors = annotation.TotalBuiltInSensors + 1;
                         }
+                        annotation.Sensors.Add(sensor);                            
+                        sensor.Index = annotation.Sensors.IndexOf(sensor);                        
+                        annotation.SensorsIndex.Add(Convert.ToInt32(sensor.ID), sensor.Index);
+                        //}
+                       // else if (sensor.SensorClass.ToLower()== Constants.BUILTIN.ToLower())
+                        //{
+                        //    annotation.HasBuiltinSensors = true;
+                         //   annotation.BuiltinSensors.Add(sensor);
+                       // }
                     }
 
                                                       

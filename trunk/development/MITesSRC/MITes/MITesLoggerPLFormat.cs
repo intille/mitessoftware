@@ -16,7 +16,7 @@ namespace HousenCS.MITes
         private String currentDataFile = "";
         private bool isActive = true;
         private string aRootPathName = ""; 
-        private MITesDecoder aMITesDecoder;
+        private MITesDecoder aMITesDecoder;      
         private int presentHour = -1;
         private string dayPath = "";
         public const string FILE_EXT = "b";
@@ -255,6 +255,57 @@ namespace HousenCS.MITes
 
                     lastTime = aTime;
                     lastUnixTime = aUnixTime; 
+                }
+            }
+        }
+
+
+        /// <summary>
+        /// A generic method that saves the data
+        /// </summary>
+        /// <param name="data"></param>
+        public void SaveRawBytes(GenericAccelerometerData[] data, int readIndex, int writeIndex)
+        {
+            if (isActive)
+            {
+                // Create and open the writer to the correct binary file in
+                // the correct directory
+                DetermineFilePath();
+
+                while (readIndex<writeIndex)
+                {
+
+                    aTime = data[readIndex].Timestamp;
+                    aUnixTime = data[readIndex].Unixtimestamp;
+
+                    // Roughly once per second save full timestamp, no matter what
+                    if (isForceTimestampSave || (timeSaveCount == TIMESTAMP_AFTER_SAMPLES))
+                    {
+                        WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                        timeSaveCount = 0;
+                    }
+                    else
+                    {
+                        WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                        timeSaveCount++;
+                    }
+
+                    isForceTimestampSave = false;
+
+                    // Actually save the data! 
+                    //SaveMITesData(aMITesDecoder.someMITesData[i]);
+
+                    if (isActive && (bwPLFormat != null))
+                    {
+                        byte[] b = data[readIndex].encode6Bytes();
+                        for (int j = 0; j < b.Length; j++)
+                        {
+                            bwPLFormat.WriteByte(b[j]);
+                        }
+                    }
+
+                    lastTime = aTime;
+                    readIndex = (readIndex + 1) % data.Length;
                 }
             }
         }

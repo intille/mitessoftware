@@ -5,7 +5,7 @@ using System.Drawing;
 using SXML;
 using AXML;
 using MITesDataCollection.Utils;
-
+using HousenCS.MITes;
 
 namespace MITesDataCollection
 {
@@ -636,8 +636,8 @@ namespace MITesDataCollection
 
             //Intialize Labels 40% of the screen
             this.sensorLabels = new Hashtable();
-            int num_rows = (int)((this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count + 2) / 2); //additional row for HR and total sampling rate
-            int textBoxHeight = ((int)(0.35 * this.panel1.ClientSize.Height) - ((this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count - 1) * Constants.WIDGET_SPACING)) / num_rows;
+            int num_rows = (int)((this.sensors.Sensors.Count  + 2) / 2); //additional row for HR and total sampling rate
+            int textBoxHeight = ((int)(0.35 * this.panel1.ClientSize.Height) - ((this.sensors.Sensors.Count  - 1) * Constants.WIDGET_SPACING)) / num_rows;
             int textBoxWidth = ((this.panel1.ClientSize.Width - (3 * Constants.WIDGET_SPACING)) / 2);
             int currentTextY = (int)(this.panel1.Height * 0.60);
             int leftTextX = Constants.WIDGET_SPACING;
@@ -664,7 +664,10 @@ namespace MITesDataCollection
             foreach (Sensor sensor in this.sensors.Sensors)
             {
                 System.Windows.Forms.Label t = new System.Windows.Forms.Label();
-                t.Text = "MITes" + sensor.ID;
+                if (Convert.ToInt32(sensor.ID) == MITesDecoder.MAX_CHANNEL)
+                    t.Text = sensor.Type;
+                else
+                    t.Text = "MITes" + sensor.ID;
                 t.Name = t.Text;
                 t.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
                 t.Location = new System.Drawing.Point(currentTextX, currentTextY);
@@ -682,26 +685,26 @@ namespace MITesDataCollection
 
             }
 
-            foreach (Sensor sensor in this.sensors.BuiltinSensors)
-            {
-                System.Windows.Forms.Label t = new System.Windows.Forms.Label();
-                t.Text = sensor.Type;
-                t.Name = t.Text;
-                t.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
-                t.Location = new System.Drawing.Point(currentTextX, currentTextY);
-                t.Font = textFont;
-                this.sensorLabels.Add(t.Text, t);
-                //this.tabPage1.Controls.Add(t);
-                this.panel1.Controls.Add(t);
-                if (currentTextX == leftTextX)
-                    currentTextX = rightTextX;
-                else
-                {
-                    currentTextX = leftTextX;
-                    currentTextY += (textBoxHeight + Constants.WIDGET_SPACING);
-                }
+            //foreach (Sensor sensor in this.sensors.BuiltinSensors)
+            //{
+            //    System.Windows.Forms.Label t = new System.Windows.Forms.Label();
+            //    t.Text = sensor.Type;
+            //    t.Name = t.Text;
+            //    t.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
+            //    t.Location = new System.Drawing.Point(currentTextX, currentTextY);
+            //    t.Font = textFont;
+            //    this.sensorLabels.Add(t.Text, t);
+            //    //this.tabPage1.Controls.Add(t);
+            //    this.panel1.Controls.Add(t);
+            //    if (currentTextX == leftTextX)
+            //        currentTextX = rightTextX;
+            //    else
+            //    {
+            //        currentTextX = leftTextX;
+            //        currentTextY += (textBoxHeight + Constants.WIDGET_SPACING);
+            //    }
 
-            }
+            //}
             samplingLabel.Text = "SampRate";
             samplingLabel.Name = samplingLabel.Text;
             samplingLabel.Size = new System.Drawing.Size(textBoxWidth, textBoxHeight);
@@ -857,19 +860,15 @@ namespace MITesDataCollection
             this.expectedLabels = new System.Windows.Forms.Label[this.sensors.MaximumSensorID + 1];
             this.samplesPerSecond = new System.Windows.Forms.Label[this.sensors.MaximumSensorID + 1];
 
-            this.builtInExpectedLabels = new Hashtable();
-            this.builtInlabels = new Hashtable();
-            this.builtInSamplesPerSecond = new Hashtable();
-
             int counter = 0;
             int label_width = (this.panel4.ClientSize.Width - Constants.SCREEN_LEFT_MARGIN - Constants.SCREEN_RIGHT_MARGIN) / 3;
 
             int label_height = 0;
 
             if (this.sensors.IsHR)
-                label_height = (this.panel4.ClientSize.Height - Constants.SCREEN_TOP_MARGIN - Constants.SCREEN_BOTTOM_MARGIN - ((this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count) * Constants.WIDGET_SPACING)) / (this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count);
+                label_height = (this.panel4.ClientSize.Height - Constants.SCREEN_TOP_MARGIN - Constants.SCREEN_BOTTOM_MARGIN - ((this.sensors.Sensors.Count ) * Constants.WIDGET_SPACING)) / (this.sensors.Sensors.Count );
             else
-                label_height = (this.panel4.ClientSize.Height - Constants.SCREEN_TOP_MARGIN - Constants.SCREEN_BOTTOM_MARGIN - ((this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count) * Constants.WIDGET_SPACING)) / (this.sensors.Sensors.Count + this.sensors.BuiltinSensors.Count + 1);
+                label_height = (this.panel4.ClientSize.Height - Constants.SCREEN_TOP_MARGIN - Constants.SCREEN_BOTTOM_MARGIN - ((this.sensors.Sensors.Count) * Constants.WIDGET_SPACING)) / (this.sensors.Sensors.Count  + 1);
 
 
             this.button1.Width = label_width;
@@ -931,43 +930,43 @@ namespace MITesDataCollection
                     counter++;
                 }
             }
-#if (PocketPC)
-            foreach (Sensor sensor in this.sensors.BuiltinSensors)
-            {
+//#if (PocketPC)
+//            foreach (Sensor sensor in this.sensors.BuiltinSensors)
+//            {
                               
-                    System.Windows.Forms.Label label = new System.Windows.Forms.Label();
-                    //label.AutoSize = true;
-                    label.Size = new Size(label_width, label_height);
-                    label.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
-                    label.Name = sensor.Type;
-                    label.Text = sensor.Type;
-                    label.Font = textFont;
-                    this.builtInlabels[sensor.Type] = label;
-                    this.panel4.Controls.Add(label);
+//                    System.Windows.Forms.Label label = new System.Windows.Forms.Label();
+//                    //label.AutoSize = true;
+//                    label.Size = new Size(label_width, label_height);
+//                    label.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
+//                    label.Name = sensor.Type;
+//                    label.Text = sensor.Type;
+//                    label.Font = textFont;
+//                    this.builtInlabels[sensor.Type] = label;
+//                    this.panel4.Controls.Add(label);
 
-                    System.Windows.Forms.Label label2 = new System.Windows.Forms.Label();
-                    //label2.AutoSize = true;
-                    label2.Size = new Size(label_width, label_height);
-                    label2.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN + label_width + Constants.WIDGET_SPACING, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
-                    label2.Name = "E(SR) " +sensor.Type;
-                    label2.Text = "unknown"; //rate.ToString("00.00") + "%";
-                    label2.Font = textFont;
-                    this.panel4.Controls.Add(label2);
-                    this.builtInExpectedLabels[sensor.Type] = label2;
+//                    System.Windows.Forms.Label label2 = new System.Windows.Forms.Label();
+//                    //label2.AutoSize = true;
+//                    label2.Size = new Size(label_width, label_height);
+//                    label2.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN + label_width + Constants.WIDGET_SPACING, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
+//                    label2.Name = "E(SR) " +sensor.Type;
+//                    label2.Text = "unknown"; //rate.ToString("00.00") + "%";
+//                    label2.Font = textFont;
+//                    this.panel4.Controls.Add(label2);
+//                    this.builtInExpectedLabels[sensor.Type] = label2;
 
-                    System.Windows.Forms.Label label3 = new System.Windows.Forms.Label();
-                    //label2.AutoSize = true;
-                    label3.Size = new Size(label_width, label_height);
-                    label3.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN + label_width + Constants.WIDGET_SPACING + label_width + Constants.WIDGET_SPACING, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
-                    label2.Name = "Samples " + sensor.Type;
-                    label3.Text = "unknown"; //rate.ToString("00.00") + "%";
-                    label3.Font = textFont;
-                    this.panel4.Controls.Add(label3);
-                    this.builtInSamplesPerSecond[sensor.Type] = label3;
-                counter++;
-            }
+//                    System.Windows.Forms.Label label3 = new System.Windows.Forms.Label();
+//                    //label2.AutoSize = true;
+//                    label3.Size = new Size(label_width, label_height);
+//                    label3.Location = new System.Drawing.Point(Constants.SCREEN_LEFT_MARGIN + label_width + Constants.WIDGET_SPACING + label_width + Constants.WIDGET_SPACING, Constants.SCREEN_TOP_MARGIN + (counter * (label_height + Constants.WIDGET_SPACING)));
+//                    label2.Name = "Samples " + sensor.Type;
+//                    label3.Text = "unknown"; //rate.ToString("00.00") + "%";
+//                    label3.Font = textFont;
+//                    this.panel4.Controls.Add(label3);
+//                    this.builtInSamplesPerSecond[sensor.Type] = label3;
+//                counter++;
+//            }
 
-#endif
+//#endif
         }
 
         #region Windows Form Designer generated code
