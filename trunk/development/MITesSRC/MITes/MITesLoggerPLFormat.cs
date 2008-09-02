@@ -272,12 +272,11 @@ namespace HousenCS.MITes
                 // Create and open the writer to the correct binary file in
                 // the correct directory
                 DetermineFilePath();
-
-                for (int i = 0; i < aMITesDecoder.someMITesDataIndex; i++)
+                
+                while ( readIndex!=writeIndex)
                 {
-                    aTime = aMITesDecoder.someMITesData[i].timeStamp;
-                    aUnixTime = aMITesDecoder.someMITesData[i].unixTimeStamp;
-
+                    aTime = data[readIndex].Timestamp;
+                    aUnixTime = data[readIndex].Unixtimestamp;
                     if (aTime < lastTime)
                     {
                         Console.WriteLine("StepBack!: " + (lastTime - aTime));
@@ -314,11 +313,13 @@ namespace HousenCS.MITes
                             bwPLFormat.WriteByte(b[j]);
                         }
                     }
-
                     lastTime = aTime;
                     readIndex = (readIndex + 1) % data.Length;
                 }
+
             }
+
+
 
         }
     }

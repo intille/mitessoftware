@@ -39,7 +39,8 @@ namespace HousenCS.MITes
         /// <summary>
         /// The byte size of each packet from the receiver. 
         /// </summary>
-        public static readonly int PACKET_SIZE = 6;
+        public static readonly int MAX_PACKET_SIZE = 6;
+        public static readonly int MIN_PACKET_SIZE = 5;
 
         /// <summary>
         /// The maximum valid channel that the receiver can use.  
@@ -54,7 +55,7 @@ namespace HousenCS.MITes
         /// <summary>
         /// Storage for packet to be decoded. 
         /// </summary>
-        public byte[] packet = new byte[PACKET_SIZE];
+        public byte[] packet = new byte[MAX_PACKET_SIZE];
         private int v = 0;
         private int lV = 0;
         private static bool DEBUG = false;
@@ -343,10 +344,11 @@ namespace HousenCS.MITes
             y = packet[2];
             z = packet[3];
             xyz = packet[4];
-            xyz2 = packet[5];
+      
 
             if (aMITesData.channel == MAX_CHANNEL)
             {
+                xyz2 = packet[5];
                 aMITesData.type = (byte)(xyz2 & 0x0F); 
                 aMITesData.x = (short)(x | ((xyz & 0xF0) << 4));
                 aMITesData.y = (short)(y | ((xyz & 0x0F) << 8));
@@ -732,6 +734,7 @@ namespace HousenCS.MITes
         {
             int i = 0;
             int valuesGrabbed = 0;
+            int variablePacketSize = MIN_PACKET_SIZE;
 
             //tw = new System.IO.StreamWriter("C:\\Test\\test.txt", true);
 
@@ -762,6 +765,15 @@ namespace HousenCS.MITes
                     {
                         packet[packetPosition] = bytes[i];
 
+                        //set the size of the packet
+                        if ((packetPosition == 0) && (IsValidChannelSelective(packet[packetPosition])))
+                        {
+                            if ((packet[packetPosition] == MAX_CHANNEL))
+                                variablePacketSize = MAX_PACKET_SIZE;
+                            else
+                                variablePacketSize = MIN_PACKET_SIZE;
+                        }
+
                         // Sanity check. Make sure channel is valid ... if not, reset and wait for new header
                         if ((packetPosition == 0) && (!IsValidChannelSelective(packet[packetPosition])))
                         {
@@ -769,11 +781,15 @@ namespace HousenCS.MITes
                               packetPosition = FIRST_HEADER_SEEN;
                             else
                               packetPosition = NO_HEADER_SEEN;
+
+ 
+
                         }
                         else
                         {
                             packetPosition++;
-                            if (packetPosition == PACKET_SIZE)
+                            //if (packetPosition == PACKET_SIZE)
+                            if (packetPosition == variablePacketSize)
                             {
                                 if (dataIndex >= someData.Length)
                                 {
