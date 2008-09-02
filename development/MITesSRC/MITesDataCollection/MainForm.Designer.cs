@@ -126,7 +126,7 @@ namespace MITesDataCollection
             this.button1.Size = new System.Drawing.Size(195, 29);
             this.button1.TabIndex = 11;
             this.button1.Text = "Calibrate";
-            this.button1.Visible = true;
+            this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
             // MainForm
