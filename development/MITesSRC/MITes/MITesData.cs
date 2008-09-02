@@ -110,7 +110,9 @@ namespace HousenCS.MITes
         /// <summary>
         /// A packet always consists of 5 bytes. 
         /// </summary>
-        public static readonly int NUM_RAW_BYTES = 6;
+        public static readonly int MIN_NUM_RAW_BYTES = 5;
+
+        public static readonly int MAX_NUM_RAW_BYTES = 6;
 
         /// <summary>
         /// The maximum number of MITes channels possible is 86 (due to FCC regulations, otherwise would be 256). In practice, chanels 
@@ -213,7 +215,7 @@ namespace HousenCS.MITes
         /// </summary>
         public MITesData()
         {
-            rawBytes = new byte[NUM_RAW_BYTES];
+            rawBytes = new byte[MAX_NUM_RAW_BYTES];
             ResetVals();
         }
 
@@ -332,7 +334,7 @@ namespace HousenCS.MITes
         /// </summary>
         public void ResetRawVals()
         {
-            for (int i = 0; i < NUM_RAW_BYTES; i++)
+            for (int i = 0; i < MAX_NUM_RAW_BYTES; i++)
             {
                 rawBytes[i] = (byte)0;
             }

@@ -388,6 +388,7 @@ namespace HousenCS.MITes
 			int[] returnVals = GetReturnVals();
 			int numVals = GetReturnValsIndex();
             int startCol = col;
+
             if (numVals > 0) // if there is MITes data plot at higher sampling rate
             {
                 for (int j = 0; j < numVals; j = j + 4)
@@ -419,7 +420,6 @@ namespace HousenCS.MITes
                             else
                                 plotVals[id, 2, col] = MITesData.EMPTY;
 
-
                             if (readIndex != writeIndex)
                             {
                                 if (builtInData[readIndex].X > 0)
@@ -445,6 +445,7 @@ namespace HousenCS.MITes
                                 readIndex = (readIndex + 1) % builtInData[readIndex].MaximumSamplingRate;
 
                             }
+                            
 
                             if (checkIsSeenID(id)) // Set isSeenID array
                             {

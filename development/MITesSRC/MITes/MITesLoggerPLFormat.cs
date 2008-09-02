@@ -143,7 +143,7 @@ namespace HousenCS.MITes
         {
             if (isActive && (bwPLFormat != null))
             {
-                for (int i = 0; i < MITesData.NUM_RAW_BYTES; i++)
+                for (int i = 0; i < MITesData.MIN_NUM_RAW_BYTES; i++)
                 {
                     bwPLFormat.WriteByte(aMITesData.rawBytes[i]);
                 }
