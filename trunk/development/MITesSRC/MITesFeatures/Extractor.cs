@@ -1011,6 +1011,7 @@ namespace MITesFeatures
             int activityIndex = 0;
             AXML.AnnotatedRecord annotatedRecord=((AXML.AnnotatedRecord)aannotation.Data[activityIndex]);
             string current_activity = "unknown";
+            TextWriter tww = new StreamWriter("test.csv");
             do
             {                
                 //decode the frame
@@ -1019,6 +1020,7 @@ namespace MITesFeatures
                 y = aMITesDecoder.GetSomeMITesData()[0].y;
                 z = aMITesDecoder.GetSomeMITesData()[0].z;
                 unixtimestamp = aMITesDecoder.GetSomeMITesData()[0].unixTimeStamp;
+                tww.WriteLine(unixtimestamp + "," + x + "," + y + "," + z);
                 double lastTimeStamp = Extractor.StoreMITesWindow();
                 //DateTime dt = new DateTime(1970, 1, 1, 0, 0, 0, 0);
                 //dt=dt.AddMilliseconds(unixtimestamp);
@@ -1064,6 +1066,7 @@ namespace MITesFeatures
 
             } while (isData = aMITesLoggerReader.GetSensorData(10));
 
+            tww.Close();
             tw.Close();
         }
 

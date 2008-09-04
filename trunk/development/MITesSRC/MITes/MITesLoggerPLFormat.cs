@@ -29,7 +29,7 @@ namespace HousenCS.MITes
         /// that might add up over time. 
         /// </summary>
         public static int TIMESTAMP_AFTER_SAMPLES = 200;
-
+        private System.IO.TextWriter tw;
         /// <summary>
         /// Sets up an object to save raw MITes data in the PlaceLab format, with binary files by the hour.
         /// </summary>
@@ -40,6 +40,7 @@ namespace HousenCS.MITes
             this.aMITesDecoder = aMITesDecoder;
             aRootPathName = aFilePath; 
             DetermineFilePath();
+            tw = new System.IO.StreamWriter(@"\Internal Storage\test\data-written.csv");
         }
 
         /// <summary>
@@ -108,10 +109,11 @@ namespace HousenCS.MITes
             }
         }
 
-        private void ShutdownFiles()
+        public void ShutdownFiles()
         {
             bwPLFormat.Flush();
             bwPLFormat.CloseFile();
+            tw.Close();
         }
 
         private void WriteTimeStamp(int time, ByteWriter byteWriter)
@@ -157,7 +159,7 @@ namespace HousenCS.MITes
         {
             if (isActive)
             {
-                diffMS = (int) (aUnixTime - lastUnixTime);
+                diffMS = (int) (aUnixTime -lastUnixTime);
 
                 // Save a full timestamp if forced
                 // or time is > than 255 ms
@@ -208,11 +210,9 @@ namespace HousenCS.MITes
         private double lastUnixTime = 0;
         private bool isForceTimestampSave = true; 
 
-        /// <summary>
-        /// For each 5 byte packet, first save the ms-offset marker byte. Then save either the
-        /// timecode then the data or the data itself. 
-        /// </summary>
-        public void SaveRawData()
+        
+        //if you have MITes data only use this method
+        public void SaveRawMITesBuiltinData(GenericAccelerometerData data)
         {
             if (isActive)
             {
@@ -220,10 +220,14 @@ namespace HousenCS.MITes
                 // the correct directory
                 DetermineFilePath();
 
+                //Store builtin data before the MITes data if it is timestamped before it
+                if ((data != null) && (data.Unixtimestamp < aMITesDecoder.someMITesData[0].unixTimeStamp))
+                    SaveRawBuiltinData(data);
+
                 for (int i = 0; i < aMITesDecoder.someMITesDataIndex; i++)
                 {
                     aTime = aMITesDecoder.someMITesData[i].timeStamp;
-                    aUnixTime = aMITesDecoder.someMITesData[i].unixTimeStamp;
+                    aUnixTime = aMITesDecoder.someMITesData[i].unixTimeStamp;       
 
                     if (aTime < lastTime)
                     {
@@ -252,70 +256,77 @@ namespace HousenCS.MITes
 
                     // Actually save the data! 
                     SaveMITesData(aMITesDecoder.someMITesData[i]);
+                    tw.WriteLine(aMITesDecoder.someMITesData[i].unixTimeStamp + ","+ aMITesDecoder.someMITesData[i].x + "," + aMITesDecoder.someMITesData[i].y + "," + aMITesDecoder.someMITesData[i].z);
 
                     lastTime = aTime;
-                    lastUnixTime = aUnixTime; 
+                    lastUnixTime =aUnixTime; 
                 }
+
+
+                //Store builtin data after the MITes if it is stamped after the MITes data
+                if ( (data != null) && (data.Unixtimestamp>=aMITesDecoder.someMITesData[0].unixTimeStamp))
+                    SaveRawBuiltinData(data);                
             }
         }
 
 
-        /// <summary>
-        /// A generic method that saves the data
-        /// </summary>
-        /// <param name="data"></param>
-        public void SaveRawBytes(GenericAccelerometerData[] data, int readIndex, int writeIndex)
-        {
 
+    
+        //if you have built in data only use this method
+        public void SaveRawBuiltinData(GenericAccelerometerData data)
+        {
+            //lastUnixTime = 0;
+            isForceTimestampSave = true;
             if (isActive)
             {
                 // Create and open the writer to the correct binary file in
                 // the correct directory
                 DetermineFilePath();
-                
-                while ( readIndex!=writeIndex)
+
+                aTime = data.Timestamp;
+                aUnixTime = data.Unixtimestamp;
+                if (aTime < lastTime)
                 {
-                    aTime = data[readIndex].Timestamp;
-                    aUnixTime = data[readIndex].Unixtimestamp;
-                    if (aTime < lastTime)
-                    {
-                        Console.WriteLine("StepBack!: " + (lastTime - aTime));
-                    }
-                    if (aUnixTime < lastUnixTime)
-                    {
-                        Console.WriteLine("StepBackUnix!: " + (lastUnixTime - aUnixTime));
-                    }
-
-                    // Roughly once per second save full timestamp, no matter what
-                    if (isForceTimestampSave || (timeSaveCount == TIMESTAMP_AFTER_SAMPLES))
-                    {
-                        //WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
-                        WriteTimeDiff(aUnixTime, lastUnixTime, true); // Force save
-                        timeSaveCount = 0;
-                    }
-                    else
-                    {
-                        //WriteTimeDiff(aTime, lastTime, aUnixTime, false);
-                        WriteTimeDiff(aUnixTime, lastUnixTime, false);
-                        timeSaveCount++;
-                    }
-
-                    isForceTimestampSave = false;
-
-                    // Actually save the data! 
-                   // SaveMITesData(aMITesDecoder.someMITesData[i]);
-
-                    if (isActive && (bwPLFormat != null))
-                    {
-                        byte[] b = data[readIndex].encode6Bytes();
-                        for (int j = 0; j < b.Length; j++)
-                        {
-                            bwPLFormat.WriteByte(b[j]);
-                        }
-                    }
-                    lastTime = aTime;
-                    readIndex = (readIndex + 1) % data.Length;
+                    Console.WriteLine("StepBack!: " + (lastTime - aTime));
                 }
+                if (aUnixTime < lastUnixTime)
+                {
+                    Console.WriteLine("StepBackUnix!: " + (lastUnixTime - aUnixTime));
+                }
+
+                // Roughly once per second save full timestamp, no matter what
+                if (isForceTimestampSave || (timeSaveCount == TIMESTAMP_AFTER_SAMPLES))
+                {
+                    //WriteTimeDiff(aTime, lastTime, aUnixTime, true); // Force save
+                    WriteTimeDiff(aUnixTime, lastUnixTime, true); // Force save
+                    timeSaveCount = 0;
+                }
+                else
+                {
+                    //WriteTimeDiff(aTime, lastTime, aUnixTime, false);
+                    WriteTimeDiff(aUnixTime, lastUnixTime, false);
+                    timeSaveCount++;
+                }
+
+                isForceTimestampSave = false;
+
+                // Actually save the data! 
+                // SaveMITesData(aMITesDecoder.someMITesData[i]);
+
+                if (isActive && (bwPLFormat != null))
+                {
+                    byte[] b = data.encode6Bytes();
+                    for (int j = 0; j < b.Length; j++)
+                    {
+                        bwPLFormat.WriteByte(b[j]);
+                    }
+                }
+
+
+                tw.WriteLine(data.toString());
+
+                lastTime = aTime;
+                lastUnixTime = aUnixTime; 
 
             }
 

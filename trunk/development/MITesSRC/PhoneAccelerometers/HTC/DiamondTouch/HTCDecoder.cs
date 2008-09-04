@@ -32,24 +32,25 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
         int writeIndex = 0;
         int readIndex = 0;
         private bool htcQuitting = false;
-        public void PollBuiltInSensors()
+        public GenericAccelerometerData PollBuiltInSensors()
         {
 
             //bufferX = new int[24];
             //bufferY = new int[24];
             //bufferZ = new int[24];
-            this.dataBuffer = new GenericAccelerometerData[Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE];
-            writeIndex = 0;
+           // this.dataBuffer = new GenericAccelerometerData[Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE];
+      
+      //      writeIndex = 0;
             double lastTime = UnixTime.GetUnixTime();
-            while (true)
-            {
-                Thread.Sleep(40);
-                if (this.htcQuitting == true)
-                    break;
-                else
-                {
+        //    while (true)
+         //   {
+           //     Thread.Sleep(40);
+             //   if (this.htcQuitting == true)
+              //      break;
+               // else
+               // {
 
-                    double currentTime = UnixTime.GetUnixTime();
+            double currentTime = UnixTime.GetUnixTime();
                     if ((currentTime - lastTime) > 1000)
                     {
                         this.lastSamplingRate = this.samplingRate;                        
@@ -64,15 +65,16 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
                     else
                         this.samplingRate = this.samplingRate + 1;
 
-                   this.dataBuffer[this.writeIndex]=GetSensorData();
+                   //this.dataBuffer[this.writeIndex]=GetSensorData();
+                    return GetSensorData();
                    // bufferX[writeIndex] = this.LastData.X;
                    // bufferY[writeIndex] = this.LastData.Y;
                    // bufferZ[writeIndex] = this.LastData.Z;
-                    writeIndex = (writeIndex + 1) % Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;
+                  //  writeIndex = (writeIndex + 1) % Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;
                     // this.htcDecoder.Reset();
 
-                }
-            }
+               // }
+           // }
         }
 
 #endif
@@ -164,8 +166,8 @@ namespace PhoneAccelerometers.HTC.DiamondTouch
         {
             GenericAccelerometerData data = new GenericAccelerometerData(Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID);
             HTCGSensorData gData = this.diamondTouchSensor.GetRawSensorData();
-            data.Timestamp = Environment.TickCount;
-            data.Unixtimestamp = UnixTime.GetUnixTime(Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID);
+            //data.Timestamp = Environment.TickCount;
+            //data.Unixtimestamp = UnixTime.GetUnixTime(Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID);
             data.Type = Constants.DIAMOND_TOUCH_ACCELEROMETER;
             data.MaximumSamplingRate = Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;          
 
