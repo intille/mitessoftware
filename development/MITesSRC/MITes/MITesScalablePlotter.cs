@@ -383,13 +383,58 @@ namespace HousenCS.MITes
                     plotVals[startPlotIndex+j, 2, col] = MITesData.EMPTY;
             }
         }
-        public int setPlotVals(GenericAccelerometerData[] builtInData,int readIndex,int writeIndex,int startPlotIndex)
-            {
-			int[] returnVals = GetReturnVals();
-			int numVals = GetReturnValsIndex();
-            int startCol = col;
 
-            if (numVals > 0) // if there is MITes data plot at higher sampling rate
+        //public void setPlotVals(GenericAccelerometerData builtInData, int startPlotIndex)
+        //{
+
+        //    if (builtInData.X > 0)
+        //        plotVals[startPlotIndex, 0, col] = builtInData.X / 5;
+        //    else
+        //        plotVals[startPlotIndex, 0, col] = MITesData.EMPTY;
+
+        //    if (builtInData.Y > 0)
+        //        plotVals[startPlotIndex, 1, col] = builtInData.Y / 5;
+        //    else
+        //        plotVals[startPlotIndex, 1, col] = MITesData.EMPTY;
+
+        //    if (builtInData.Z > 0)
+        //        plotVals[startPlotIndex, 2, col] = builtInData.Z / 5;
+        //    else
+        //        plotVals[startPlotIndex, 2, col] = MITesData.EMPTY;
+
+            
+        //    //aPanel.Invalidate(new System.Drawing.Rectangle(col, 0, 2, plotAreaSize.Height));
+        //    //col++;
+        //    //if (col >= plotAreaSize.Width)
+        //    //    col = 0;
+
+        //    //resetPlotVals(col);
+        //}
+
+		/// <summary>
+		/// 
+		/// </summary>
+        public void setPlotVals(GenericAccelerometerData builtInData, int startPlotIndex)
+        {
+            int[] returnVals = GetReturnVals();
+            int numVals = GetReturnValsIndex();
+
+            if ((numVals == 0) && (builtInData != null))
+            {
+
+                plotVals[startPlotIndex, 0, col] = builtInData.X / 5;
+                plotVals[startPlotIndex, 1, col] = builtInData.Y / 5;
+                plotVals[startPlotIndex, 2, col] = builtInData.Z / 5;
+
+                aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
+                col++;
+                if (col >= plotAreaSize.Width)
+                    col = 0;
+
+                resetPlotVals(col);
+
+            }
+            else
             {
                 for (int j = 0; j < numVals; j = j + 4)
                 {
@@ -420,42 +465,39 @@ namespace HousenCS.MITes
                             else
                                 plotVals[id, 2, col] = MITesData.EMPTY;
 
-                            if (readIndex != writeIndex)
+                            //if there are extra plots to plot the builtin sensor data
+                            if (startPlotIndex != maxPlots)
                             {
-                                if (builtInData[readIndex].X > 0)
-                                    plotVals[startPlotIndex, 0, col] = builtInData[readIndex].X / 5;
+                                if (builtInData != null)
+                                {
+
+                                    plotVals[startPlotIndex, 0, col] = builtInData.X / 5;
+                                    plotVals[startPlotIndex, 1, col] = builtInData.Y / 5;
+                                    plotVals[startPlotIndex, 2, col] = builtInData.Z / 5;
+                                    //builtInData = null;
+
+                                    //aPanel.Invalidate(new System.Drawing.Rectangle(0, 0,plotAreaSize.Width, plotAreaSize.Height));
+                                    //col++;
+                                    //if (col >= plotAreaSize.Width)
+                                    //    col = 0;
+
+                                    //resetPlotVals(col);
+
+                                }
                                 else
+                                {
                                     plotVals[startPlotIndex, 0, col] = MITesData.EMPTY;
-
-                                if (builtInData[readIndex].Y > 0)
-                                    plotVals[startPlotIndex, 1, col] = builtInData[readIndex].Y / 5;
-                                else
                                     plotVals[startPlotIndex, 1, col] = MITesData.EMPTY;
-
-                                if (builtInData[readIndex].Z > 0)
-                                    plotVals[startPlotIndex, 2, col] = builtInData[readIndex].Z / 5;
-                                else
                                     plotVals[startPlotIndex, 2, col] = MITesData.EMPTY;
-
-                                // aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
-                                // col++;
-                                // if (col >= plotAreaSize.Width)              
-                                //    col = 0;
-                                //resetPlotVals(col);
-                                readIndex = (readIndex + 1) % builtInData[readIndex].MaximumSamplingRate;
-
+                                }
                             }
-                            
 
                             if (checkIsSeenID(id)) // Set isSeenID array
                             {
                                 aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
                                 col++;
                                 if (col >= plotAreaSize.Width)
-                                {
-                                    startCol = 0;
                                     col = 0;
-                                }
 
                                 resetPlotVals(col);
                             }
@@ -471,102 +513,9 @@ namespace HousenCS.MITes
                     }
                 }
             }
-            else //if no MITes data plot and low builtin sampling rate
-            {
 
-                col = startCol;
-                while (readIndex != writeIndex)
-                {
-                    if (builtInData[readIndex].X > 0)
-                        plotVals[startPlotIndex, 0, col] = builtInData[readIndex].X / 5;
-                    else
-                        plotVals[startPlotIndex, 0, col] = MITesData.EMPTY;
-
-                    if (builtInData[readIndex].Y > 0)
-                        plotVals[startPlotIndex, 1, col] = builtInData[readIndex].Y / 5;
-                    else
-                        plotVals[startPlotIndex, 1, col] = MITesData.EMPTY;
-
-                    if (builtInData[readIndex].Z > 0)
-                        plotVals[startPlotIndex, 2, col] = builtInData[readIndex].Z / 5;
-                    else
-                        plotVals[startPlotIndex, 2, col] = MITesData.EMPTY;
-
-                    aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
-                    col++;
-                    if (col >= plotAreaSize.Width)
-                        col = 0;
-                    resetPlotVals(col);
-                    readIndex = (readIndex + 1) % builtInData[readIndex].MaximumSamplingRate;
-
-                }
-            }
-
-			SetReturnValsIndex(0);
-            return readIndex;
-		}
-
-		/// <summary>
-		/// 
-		/// </summary>
-		public void setPlotVals()
-		{
-			int[] returnVals = GetReturnVals();
-			int numVals = GetReturnValsIndex();
-
-			for (int j = 0; j < numVals; j = j+4)
-			{
-				if (returnVals[j] != MITesDecoder.STATIC_CHANNEL)
-				{
-					id = GetSensorIDMap(returnVals[j]);
-					if (id == MITesData.NONE)
-						Warning("GetSensorIDMap returned NONE!");
-
-					if (id < maxPlots)
-					{
-						x = returnVals[j+1];
-						y = returnVals[j+2];
-						z = returnVals[j+3];
-		
-						if (InValidRange(x))
-							plotVals[id,0,col] = x;
-						else
-							plotVals[id,0,col] = MITesData.EMPTY;
-		
-						if (InValidRange(y))
-							plotVals[id,1,col] = y;
-						else
-							plotVals[id,1,col] = MITesData.EMPTY;
-		
-						if (InValidRange(z))
-							plotVals[id,2,col] = z;
-						else
-							plotVals[id,2,col] = MITesData.EMPTY;
-			
-                        
-
-						if (checkIsSeenID(id)) // Set isSeenID array
-						{
-							aPanel.Invalidate(new System.Drawing.Rectangle(col-1,0,2,plotAreaSize.Height));
-							col++;
-							if (col >= plotAreaSize.Width)
-								col = 0;
-		
-							resetPlotVals(col);
-						}
-					}
-					else
-					{
-						if (errorPrintCount == 0)
-							Console.WriteLine ("WARNING! Not plotting data from Sensor ID:" + returnVals[j]);
-						errorPrintCount++;
-						if (errorPrintCount > 1000)
-							errorPrintCount = 0;
-					}
-				}
-			}
-			SetReturnValsIndex(0);
-		}
+            SetReturnValsIndex(0);
+        }
 
 		private int v1;
 		private int v2;

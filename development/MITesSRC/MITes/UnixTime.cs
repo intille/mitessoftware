@@ -109,7 +109,14 @@ namespace HousenCS.MITes
         {
             QueryPerformanceCounter(out counter);
             current_time = (double)(referenceTime + ((counter - referenceCounter) * 1000.0 / (double)freq));
-            return current_time;
+
+            int diff = (int)(current_time - previousTime);
+
+            if (diff >=1)                             
+                previousTime = Math.Round(current_time);
+
+            return previousTime;
+            
         }
 		/// <summary>
 		/// 
@@ -121,12 +128,18 @@ namespace HousenCS.MITes
         //static int c1 = 0;
         //static double current_time_dt;
 
+        private static double previousTime=0;
+        private static double[] previousTimes = new double[MITesDecoder.MAX_CHANNEL];
 
-		public static double GetUnixTime(int sensor_id)
+		public static double GetUnixTime(int channel)
 		{
             QueryPerformanceCounter(out counter);
             current_time = (double)(referenceTime + ((counter - referenceCounter) * 1000.0 / (double)freq)); //(double) DateTime.Now.Ticks; //((TimeSpan)(DateTime.UtcNow.Subtract(UnixRef))).TotalMilliseconds;            
 
+            int diff = (int)(current_time - previousTimes[channel]);
+            if (diff <= 0)
+                current_time = previousTimes[channel] + 1;
+            previousTimes[channel] = current_time;          
             //if (sensor_id == 0) //HR
                 return current_time;
            //else //ACCEL

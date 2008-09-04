@@ -154,6 +154,11 @@ namespace HousenCS.MITes
                 this.z = value;
             }
         }
+
+        public string toString()
+        {
+            return this.unixtimestamp + "," + this.x + "," + this.y + "," + this.z;
+        }
     
     }
 }

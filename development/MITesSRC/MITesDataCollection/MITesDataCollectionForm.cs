@@ -64,6 +64,7 @@ namespace MITesDataCollection
         private int printSamplingCount = 0;
         private int stepsToWarning = 0;
         private int time = Environment.TickCount;
+        private int pollingTime = Environment.TickCount;
         private double ave = 0;
         private int sum = 0;
         private int count = 0;
@@ -117,7 +118,7 @@ namespace MITesDataCollection
 
         #region Definition of Builtin accelerometer objects
         private PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder htcDecoder;
-        private Thread htcThread;
+        private Thread pollingThread;
 
 
         #endregion Definition of Builtin accelerometer objects
@@ -766,6 +767,18 @@ namespace MITesDataCollection
             }
 
 
+
+            //Start the built in polling thread            
+#if (PocketPC)
+            if (this.sensors.HasBuiltinSensors)
+            {
+                this.pollingThread = new Thread(new ThreadStart(this.pollingData));
+                this.pollingThread.Priority = ThreadPriority.Lowest;
+                this.pollingThread.Start();
+             }
+#endif
+
+
             //Terminate the progress thread
             t.Abort();
 
@@ -779,14 +792,7 @@ namespace MITesDataCollection
             this.ShowForms();
 #endif
 
-            //Start the built in polling thread            
-#if (PocketPC)
-            if (this.sensors.HasBuiltinSensors)
-            {
-                this.htcThread = new Thread(new ThreadStart(this.htcDecoder.PollBuiltInSensors));
-                this.htcThread.Start();
-            }
-#endif
+
             //Enable the read data, quality reporting and heart rate reporting threads
             this.readDataTimer.Enabled = true;
             this.qualityTimer.Enabled = true;
@@ -1849,8 +1855,11 @@ namespace MITesDataCollection
                     this.htcDecoder.isQuitting = true;
 
                     Thread.Sleep(100);
-                    this.htcThread.Abort();
+                    this.pollingThread.Abort();
                 }
+                aMITesLoggerPLFormat.FlushBytes();
+                aMITesLoggerPLFormat.ShutdownFiles();
+                //ShutdownFiles()
 #else
                 foreach (Sensor sensor in this.sensors.Sensors)
                 {
@@ -2158,21 +2167,19 @@ namespace MITesDataCollection
         {
         }
 
+        private void GraphAccelerometerValues(GenericAccelerometerData data)
+        {
+            if (isStartedReceiver)
+                aMITesPlotter.SetAccelResultsData();
+
+            aMITesPlotter.setPlotVals(data, this.sensors.Sensors.Count - this.sensors.TotalBuiltInSensors);            
+        }
         private void GraphAccelerometerValues()
         {
 
-
-
             if (isStartedReceiver)
                 aMITesPlotter.SetAccelResultsData();
-#if (PocketPC)
-            if (this.sensors.HasBuiltinSensors)
-                this.htcDecoder.ReadIndex=aMITesPlotter.setPlotVals(this.htcDecoder.PolledData,this.htcDecoder.ReadIndex,this.htcDecoder.WriteIndex, this.sensors.Sensors.Count-this.sensors.TotalBuiltInSensors);            
-            else
-                aMITesPlotter.setPlotVals();
-#else
-            aMITesPlotter.setPlotVals();
-#endif
+         //   aMITesPlotter.setPlotVals();
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -2375,7 +2382,23 @@ namespace MITesDataCollection
         }
 
 
+        private bool unprocessedBuiltin = false;
+        private GenericAccelerometerData builtinData;
+        //private System.Threading.Monitor pollingMutex = new Mutex();
 
+        private void pollingData()
+        {
+            while (true)
+            {
+                if ((unprocessedBuiltin==false) && (Environment.TickCount - pollingTime >= 40))
+                {
+
+                    this.builtinData = this.htcDecoder.PollBuiltInSensors();
+                    pollingTime = Environment.TickCount;
+                    unprocessedBuiltin = true;
+                }
+            }
+        }
 
         /// <summary>
         /// This methods is invoked every 10 milliseconds
@@ -2384,6 +2407,8 @@ namespace MITesDataCollection
         /// <param name="e"></param>
         private void readDataTimer_Tick(object sender, EventArgs e)
         {
+            GenericAccelerometerData polledData=null;
+
             if (okTimer > 3000)
                 okTimer = -1;
             okTimer++;
@@ -2393,7 +2418,38 @@ namespace MITesDataCollection
             if (this.Visible)
                 this.Visible = false;
 #endif
-            //if all receivers are started
+
+
+            //Collect any pending data
+
+            #region Collect MITes Data
+            if (isStartedReceiver)
+            {
+               
+                //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
+                for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
+                    this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
+
+                for (int i = 1; (i < this.sensors.TotalReceivers); i++)
+                    this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);
+            }
+
+            #endregion Collect MITes Data
+
+            #region Collect Builtin Data
+            //timestamp the data in the main thread
+            if (unprocessedBuiltin==true)
+            {            
+                this.builtinData.Timestamp = Environment.TickCount;
+                this.builtinData.Unixtimestamp = UnixTime.GetUnixTime();
+                polledData = this.builtinData;
+            }
+
+            #endregion Collect Builtin Data
+
+
+
+            //Post process the data if needed
             if (isStartedReceiver)
             {
                 count++;
@@ -2408,22 +2464,6 @@ namespace MITesDataCollection
                     time = Environment.TickCount;
                 }
 
-
-                #region MERGE MITes Data
-                //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
-                    this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
-
-                for (int i = 1; (i < this.sensors.TotalReceivers); i++)
-                    this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);
-
-
-                #endregion MERGE MITes Data
-
-                #region Poll Builtin Sensors Data
-
-
-                #endregion Poll Builtin Sensors Data
 
                 #region Train in realtime and generate ARFF File
                 if (IsTraining == true)
@@ -2849,21 +2889,7 @@ namespace MITesDataCollection
 
 
 
-                sum += this.mitesDecoders[0].GetLastByteNum();
-                //aMITesLogger.SaveRawData();
-
-//#if (PocketPC)
-                aMITesLoggerPLFormat.SaveRawData();
-
-                if (flushTimer == 0)
-                {
-                    //aMITesLogger.FlushBytes();
-                    aMITesLoggerPLFormat.FlushBytes();                    
-                }
-                if (flushTimer > 6000)
-                    flushTimer = -1;
-                flushTimer++;
-//#endif
+                sum += this.mitesDecoders[0].GetLastByteNum();               
                 aMITesDataFilterer.RemoveZeroNoise();
                 this.mitesDecoders[0].UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
 
@@ -2960,18 +2986,33 @@ namespace MITesDataCollection
             }
 
 
-#if (PocketPC)
-            if (this.sensors.HasBuiltinSensors)
-            {
-                if (this.htcDecoder.ReadIndex != this.htcDecoder.WriteIndex)
-                    aMITesLoggerPLFormat.SaveRawBytes(this.htcDecoder.PolledData,
-                        this.htcDecoder.ReadIndex, this.htcDecoder.WriteIndex);
-            }
+            #region Store the sensor data
 
-#endif
+            if ((this.sensors.HasBuiltinSensors) && (polledData != null))            
+                aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);                            
+            else
+                aMITesLoggerPLFormat.SaveRawMITesBuiltinData(null);
+
+            if (flushTimer == 0)           
+                aMITesLoggerPLFormat.FlushBytes();            
+            if (flushTimer > 6000)
+                flushTimer = -1;
+            flushTimer++;
+
+            #endregion Store the sensor data
+
+
+
             // Graph accelerometer data for multiple recievers
-            if (isPlotting)
-                GraphAccelerometerValues();
+            if (isPlotting)                         
+                GraphAccelerometerValues(polledData);
+
+
+            if (polledData!= null)
+            {
+                this.builtinData = null;
+                this.unprocessedBuiltin = false;
+            }
 
 
         }
