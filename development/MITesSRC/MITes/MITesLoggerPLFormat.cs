@@ -29,7 +29,7 @@ namespace HousenCS.MITes
         /// that might add up over time. 
         /// </summary>
         public static int TIMESTAMP_AFTER_SAMPLES = 200;
-        private System.IO.TextWriter tw;
+        //private System.IO.TextWriter tw;
         /// <summary>
         /// Sets up an object to save raw MITes data in the PlaceLab format, with binary files by the hour.
         /// </summary>
@@ -40,7 +40,7 @@ namespace HousenCS.MITes
             this.aMITesDecoder = aMITesDecoder;
             aRootPathName = aFilePath; 
             DetermineFilePath();
-            tw = new System.IO.StreamWriter(@"\Internal Storage\test\data-written.csv");
+            //tw = new System.IO.StreamWriter(@"\Internal Storage\test\data-written.csv");
         }
 
         /// <summary>
@@ -113,7 +113,7 @@ namespace HousenCS.MITes
         {
             bwPLFormat.Flush();
             bwPLFormat.CloseFile();
-            tw.Close();
+          //  tw.Close();
         }
 
         private void WriteTimeStamp(int time, ByteWriter byteWriter)
@@ -256,7 +256,7 @@ namespace HousenCS.MITes
 
                     // Actually save the data! 
                     SaveMITesData(aMITesDecoder.someMITesData[i]);
-                    tw.WriteLine(aMITesDecoder.someMITesData[i].unixTimeStamp + ","+ aMITesDecoder.someMITesData[i].x + "," + aMITesDecoder.someMITesData[i].y + "," + aMITesDecoder.someMITesData[i].z);
+                   // tw.WriteLine(aMITesDecoder.someMITesData[i].unixTimeStamp + ","+ aMITesDecoder.someMITesData[i].x + "," + aMITesDecoder.someMITesData[i].y + "," + aMITesDecoder.someMITesData[i].z);
 
                     lastTime = aTime;
                     lastUnixTime =aUnixTime; 
@@ -323,7 +323,7 @@ namespace HousenCS.MITes
                 }
 
 
-                tw.WriteLine(data.toString());
+                //tw.WriteLine(data.toString());
 
                 lastTime = aTime;
                 lastUnixTime = aUnixTime; 
