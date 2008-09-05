@@ -2034,6 +2034,7 @@ namespace MITesDataCollection
             foreach (Sensor sensor in this.sensors.Sensors)
             {
                 int sensor_id = Convert.ToInt32(sensor.ID);
+#if (PocketPC)
                 if (sensor_id == MITesDecoder.MAX_CHANNEL) //builtin sensor
                 {
                     string key = sensor.Type;
@@ -2048,7 +2049,9 @@ namespace MITesDataCollection
                             ((System.Windows.Forms.Label)this.sensorLabels[key]).Text = sensor.Type + ": still";
                     }
                 }
-                else if (sensor_id > 0)
+                else 
+#endif                    
+                if (sensor_id > 0)
                 {
                     double result = ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).GetLastEpochValueAll();
                     string key = "MITes" + sensor.ID;
@@ -2287,6 +2290,7 @@ namespace MITesDataCollection
             {
                 int sensor_id = Convert.ToInt32(sensor.ID);
 
+#if (PocketPC)
                 if (sensor_id == MITesDecoder.MAX_CHANNEL) //BUILTIN
                 {
                     double rate = ((double)this.htcDecoder.SamplingRate) * 100 / sensor.SamplingRate;
@@ -2316,7 +2320,9 @@ namespace MITesDataCollection
                     if (rate < MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate)
                         overallGoodQuality = false;
                 }
-                else if (sensor_id > 0) // don't include HR
+                else 
+#endif                    
+                if (sensor_id > 0) // don't include HR
                 {
                     double rate = ((double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter / (double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate) * 100;
                     if (rate > 100)
@@ -2382,10 +2388,10 @@ namespace MITesDataCollection
         }
 
 
+#if (PocketPC)
         private bool unprocessedBuiltin = false;
         private GenericAccelerometerData builtinData;
         //private System.Threading.Monitor pollingMutex = new Mutex();
-
         private void pollingData()
         {
             while (true)
@@ -2399,7 +2405,7 @@ namespace MITesDataCollection
                 }
             }
         }
-
+#endif
         /// <summary>
         /// This methods is invoked every 10 milliseconds
         /// </summary>
@@ -2437,14 +2443,15 @@ namespace MITesDataCollection
             #endregion Collect MITes Data
 
             #region Collect Builtin Data
-            //timestamp the data in the main thread
+
+#if (PocketPC)
             if (unprocessedBuiltin==true)
             {            
                 this.builtinData.Timestamp = Environment.TickCount;
                 this.builtinData.Unixtimestamp = UnixTime.GetUnixTime();
                 polledData = this.builtinData;
             }
-
+#endif
             #endregion Collect Builtin Data
 
 
@@ -3007,13 +3014,13 @@ namespace MITesDataCollection
             if (isPlotting)                         
                 GraphAccelerometerValues(polledData);
 
-
+#if (PocketPC)
             if (polledData!= null)
             {
                 this.builtinData = null;
                 this.unprocessedBuiltin = false;
             }
-
+#endif
 
         }
 

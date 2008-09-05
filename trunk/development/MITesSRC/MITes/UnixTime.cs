@@ -110,7 +110,7 @@ namespace HousenCS.MITes
             QueryPerformanceCounter(out counter);
             current_time = (double)(referenceTime + ((counter - referenceCounter) * 1000.0 / (double)freq));
 
-            int diff = (int)(current_time - previousTime);
+            double diff = current_time - previousTime;
 
             if (diff >=1)                             
                 previousTime = Math.Round(current_time);
