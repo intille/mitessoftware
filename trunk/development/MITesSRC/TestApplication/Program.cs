@@ -17,44 +17,10 @@ namespace TestApplication
     {
         static void Main(string[] args)
         {
-            /* AXML.Reader areader1 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "Copy of ActivityLabels.xml");
-             AXML.Reader areader2 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "ActivityLabels.xml");
-             AXML.Annotation annotation1 = areader1.parse();
-             AXML.Annotation annotation2 = areader2.parse();
-             AXML.Annotation interesection = annotation1.Intersect(annotation2);
-             AXML.Annotation difference = annotation1.Difference(annotation2);
-           
-             TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\intersection.xml");
-             tw.WriteLine(interesection.ToXML());
-             tw.Close();
-             tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\Difference.xml");
-             tw.WriteLine(difference.ToXML());
-             tw.Close();
-             */
 
-
-
-
-            //Generates an Arff file from a PlaceLab format file
-            //Extractor.toARFF(@"C:\MITesData\SamplePLFormat",
-            // "..\\NeededFiles\\Master\\", 3);
-
-
-            /* AXML.Reader areader1 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "Copy of ActivityLabels.xml");
-  AXML.Reader areader2 = new AXML.Reader("..\\NeededFiles\\Master\\", @"C:\MITesData\SamplePLFormat", "ActivityLabels.xml");
-  AXML.Annotation annotation1 = areader1.parse();
-  AXML.Annotation annotation2 = areader2.parse();
-  AXML.Annotation interesection = annotation1.Intersect(annotation2);
-  AXML.Annotation difference = annotation1.Difference(annotation2);
-           
-  TextWriter tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\intersection.xml");
-  tw.WriteLine(interesection.ToXML());
-  tw.Close();
-  tw = new StreamWriter(@"C:\MITesData\SamplePLFormat\Difference.xml");
-  tw.WriteLine(difference.ToXML());
-  tw.Close();
-  */
-
+            Extractor.toARFF(@"C:\SamplePLFormat",
+             "..\\NeededFiles\\Master\\", 3);
+            /*
 
             
             string[] filter = new string[5];
@@ -74,22 +40,7 @@ namespace TestApplication
             int annotaters = 2;
             int[,] labeledData = new int[data.numInstances(), 3]; //each instance has 2 annotators and a classifier
 
-            //Filter labels unknown, gooddata,a_flaprock_maybe
-            //RemoveWithValues preprocessFilter = new RemoveWithValues();
-            //int annotatorAttribute = data.numAttributes();
-            //preprocessFilter.set_AttributeIndex(annotatorAttribute.ToString());
-            //preprocessFilter.set_InvertSelection(false);
-            //preprocessFilter.set_NominalIndices("1,4");
-            //preprocessFilter.setInputFormat(data);    
-            //data = Filter.useFilter(data, preprocessFilter);
 
-            //preprocessFilter = new RemoveWithValues();
-            //annotatorAttribute = data.numAttributes()-1;
-            //preprocessFilter.set_AttributeIndex(annotatorAttribute.ToString());
-            //preprocessFilter.set_InvertSelection(false);
-            //preprocessFilter.set_NominalIndices("1,4");
-            //preprocessFilter.setInputFormat(data);
-            //data = Filter.useFilter(data, preprocessFilter);
 
 
             //Filter intersection instances
@@ -202,12 +153,7 @@ namespace TestApplication
             }
 
 
-            //Evaluation eval = new Evaluation(agreementData);
-            //eval.evaluateModel(tree, disagreementData);//.crossValidateModel(tree, data, 10, new Random(1));
-
-
-
-
+      
 
             //cross validate the intersection data
 
@@ -352,24 +298,6 @@ namespace TestApplication
 
 
             TextWriter tw2 = new StreamWriter(@"C:\MITesData\SamplePLFormat\accuracy.txt");
-            //ConfusionMatrix totalMatrix = new ConfusionMatrix(className);
-            //double totalMatrix1=0, correctMatrix1=0;
-            //double totalMatrix2=0 ,correctMatrix2=0;
-            //for (int i = 0; (i < className.Length); i++)
-            //{
-            // for (int j = 0; (j < className.Length); j++)
-            // {
-            // if (i == j)
-            // {
-            // correctMatrix1 += cMatrix1.getRow(i)[j];
-            // correctMatrix2 += cMatrix2.getRow(i)[j];
-            // }
-            // totalMatrix1 += cMatrix1.getRow(i)[j];
-            // totalMatrix2 += cMatrix2.getRow(i)[j];
-            // totalMatrix.addElement(i, j, cMatrix1.getRow(i)[j] + cMatrix2.getRow(i)[j]);
-            // }
-            //}
-
 
 
             ConfusionMatrix[] totalMatrix = new ConfusionMatrix[annotaters];
@@ -433,49 +361,7 @@ namespace TestApplication
             tw2.Close();
 
 
-            //Generate the folds
-            //Evaluation eval2 = new Evaluation(agreementData);
-            //eval2.crossValidateModel(tree, agreementData, 10, new Random(1));
-
-
-
-            // Instances intersectionData=
-
-
-
-            //Extractor.toARFF(@"C:\MITesData\SamplePLFormat",
-            //    "..\\NeededFiles\\Master\\", 3);
-
-
-            // Evaluator e = new Evaluator(@"C:\MITesData\Edith-07-24-2008\all-1second-0.50loss-5cons.arff");
-            // e.EvaluateIncrementalBatches(10);
-
-            //Instances data = new Instances(new StreamReader(@"C:\MITesData\Edith-07-09-2008\all-2second-0.20loss-5cons.arff"));
-            //data.ClassIndex = data.numAttributes() - 1;
-            //Randomize randomizeFilter = new Randomize();
-            //randomizeFilter.setInputFormat(data);
-
-
-            //Instances training = Filter.useFilter(data, randomizeFilter);
-            //RemoveFolds foldsFilter = new RemoveFolds();
-            //foldsFilter.set_Fold(1);
-            //foldsFilter.set_NumFolds(10);
-            //foldsFilter.set_InvertSelection(false);
-            //foldsFilter.inputFormat(training);
-            //training = Filter.useFilter(training, foldsFilter);
-
-            //J48 tree = new J48();         // new instance of tree
-            //tree.set_MinNumObj(2);
-            //tree.set_ConfidenceFactor((float)0.25);
-            //tree.buildClassifier(data);   // build classifier
-
-            //Evaluation eval = new Evaluation(data);
-            //eval.crossValidateModel(tree, data, 10, new Random(1));
-
-
-            //eval.
-            //Console.WriteLine(eval.toSummaryString("\nResults\n=======\n", false));
-
+     */
 
 
         }

@@ -262,6 +262,8 @@ namespace MITesDataCollection
         //of sensors
         public MITesDataCollectionForm(SensorAnnotation uncalibratedSensors, string dataDirectory)
         {
+            //Initialize the UNIX timer to use QueryPerformanceCounter
+            UnixTime.InitializeTime();
 
             //Setup the initial state of the calibration variables
             this.sensors = uncalibratedSensors;
@@ -402,8 +404,7 @@ namespace MITesDataCollection
                 }
             }
 
-            //Initialize the UNIX timer to use QueryPerformanceCounter
-            UnixTime.InitializeTime();
+
 #if (PocketPC)
             this.tabControl1.SelectedIndex = 0;
 #endif
@@ -459,6 +460,12 @@ namespace MITesDataCollection
 
         public MITesDataCollectionForm(string dataDirectory)
         {
+
+
+            //Initialize the UNIX QueryPerformanceCounter
+            UnixTime.InitializeTime();
+
+
             //intialize the mode of the software
             this.collectDataMode = true;
 #if (PocketPC)
@@ -736,8 +743,6 @@ namespace MITesDataCollection
 #endif
 
 
-            //Initialize the UNIX QueryPerformanceCounter
-            UnixTime.InitializeTime();
 
 
             //Start the receiver threads
@@ -806,6 +811,8 @@ namespace MITesDataCollection
         public MITesDataCollectionForm(string dataDirectory, string arffFile, bool isHierarchical)
         {
             int i = 0, j = 0;
+            //Initialize the unix timer
+            UnixTime.InitializeTime(); //passed to adjust time when its granularity is not good
 
             //Initialize the software mode
             this.classifyDataMode = true;
@@ -1065,8 +1072,7 @@ namespace MITesDataCollection
 #endif
             //Here initialize the classifier
 
-            //Initialize the unix timer
-            UnixTime.InitializeTime(); //passed to adjust time when its granularity is not good
+
 
 
 
