@@ -7,6 +7,12 @@ using AXML;
 using MITesDataCollection.Utils;
 using HousenCS.MITes;
 
+#if (PocketPC)
+using OpenNETCF.GDIPlus;
+using ActivitySummary;
+using Charts.twodimensional;
+#endif
+
 namespace MITesDataCollection
 {
     partial class MITesDataCollectionForm
@@ -17,6 +23,13 @@ namespace MITesDataCollection
         private System.ComponentModel.IContainer components = null;
         private System.Windows.Forms.MainMenu mainMenu1;
 
+#if (PocketPC)
+        private Chart pieChart;
+        IntPtr token;
+        BitmapPlus bmp;
+        GdiplusStartupInput input = new GdiplusStartupInput();
+        GdiplusStartupOutput output;
+#endif 
         /// <summary>
         /// Clean up any resources being used.
         /// </summary>
@@ -29,6 +42,8 @@ namespace MITesDataCollection
             }
             base.Dispose(disposing);
         }
+
+
 
         //Intialize different interface components
         private void InitializeInterface()
@@ -70,7 +85,7 @@ namespace MITesDataCollection
             this.startStopButton = new System.Windows.Forms.Button();
             this.oxyconButton = new System.Windows.Forms.Button();
             this.label6 = new System.Windows.Forms.Label();
-            this.label16 = new System.Windows.Forms.Label();
+            //this.label16 = new System.Windows.Forms.Label();
             this.label8 = new System.Windows.Forms.Label();
             this.label7 = new System.Windows.Forms.Label();
             this.label9 = new System.Windows.Forms.Label();
@@ -309,18 +324,18 @@ namespace MITesDataCollection
             // 
             // label6
             // 
-            this.label6.Font = new System.Drawing.Font("Tahoma", 16F, System.Drawing.FontStyle.Bold);
-            this.label6.Location = new System.Drawing.Point(10, 30);
-            this.label6.Name = "label6";
-            this.label6.Size = new System.Drawing.Size(200, 66);
-            this.label6.Text = "Predicted Activity";
+            //this.label6.Font = new System.Drawing.Font("Tahoma", 16F, System.Drawing.FontStyle.Bold);
+            //this.label6.Location = new System.Drawing.Point(10, 30);
+            //this.label6.Name = "label6";
+            //this.label6.Size = new System.Drawing.Size(200, 66);
+            //this.label6.Text = "Predicted Activity";
 
 
-            this.label16.Font = new System.Drawing.Font("Tahoma", 16F, System.Drawing.FontStyle.Bold);
-            this.label16.Location = new System.Drawing.Point(10, 120);
-            this.label16.Name = "label6";
-            this.label16.Size = new System.Drawing.Size(200, 66);
-            this.label16.Text = "Predicted Activity";
+            //this.label16.Font = new System.Drawing.Font("Tahoma", 16F, System.Drawing.FontStyle.Bold);
+            //this.label16.Location = new System.Drawing.Point(10, 120);
+            //this.label16.Name = "label6";
+            //this.label16.Size = new System.Drawing.Size(200, 66);
+            //this.label16.Text = "Predicted Activity";
 
             // 
             // label8
@@ -463,12 +478,20 @@ namespace MITesDataCollection
             // 
             // tabPage3
             // 
-            this.tabPage3.Controls.Add(this.label6);
-            this.tabPage3.Controls.Add(this.label16);
+            //this.tabPage3.Controls.Add(this.label6);
+            //this.tabPage3.Controls.Add(this.label16);
+
+            GpStatusPlus stat = NativeMethods.GdiplusStartup(out token, input, out output);            
+            pieChart = new Charts.twodimensional.PieChart();
+            pieChart.IsStretch = true;
+            ActivityList aList = new ActivitySummary.Reader(null, @"\test").parse();
+            pieChart.Data = aList.toPercentHashtable();
+            this.tabPage3.Controls.Add(pieChart);
+
             this.tabPage3.Location = new System.Drawing.Point(0, 0);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Size = new System.Drawing.Size(232, 239);
-            this.tabPage3.Text = "Classifier";
+            this.tabPage3.Text = "Summary";
             // tabPage4
             // 
             this.panel4.Controls.Add(this.label8);
@@ -850,6 +873,8 @@ namespace MITesDataCollection
 
 
             #endregion Calculation of Widgets locations and sizes
+
+
         }
 
 
