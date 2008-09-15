@@ -30,7 +30,7 @@ namespace Charts.twodimensional
         // The constant for grouping data. Grouping data is to join
         // data together that has small size. 
         protected const int MINIMUM_PIECE = 1;
-        protected const int SMALLEST_DISPLAY_IN_PERCENT = 2;
+        protected const int SMALLEST_DISPLAY_IN_PERCENT = 1;
 
         // The constant for drawing the chart
         protected const int CHART_WIDTH_MAX = 200;
@@ -45,9 +45,9 @@ namespace Charts.twodimensional
         protected Graphics graphics;
         protected BrushPlus[] brush = 
 			   {Brushes.Red, Brushes.Orange, Brushes.Green, Brushes.Blue, 
-				Brushes.HotPink, Brushes.Crimson, Brushes.DarkKhaki,
+				Brushes.HotPink, Brushes.DarkKhaki,
 				Brushes.Olive, Brushes.MediumSeaGreen, Brushes.LightCoral,
-				Brushes.Silver, Brushes.Chocolate};
+				Brushes.Silver, Brushes.Chocolate, Brushes.Crimson};
 
         private bool _firstDraw = true;
 
@@ -152,7 +152,7 @@ namespace Charts.twodimensional
         // Method to draw the chart legend/information
         protected virtual void DrawLegend()
         {
-            int X = (int)(SPACE_RATIO * Width) + ChartWidth;
+            int X = (int)(SPACE_RATIO * Width) + ChartWidth-50;
             int Y = 60;
 
             //Title for the summary
@@ -162,13 +162,13 @@ namespace Charts.twodimensional
 
             if (currentActivity.Length > 0)
             {
-                graphics.DrawString(currentActivity, new Font("Arial", 14, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 110);
-                graphics.DrawString(currentActivityHours.ToString("00") + ":" + currentActivityMinutes.ToString("00") + ":" + currentActivitySeconds.ToString("00"), new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 80, Height - 110);
+                graphics.DrawString(currentActivity, new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 100);
+                graphics.DrawString(currentActivityHours.ToString("00") + ":" + currentActivityMinutes.ToString("00") + ":" + currentActivitySeconds.ToString("00"), new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
             }
             else
             {
-                graphics.DrawString("Unknown", new Font("Arial", 14, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 110);
-                graphics.DrawString("00:00:00", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 80, Height - 110);
+                graphics.DrawString("Unknown", new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 100);
+                graphics.DrawString("00:00:00", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
 
             }
 
@@ -213,7 +213,7 @@ namespace Charts.twodimensional
             {
                 float percent = 100 - totalPercentage;
                 string strPercent = percent.ToString("#0.00") + "%";
-                string nameText = "Empty";
+                string nameText = "No Activity";
                 string legendText = nameText + " (" + strPercent + ")";
 
                 BrushPlus theBrush = Brushes.Gray;

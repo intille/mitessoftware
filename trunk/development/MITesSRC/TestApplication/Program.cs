@@ -11,6 +11,9 @@ using weka.filters.unsupervised.instance;
 using weka.filters.unsupervised.attribute;
 using weka.classifiers.evaluation;
 using AXML;
+using ActivitySummary;
+using System.Collections;
+
 namespace TestApplication
 {
     class Program
@@ -18,8 +21,152 @@ namespace TestApplication
         static void Main(string[] args)
         {
 
-            Extractor.toARFF(@"C:\SamplePLFormat",
-             "..\\NeededFiles\\Master\\", 3);
+            //Extractor.toARFF(@"C:\SamplePLFormat",
+            // "..\\NeededFiles\\Master\\", 3);
+
+            Instances training = new Instances(new StreamReader(@"C:\SamplePLFormat\training.arff"));
+            J48 tree = new J48();         // new instance of tree
+            tree.set_MinNumObj(10);
+            tree.set_ConfidenceFactor((float)0.25);
+            training.ClassIndex = training.numAttributes() - 1;
+            tree.buildClassifier(training);   // build classifier
+
+            Instances testing = new Instances(new StreamReader(@"C:\SamplePLFormat\testing.arff"));
+            testing.ClassIndex = testing.numAttributes() - 1;
+            Hashtable h = new Hashtable();
+            h.Add("standing", 0);
+            h.Add("sitting", 0);
+            h.Add("sleeping", 0);
+            h.Add("brisk_walking", 0);
+            h.Add("cycling", 0);
+
+
+
+
+            string last_activity = "";
+            int timer = 0;
+            double calories = 0;
+            double totalCalories = 0;
+            TextWriter tw = new StreamWriter("results.txt");
+            tw.WriteLine("Total Examples " + testing.numInstances() + "\n");
+            for (int j = 0; (j < testing.numInstances()); j++)
+            {
+
+                Instance newinstance = testing.instance(j);
+                newinstance.Dataset = testing;                
+                double predicted = tree.classifyInstance(newinstance);
+                string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
+                if (last_activity != predicted_activity)
+                {
+                    last_activity = predicted_activity;
+                    timer = 0;
+                }
+                else
+                    timer += 200;
+
+                h[predicted_activity] = (int) h[predicted_activity] + 1;
+
+                calories = 0;
+                if (j == 30000)
+                {
+                    totalCalories = 0;
+                    tw.WriteLine("1/4:");
+                    foreach (string key in h.Keys)
+                    {
+                        tw.WriteLine(key + ": " + h[key]);
+                        double mets = 8.0;
+                        if (key=="walking")
+                            mets=4.0;
+                        else if (key=="standing")
+                            mets=2.0;
+                        else if (key=="sitting")
+                            mets=2.0;
+                        else
+                            mets=0.9;
+                        calories=(83 * mets * (int)h[key] * 200.0) / (1000 * 60 * 60.0);
+                        totalCalories += calories;
+                        tw.WriteLine("Calories:" + calories.ToString("0.00"));
+                        tw.WriteLine("Last Activity:" + last_activity + " Time:" + timer / 1000.0);
+                    }
+
+                    tw.WriteLine("Total cals:" + totalCalories + "\n");
+                }
+                else if (j == 60000)
+                {
+                    tw.WriteLine("1/2:");
+                    totalCalories = 0;
+                    foreach (string key in h.Keys)
+                    {
+                        Console.WriteLine(key + ": " + h[key]);
+                        double mets = 8.0;
+                        if (key == "walking")
+                            mets = 4.0;
+                        else if (key == "standing")
+                            mets = 2.0;
+                        else if (key == "sitting")
+                            mets = 2.0;
+                        else
+                            mets = 0.9;
+                        calories = (83 * mets * (int)h[key] * 200.0) / (1000 * 60 * 60.0);
+                        totalCalories += calories;
+                        tw.WriteLine("Calories:" + calories.ToString("0.00"));
+                        tw.WriteLine("Last Activity:" + last_activity + " Time:" + timer / 1000.0);
+                    }
+                    tw.WriteLine("Total cals:" + totalCalories + "\n");
+                }
+                else if (j == 90000)
+                {
+                    tw.WriteLine("3/4:");
+                    totalCalories = 0;
+                    foreach (string key in h.Keys)
+                    {
+                        tw.WriteLine(key + ": " + h[key]);
+                        double mets = 8.0;
+                        if (key == "walking")
+                            mets = 4.0;
+                        else if (key == "standing")
+                            mets = 2.0;
+                        else if (key == "sitting")
+                            mets = 2.0;
+                        else
+                            mets = 0.9;
+                        calories = (83 * mets * (int)h[key] * 200.0) / (1000 * 60 * 60.0);
+                        totalCalories += calories;
+                        tw.WriteLine("Calories:" + calories.ToString("0.00"));
+                        tw.WriteLine("Last Activity:" + last_activity + " Time:" + timer / 1000.0);
+                    }
+                    tw.WriteLine("Total cals:" + totalCalories + "\n");
+                }
+            }
+
+
+            calories = 0;
+            totalCalories = 0;
+            tw.WriteLine("Total:");
+            foreach (string key in h.Keys)
+            {
+                tw.WriteLine(key + ": " + h[key]);
+                double mets = 8.0;
+                if (key == "walking")
+                    mets = 4.0;
+                else if (key == "standing")
+                    mets = 2.0;
+                else if (key == "sitting")
+                    mets = 2.0;
+                else
+                    mets = 0.9;
+                calories = (83 * mets * (int)h[key] * 200.0) / (1000 * 60 * 60.0);
+                totalCalories += calories;
+                tw.WriteLine("Calories:" + calories.ToString("0.00"));
+                tw.WriteLine("Last Activity:" + last_activity + " Time:" + timer / 1000.0);
+            }
+
+            
+            tw.WriteLine("Total cals:" + totalCalories);
+
+            tw.WriteLine();
+            tw.Close();
+            
             /*
 
             

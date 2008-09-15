@@ -32,7 +32,7 @@ namespace HousenCS.MITes
                 return;
 
 
-                for (int i = 0; i < 24; i++)
+                for (int i = 0; i < 30; i++)
                 {
                     if (Directory.Exists(aDataDir +  "\\" + i))
                         someBinaryFiles.Add(GetBinaryMITesFile(aDataDir + "\\" + i));

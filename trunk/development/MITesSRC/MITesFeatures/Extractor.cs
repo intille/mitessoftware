@@ -1054,15 +1054,15 @@ namespace MITesFeatures
                 }
                 
                 //if (lastTimeStamp>=
-                if (current_activity.Equals("unknown") == false)
-                {
+                //if (current_activity.Equals("unknown") == false)
+                //{
                     if ((Extractor.GenerateFeatureVector(lastTimeStamp)))
                     {
                         string arffSample = Extractor.toString() + "," + current_activity;
                         tw.WriteLine(arffSample);
                         
                     }
-                }
+                //}
 
             } while (isData = aMITesLoggerReader.GetSensorData(10));
 

@@ -47,7 +47,7 @@ namespace ActivitySummary
                                 else if (jAttribute.Name == Constants.END_TIME_ATTRIBUTE)
                                     a.EndTime = Convert.ToDouble(jAttribute.Value);
                                 else if (jAttribute.Name == Constants.VALUE_ATTRIBUTE)
-                                    a.Percent = Convert.ToInt32(jAttribute.Value);
+                                    a.Percent =  Convert.ToInt32(jAttribute.Value);
                             }
 
                         }
