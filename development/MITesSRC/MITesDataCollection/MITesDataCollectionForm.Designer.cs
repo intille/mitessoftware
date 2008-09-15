@@ -486,6 +486,9 @@ namespace MITesDataCollection
             pieChart.IsStretch = true;
             ActivityList aList = new ActivitySummary.Reader(null, @"\test").parse();
             pieChart.Data = aList.toPercentHashtable();
+            pieChart.SetActivity("No Activity");
+            pieChart.SetTime(0, 0,0);
+            pieChart.SetCalories(0, 0);
             this.tabPage3.Controls.Add(pieChart);
 
             this.tabPage3.Location = new System.Drawing.Point(0, 0);

@@ -64,5 +64,15 @@ namespace ActivitySummary
                 this.percent = value;
             }
         }
+
+        public string toString()
+        {
+            string output = "<" + Constants.ACTIVITY_ELEMENT + ">\n";
+            output += "<" + Constants.NAME_ATTRIBUTE + "=\"" + this.name + "\" />\n";
+            output += "<" + Constants.START_TIME_ATTRIBUTE + "=\"" + this.StartTime + "\" " + Constants.END_TIME_ATTRIBUTE + "=\"" + this.EndTime + "\"" + " />\n";
+            output += "<" + Constants.PERCENT_ELEMENT + "=\"" + this.percent + "\" />\n";
+            output += "</" + Constants.ACTIVITY_ELEMENT + ">\n";
+            return output;
+        }
     }
 }
