@@ -1615,7 +1615,10 @@ namespace MITesFeatures
             int fftIndex = rangeIndex + inputRowSize;
             int energyIndex = fftIndex + (2* fftMaximumFrequencies * inputRowSize);
             int correlationIndex = energyIndex + inputRowSize; //add number of variances         
-            
+
+
+            for (i = 0; (i < features.Length); i++)
+                features[i] = 0;
 
             //for good cache locality go through the rows then columns
             for (i = 0; (i < inputRowSize); i++)

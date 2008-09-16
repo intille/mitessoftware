@@ -2181,7 +2181,10 @@ namespace MITesDataCollection
             if (isStartedReceiver)
                 aMITesPlotter.SetAccelResultsData();
 
-            aMITesPlotter.setPlotVals(data, this.sensors.Sensors.Count - this.sensors.TotalBuiltInSensors);            
+            if (this.sensors.IsHR)
+                aMITesPlotter.setPlotVals(data, this.sensors.Sensors.Count - this.sensors.TotalBuiltInSensors-1);
+            else
+                aMITesPlotter.setPlotVals(data, this.sensors.Sensors.Count - this.sensors.TotalBuiltInSensors);            
         }
         private void GraphAccelerometerValues()
         {
