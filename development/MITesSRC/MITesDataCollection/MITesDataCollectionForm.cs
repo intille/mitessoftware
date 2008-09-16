@@ -2415,6 +2415,8 @@ namespace MITesDataCollection
             }
         }
 #endif
+
+        private bool connectionLost = false;
         /// <summary>
         /// This methods is invoked every 10 milliseconds
         /// </summary>
@@ -2433,7 +2435,66 @@ namespace MITesDataCollection
             if (this.Visible)
                 this.Visible = false;
 #endif
+            if (connectionLost) //attempt to restablish connection
+            {
 
+         
+
+#if (PocketPC)
+                progressMessage = null;
+                Thread t = new Thread(new ThreadStart(ProgressThread));
+                t.Start();
+                progressMessage += "Attempting to restablish Bluetooth Connection\r\n";
+                progressMessage += "Bluetooth Connection...";
+                //setup the Bluetooth if needed
+                if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
+                {
+                    this.bt.close();                    
+                    this.bt = new BluetoothController();
+                    try
+                    {
+                        this.bluetoothPort = bt.initialize(this.configuration.MacAddress, this.configuration.Passkey);
+                    }
+                    catch (Exception exx)
+                    {
+                        
+                        MessageBox.Show("Failed to reconnect to Bluetooth Device... exiting!");
+                        bt.close();
+                        Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                    }
+                }
+                progressMessage += " Established...\r\n";
+#endif
+
+                progressMessage += "Attempting to reinitialize MITes receivers\r\n";
+                //Intialize the MITes Receivers, decoders and counters based
+                //on the chosen sensors
+                if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
+                {
+                    this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
+                    this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
+                    this.aMITesActivityCounters = new Hashtable();                    
+                    if (InitializeMITes(dataDirectory) == false)
+                    {
+                        MessageBox.Show("Exiting: You picked a configuration with " + this.sensors.TotalReceivers + " receivers. Please make sure they are attached to the computer.");
+#if (PocketPC)
+                        bt.close();
+                        Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+
+                    Environment.Exit(0);
+                    Application.Exit();
+#endif
+                    }
+                }
+
+                progressMessage += "Data collection resumed\r\n";
+                connectionLost = false;
+                isStartedReceiver = true;
+                t.Abort();
+            }
 
             //Collect any pending data
 
@@ -2442,8 +2503,17 @@ namespace MITesDataCollection
             {
                
                 //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
-                    this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
+                try
+                {
+                    for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
+                        this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.ToString());
+                    connectionLost = true;
+                    isStartedReceiver = false;
+                }
 
                 for (int i = 1; (i < this.sensors.TotalReceivers); i++)
                     this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);
