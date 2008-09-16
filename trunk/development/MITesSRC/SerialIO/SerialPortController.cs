@@ -397,8 +397,13 @@ namespace HousenCS.SerialIO
 			return i;
 		}
 
+        int previousTick=0, nodataMilliseconds = 0;
+        public static int TIMEOUT_WITHOUT_DATA = 5000;
+        private bool receivedData = false;
 		private int FillBytesBufferThreaded(byte[] retBytes)
 		{
+ 
+            
 			if (IsNewData())
 			{
 				if (retBytes.Length < bytesBufferCount)
@@ -408,20 +413,34 @@ namespace HousenCS.SerialIO
 				{
 					if (i < retBytes.Length)
 						retBytes[i] = bytesBuffer[i];
+                                   
 				}
 
 				if (bytesBufferCount > retBytes.Length)
 					tempByteCount = retBytes.Length;
 				else
 					tempByteCount = bytesBufferCount;
-				bytesBufferCount = 0; 
+				bytesBufferCount = 0;
+                
+  
+                nodataMilliseconds = 0;
+                previousTick = Environment.TickCount;
+                receivedData = true;
 				return tempByteCount;
 			}
 			else
 			{
-				//PrintWarning("No data to get!");
+                if (receivedData)
+                {
+                    nodataMilliseconds += nodataMilliseconds + (Environment.TickCount - previousTick);
+                    if (nodataMilliseconds > TIMEOUT_WITHOUT_DATA)
+                        throw new ConnectionException("No receiver data for 5 seconds");
+                    previousTick = Environment.TickCount;
+                }
+                //PrintWarning("No data to get!");
 				return 0;
 			}
+                        
 		}
 
 		private bool IsNewData()
