@@ -430,6 +430,7 @@ namespace HousenCS.SerialIO
 			}
 			else
 			{
+#if (PocketPC)
                 if (receivedData)
                 {
                     nodataMilliseconds += nodataMilliseconds + (Environment.TickCount - previousTick);
@@ -437,6 +438,7 @@ namespace HousenCS.SerialIO
                         throw new ConnectionException("No receiver data for 5 seconds");
                     previousTick = Environment.TickCount;
                 }
+#endif
                 //PrintWarning("No data to get!");
 				return 0;
 			}

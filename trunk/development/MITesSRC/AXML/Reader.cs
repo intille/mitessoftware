@@ -104,7 +104,7 @@ namespace AXML
                                 {
                                    if (jAttribute.Name == Constants.NAME_ATTRIBUTE)
                                    {
-                                            category.Name=jAttribute.Value.Replace(' ','-').Replace(',','_').ToLower();
+                                       category.Name = jAttribute.Value.Replace("A - ", "").Replace("A- ", "").Replace(' ', '-').Replace(',', '_').ToLower();
                                    }else if (jAttribute.Name == Constants.PROPERTY_ATTRIBUTE)
                                    {
                                             category.Property=jAttribute.Value;
@@ -118,7 +118,7 @@ namespace AXML
                                     {
                                         if (kAttribute.Name == Constants.NAME_ATTRIBUTE)
                                         {
-                                            Label newlabel = new Label(kAttribute.Value.Replace(' ', '-').Replace(',', '_').ToLower(), category.Name);
+                                            Label newlabel = new Label(kAttribute.Value.Replace("A - ","").Replace("A- ","").Replace(' ', '-').Replace(',', '_').ToLower(), category.Name);
                                             //newlabel.InitializeTone(this.caller.Handle.ToInt32(),frequency);
                                             category.Labels.Add(newlabel);
                                             //frequency += 200;
@@ -250,7 +250,7 @@ namespace AXML
                                 //TimeSpan ts = startDT - new DateTime(1970, 1, 1, 0, 0, 0, 0);
                                 annotatedRecord.StartUnix = ts.TotalMilliseconds;
                                 //for some data might require day light savings adjustment
-                                //annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
+                                annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
                              
                                 annotatedRecord.EndDate = endDT.ToString("MM-dd-yyyy");
                                 annotatedRecord.EndHour = endDT.Hour;
@@ -260,7 +260,7 @@ namespace AXML
                                 ts = endDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0,0));
                                 //ts = endDT - new DateTime(1970, 1, 1, 0, 0, 0, 0, 0);
                                 annotatedRecord.EndUnix = ts.TotalMilliseconds;    
-                                //annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
+                                annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
 
 
                                 //parsing values
@@ -272,7 +272,7 @@ namespace AXML
                                     {
                                         if (kAttribute.Name == Constants.LABEL_ATTRIBUTE)
                                         {
-                                            label = kAttribute.Value.Replace(' ', '-').Replace(',', '_').ToLower();
+                                            label = kAttribute.Value.Replace("A - ","").Replace("A- ","").Replace(' ', '-').Replace(',', '_').ToLower();
                                         }
                                         else if (kAttribute.Name == Constants.CATEGORY_ATTRIBUTE)
                                         {

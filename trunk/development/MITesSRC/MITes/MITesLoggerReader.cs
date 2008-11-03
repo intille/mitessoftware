@@ -435,7 +435,8 @@ namespace HousenCS.MITes
 		        fileIndex += 1;
                 if (fileIndex < someBinaryFiles.Count)
                 {
-                    isNewFiles = SetupNextFiles(fileIndex);
+                    isNewFiles = SetupNextFiles(fileIndex);                    
+                    isRefDateSet = false; 
                     if (!isNewFiles)
                         return false;
 

@@ -73,6 +73,7 @@ namespace SXML
             return configurations;                            
         }
 
+#if (!PocketPC)
         public bool validate()
         {
 
@@ -107,5 +108,6 @@ namespace SXML
         {
             throw new Exception(e.Message);
         }
+#endif
     }
 }

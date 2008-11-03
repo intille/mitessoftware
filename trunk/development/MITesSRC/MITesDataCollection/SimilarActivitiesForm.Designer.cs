@@ -29,15 +29,19 @@ namespace MITesDataCollection
             string arffFile = TroubleshootModel.SelectedFile;  
             //parse the AXML
             AXML.Reader reader = new AXML.Reader(Constants.MASTER_DIRECTORY, TroubleshootModel.SelectedFolder);
+#if (!PocketPC)
             if (reader.validate() == false)
             {
                 throw new Exception("Error Code 0: XML format error - activities.xml does not match activities.xsd!");
             }
             else
             {
+#endif
                 this.annotation = reader.parse();
                 this.annotation.DataDirectory = TroubleshootModel.SelectedFolder;
+#if (!PocketPC)
             }
+#endif
 
             int cindex=0;
             foreach (AXML.Label label in ((AXML.Category)this.annotation.Categories[0]).Labels)
