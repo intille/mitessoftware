@@ -740,6 +740,8 @@ namespace MITesFeatures
             AXML.Reader[] readers=new AXML.Reader[annotators];
             AXML.Annotation intersection = null;
             AXML.Annotation[] difference = new AXML.Annotation[annotators];
+            AXML.Annotation realtimeAnnotation = new AXML.Reader(masterDirectory, aDataDirectory).parse();
+            realtimeAnnotation.RemoveData(filter);
 
 
 
@@ -771,22 +773,23 @@ namespace MITesFeatures
             Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation[0], sannotation,configuration);
             
 
-            TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");
+            TextWriter tw = new StreamWriter(aDataDirectory + "\\output-"+sourceFile+".arff");
             tw.WriteLine("@RELATION wockets");
             tw.WriteLine(Extractor.GetArffHeader());
 
 
             tw.WriteLine("@ATTRIBUTE INDEX NUMERIC");
             tw.WriteLine("@ATTRIBUTE ANNOTATORS_AGREE NUMERIC");
-
+            
+            Hashtable recorded_activities = new Hashtable();
             for (int k = 0; (k < annotators); k++)
             {
-                tw.Write("@ATTRIBUTE annotator"+k+" {unknown");
+                //tw.Write("@ATTRIBUTE annotator"+k+" {unknown");
                 //tw.Write("@ATTRIBUTE annotator" + k + " {");
-                Hashtable recorded_activities = new Hashtable();
-                for (int i = 0; (i < aannotation[0].Data.Count); i++)
+                
+                for (int i = 0; (i < aannotation[k].Data.Count); i++)
                 {
-                    AXML.AnnotatedRecord record = ((AXML.AnnotatedRecord)aannotation[0].Data[i]);
+                    AXML.AnnotatedRecord record = ((AXML.AnnotatedRecord)aannotation[k].Data[i]);
                     string activity = "";
                     for (int j = 0; (j < record.Labels.Count); j++)
                     {
@@ -802,12 +805,27 @@ namespace MITesFeatures
                     //only output activity labels that have not been seen
                     if (recorded_activities.Contains(activity) == false)
                     {
-                        tw.Write("," + activity);
+                        //tw.Write("," + activity);
                         recorded_activities[activity] = activity;
                     }
                 }
-                tw.WriteLine("}");
+                
             }
+
+
+            for (int k = 0; (k < annotators); k++)
+            {
+                tw.Write("@ATTRIBUTE annotator" + k + " {unknown,flapping,rocking,flaprock}\n");
+                //foreach ( DictionaryEntry de in recorded_activities )
+                 //   tw.Write("," + (string) de.Key); 
+                //tw.WriteLine("}");
+            }
+
+            tw.Write("@ATTRIBUTE realtime {unknown,flapping,rocking,flaprock}\n");
+            //foreach (DictionaryEntry de in recorded_activities)
+             //   tw.Write("," + (string)de.Key);
+            //tw.WriteLine("}");
+
             tw.WriteLine("@DATA");
 
             bool isData = aMITesLoggerReader.GetSensorData(10);
@@ -820,6 +838,9 @@ namespace MITesFeatures
             string intersection_activity = "unknown";
             AXML.AnnotatedRecord intersectionRecord = ((AXML.AnnotatedRecord)intersection.Data[intersectionIndex]);
             string[] current_activity = new string[annotators];
+            string realtime_activity = "unknown";
+            int realtimeIndex = 0;
+            AXML.AnnotatedRecord realtimeRecord = ((AXML.AnnotatedRecord)realtimeAnnotation.Data[realtimeIndex]);
             for (int i = 0; (i < annotators); i++)
             {
                 differenceIndex[i] = 0;
@@ -852,6 +873,15 @@ namespace MITesFeatures
                 }
 
 
+                if (unixtimestamp > realtimeRecord.EndUnix)
+                {
+                    realtime_activity = "unknown";
+                    realtimeIndex++;
+                    if (realtimeIndex < realtimeAnnotation.Data.Count)                                            
+                        realtimeRecord = ((AXML.AnnotatedRecord)realtimeAnnotation.Data[realtimeIndex]);                    
+                }
+
+
                 if (unixtimestamp > intersectionRecord.EndUnix)
                 {
                
@@ -881,10 +911,30 @@ namespace MITesFeatures
                         current_activity[i] = Regex.Replace(current_activity[i], "^[_]+", "");
                         current_activity[i] = Regex.Replace(current_activity[i], "[_]+$", "");
                     }
-                    else
+                    else if (lastTimeStamp > annotatedRecord[i].EndUnix)
                         current_activity[i] = "unknown";
                  
                 }
+
+                if ((lastTimeStamp >= realtimeRecord.StartUnix) &&
+                       (lastTimeStamp <= realtimeRecord.EndUnix) && realtime_activity.Equals("unknown"))
+                {
+                    realtime_activity = "";
+                    for (int j = 0; (j < realtimeRecord.Labels.Count); j++)
+                    {
+                        if (j == realtimeRecord.Labels.Count - 1)
+                            realtime_activity += ((AXML.Label)realtimeRecord.Labels[j]).Name;
+                        else
+                            realtime_activity += ((AXML.Label)realtimeRecord.Labels[j]).Name + "_";
+                    }
+                    realtime_activity = realtime_activity.Replace("none", "").Replace('-', '_').Replace(':', '_').Replace('%', '_').Replace('/', '_');
+                    realtime_activity = Regex.Replace(realtime_activity, "[_]+", "_");
+                    realtime_activity = Regex.Replace(realtime_activity, "^[_]+", "");
+                    realtime_activity = Regex.Replace(realtime_activity, "[_]+$", "");
+                }
+                else if (lastTimeStamp > realtimeRecord.EndUnix)
+                    realtime_activity = "unknown";
+
 
 
                 if ((lastTimeStamp >= intersectionRecord.StartUnix) &&
@@ -931,14 +981,11 @@ namespace MITesFeatures
                     }
                     
                     string arffSample = Extractor.toString() + activity_suffix;
-                   //if (activity_suffix.Contains("unknown") == false)
-                   //{
-              
-                   // if (!(current_activity[0] == "unknown") && !(current_activity[1] == "unknown"))
-                     //{
-                        tw.WriteLine(arffSample);
+                    //if (activity_suffix.Contains("unknown") == false)
+                    //{
+                        tw.WriteLine(arffSample+","+realtime_activity);
                         featureVectorIndex++;
-                     //}
+                    //}
                   
 
                 }
@@ -948,8 +995,8 @@ namespace MITesFeatures
 
             tw.Close();
         }
-#endif
-        public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers)
+
+        public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string[] filter)
         {
             MITesDecoder aMITesDecoder = new MITesDecoder();
             MITesLoggerReader aMITesLoggerReader = new MITesLoggerReader(aMITesDecoder, aDataDirectory);
@@ -962,6 +1009,7 @@ namespace MITesFeatures
             //else
            // {
                 aannotation = reader.parse();
+                aannotation.RemoveData(filter);
                 aannotation.DataDirectory = aDataDirectory;
 
                 SXML.Reader sreader = new SXML.Reader(masterDirectory, aDataDirectory);
@@ -975,7 +1023,7 @@ namespace MITesFeatures
             Extractor.Initialize(aMITesDecoder, aDataDirectory, aannotation, sannotation,configuration);
 
      
-            TextWriter tw = new StreamWriter(aDataDirectory + "\\output.arff");            
+            TextWriter tw = new StreamWriter(aDataDirectory + "\\realtime-output.arff");            
             tw.WriteLine("@RELATION wockets");
             tw.WriteLine(Extractor.GetArffHeader());
             tw.Write("@ATTRIBUTE activity {unknown");
@@ -1069,8 +1117,8 @@ namespace MITesFeatures
             tww.Close();
             tw.Close();
         }
-
-       /*
+#endif
+        /*
         public static void toARFF(string aDataDirectory,string masterDirectory, string labelsFile,int maxControllers)
         {
             Hashtable arffClasses = new Hashtable();

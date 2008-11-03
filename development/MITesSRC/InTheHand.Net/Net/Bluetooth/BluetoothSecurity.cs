@@ -325,7 +325,17 @@ namespace InTheHand.Net.Bluetooth
                 if (rk != null)
                 {
                     //delete the device key and all contents
-                    rk.DeleteSubKeyTree(device.ToString());
+                    string[] subkeys = rk.GetSubKeyNames();
+                    for (int i = 0; (i < subkeys.Length); i++)
+                    {
+                        if (subkeys[i].Equals(device.ToString()))
+                        {
+                            rk.DeleteSubKeyTree(device.ToString());
+                            break;
+                        }
+                    }
+
+                    
                     return true;
                 }
 

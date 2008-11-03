@@ -39,8 +39,10 @@ namespace MITesDataCollection
             //Load the activity protocols from the master directory
             ConfigurationReader creader = new ConfigurationReader(Constants.MASTER_DIRECTORY);
             string longest_label = "";
+#if (!PocketPC)
             if (creader.validate())
             {
+#endif
                 configurations = creader.parse();
                 foreach (Configuration configuration in configurations.SensorConfigurations)
                 {
@@ -67,8 +69,10 @@ namespace MITesDataCollection
                 this.button2.Location = new Point((int)Constants.SCREEN_LEFT_MARGIN, (int)(this.listBox1.Location.Y + this.listBox1.Height + Constants.WIDGET_SPACING));
                 this.button1.Location = new Point((int)(Constants.SCREEN_LEFT_MARGIN + this.button1.Width + Constants.WIDGET_SPACING),
                     (int)(this.listBox1.Location.Y + this.listBox1.Height + Constants.WIDGET_SPACING));
-            }
-
+#if (!PocketPC)
+                
+        }
+#endif
             this.button2.Font = this.button1.Font = GUI.CalculateBestFitFont(this.button1.Parent.CreateGraphics(), Constants.MIN_FONT,
                     Constants.MAX_FONT, this.button1.Size, "Next", this.button1.Font, (float)0.9, (float)0.9);
 

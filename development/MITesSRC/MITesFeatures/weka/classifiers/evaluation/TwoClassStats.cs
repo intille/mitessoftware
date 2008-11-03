@@ -294,16 +294,16 @@ namespace weka.classifiers.evaluation
 		{
 			
 			System.Text.StringBuilder res = new System.Text.StringBuilder();
-			res.Append(TruePositive).Append(' ');
-			res.Append(FalseNegative).Append(' ');
-			res.Append(TrueNegative).Append(' ');
-			res.Append(FalsePositive).Append(' ');
-			res.Append(FalsePositiveRate).Append(' ');
-			res.Append(TruePositiveRate).Append(' ');
-			res.Append(Precision).Append(' ');
-			res.Append(Recall).Append(' ');
-			res.Append(FMeasure).Append(' ');
-			res.Append(Fallout).Append(' ');
+			res.Append("TP:").Append(TruePositive.ToString("0.00")).Append('\n');
+            res.Append("FN:").Append(FalseNegative.ToString("0.00")).Append('\n');
+            res.Append("TN:").Append(TrueNegative.ToString("0.00")).Append('\n');
+            res.Append("FP:").Append(FalsePositive.ToString("0.00")).Append('\n');
+            res.Append("FP Rate:").Append(FalsePositiveRate.ToString("0.00")).Append('\n');
+            res.Append("TP Rate:").Append(TruePositiveRate.ToString("0.00")).Append('\n');
+            res.Append("Precision:").Append(Precision.ToString("0.00")).Append('\n');
+            res.Append("Recall:").Append(Recall.ToString("0.00")).Append('\n');
+            res.Append("FMeasure:").Append(FMeasure.ToString("0.00")).Append('\n');
+            res.Append("Fallout:").Append(Fallout.ToString("0.00")).Append('\n');
 			return res.ToString();
 		}
 	}

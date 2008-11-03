@@ -154,7 +154,24 @@ namespace MITesDataCollection
 #endif
                     }
 
+#if(PocketPC)
+                    try
+                    {
+                        File.Copy(Constants.MASTER_DIRECTORY + ActivitySummary.Reader.DEFAULT_XML_FILE,
+                            WhereStoreDataForm.SelectedFolder + "\\" + ActivitySummary.Reader.DEFAULT_XML_FILE);
+                    }
+                    catch (Exception)
+                    {
+                        MessageBox.Show("Exiting: Please choose an empty storage directory");
+#if (PocketPC)
+                        Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+                        Environment.Exit(0);
+#endif
+                    }
 
+#endif
                     Application.Run(new MITesDataCollectionForm(WhereStoreDataForm.SelectedFolder));
                 }
             }

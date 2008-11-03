@@ -2431,16 +2431,15 @@ namespace MITesDataCollection
             okTimer++;
 
 #if (PocketPC)
-#else
-            if (this.Visible)
-                this.Visible = false;
-#endif
-            if (connectionLost) //attempt to restablish connection
+
+
+            
+                        if (connectionLost) //attempt to restablish connection
             {
 
-         
 
-#if (PocketPC)
+                System.Threading.Thread.Sleep(1000);
+                bool btRestablished = false;
                 progressMessage = null;
                 Thread t = new Thread(new ThreadStart(ProgressThread));
                 t.Start();
@@ -2454,23 +2453,23 @@ namespace MITesDataCollection
                     try
                     {
                         this.bluetoothPort = bt.initialize(this.configuration.MacAddress, this.configuration.Passkey);
+                        btRestablished = true;
                     }
                     catch (Exception exx)
                     {
                         
-                        MessageBox.Show("Failed to reconnect to Bluetooth Device... exiting!");
-                        bt.close();
-                        Application.Exit();
-                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                       // MessageBox.Show("Failed to reconnect to Bluetooth Device... exiting!");
+                       // bt.close();
+                        //Application.Exit();
+                        //System.Diagnostics.Process.GetCurrentProcess().Kill();
                     }
                 }
                 progressMessage += " Established...\r\n";
-#endif
 
                 progressMessage += "Attempting to reinitialize MITes receivers\r\n";
                 //Intialize the MITes Receivers, decoders and counters based
                 //on the chosen sensors
-                if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
+                if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
                 {
                     this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
                     this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
@@ -2478,23 +2477,25 @@ namespace MITesDataCollection
                     if (InitializeMITes(dataDirectory) == false)
                     {
                         MessageBox.Show("Exiting: You picked a configuration with " + this.sensors.TotalReceivers + " receivers. Please make sure they are attached to the computer.");
-#if (PocketPC)
+
                         bt.close();
                         Application.Exit();
                         System.Diagnostics.Process.GetCurrentProcess().Kill();
-#else
 
-                    Environment.Exit(0);
-                    Application.Exit();
-#endif
                     }
                 }
 
+                btRestablished = false;
                 progressMessage += "Data collection resumed\r\n";
                 connectionLost = false;
                 isStartedReceiver = true;
                 t.Abort();
             }
+#else
+            if (this.Visible)
+                this.Visible = false;
+#endif
+
 
             //Collect any pending data
 
@@ -2506,6 +2507,7 @@ namespace MITesDataCollection
                 try
                 {
                     for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI
+                        
                         this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
                 }
                 catch (Exception ex)
@@ -2549,6 +2551,11 @@ namespace MITesDataCollection
                     count = 0;
                     time = Environment.TickCount;
                 }
+
+                #region Arizona
+                double lastTS = Extractor.StoreMITesWindow();
+                Extractor.GenerateFeatureVector(lastTS);
+                #endregion
 
 
                 #region Train in realtime and generate ARFF File
