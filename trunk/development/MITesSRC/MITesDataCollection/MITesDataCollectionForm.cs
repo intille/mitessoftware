@@ -249,10 +249,11 @@ namespace MITesDataCollection
 #endif
 
                 if (progressMessage != null)
-                    progressForm.UpdateProgressBar(progressMessage);
+                     progressForm.UpdateProgressBar(progressMessage);
 
             }
             progressForm.Close();
+            t.Abort();            
         }
 
 
@@ -296,7 +297,7 @@ namespace MITesDataCollection
 
             //Spawn the progress thread
             progressMessage = null;
-            Thread t = new Thread(new ThreadStart(ProgressThread));
+            t = new Thread(new ThreadStart(ProgressThread));
             t.Start();
 
 
@@ -437,7 +438,8 @@ namespace MITesDataCollection
             }
 
             //terminate the progress thread before starting the receivers
-            t.Abort();
+            //t.Abort();
+            progressThreadQuit = true;
             //remove unnecessary forms or pages
 #if (PocketPC)
             this.tabControl1.TabPages.RemoveAt(1);
@@ -478,7 +480,7 @@ namespace MITesDataCollection
 
             //initialize the progress thread
             progressMessage = null;
-            Thread t = new Thread(new ThreadStart(ProgressThread));
+            t = new Thread(new ThreadStart(ProgressThread));
             t.Start();
 
 
@@ -572,7 +574,8 @@ namespace MITesDataCollection
                         bt.close();
                         progressThreadQuit = true;
                         Thread.Sleep(100);
-                        t.Abort();
+                        //t.Abort();
+                        progressThreadQuit = true;
                         this.Close();
                         Application.Exit();
                         System.Diagnostics.Process.GetCurrentProcess().Kill();
@@ -785,7 +788,8 @@ namespace MITesDataCollection
 
 
             //Terminate the progress thread
-            t.Abort();
+            //t.Abort();
+             progressThreadQuit = true;
 
 
             //Initialize the interface
@@ -807,6 +811,8 @@ namespace MITesDataCollection
 
         #endregion Data collection constructor
 
+
+
         #region Classifier constructor
         public MITesDataCollectionForm(string dataDirectory, string arffFile, bool isHierarchical)
         {
@@ -823,7 +829,7 @@ namespace MITesDataCollection
 
             //Initialize the progress bar thread
             progressMessage = null;
-            Thread t = new Thread(new ThreadStart(ProgressThread));
+            t = new Thread(new ThreadStart(ProgressThread));
             t.Start();
 
             //Initialize the interface
@@ -946,6 +952,22 @@ namespace MITesDataCollection
             progressMessage += " Completed\r\n";
 
 
+#if (PocketPC)
+            #region Builtin Accelerometer Initialization
+            progressMessage += "Initializing built-in sensors... \r\n";
+            foreach (Sensor sensor in this.sensors.Sensors)
+            {
+                if (sensor.SensorClass == SXML.Constants.BUILTIN)
+                {
+                    progressMessage += "Initializing ... " + sensor.SensorClass + "\r\n";
+                    if (sensor.Type == PhoneAccelerometers.Constants.DIAMOND_TOUCH_NAME)
+                        this.htcDecoder = new PhoneAccelerometers.HTC.DiamondTouch.HTCDecoder();
+                }
+            }
+
+            #endregion Builtin Accelerometer Initialization
+#endif
+
             //Initialize the feature extractor
             Extractor.Initialize(this.mitesDecoders[0], dataDirectory, this.annotation, this.sensors, this.configuration);
 
@@ -978,96 +1000,126 @@ namespace MITesDataCollection
             progressMessage += "Initializing Decision Tree Classifiers ...";
 
 #if (PocketPC)
+            labelIndex = new Hashtable();
+            instances = new Instances(new StreamReader(arffFile));
+            instances.Class = instances.attribute(Extractor.ArffAttributeLabels.Length);
+            classifier = new J48();
+            classifier.buildClassifier(instances);
+            fvWekaAttributes = new FastVector(Extractor.ArffAttributeLabels.Length + 1);
+            for (i = 0; (i < Extractor.ArffAttributeLabels.Length); i++)
+                fvWekaAttributes.addElement(new weka.core.Attribute(Extractor.ArffAttributeLabels[i]));
 
-            if (isHierarchical == true)
-                //Generate the hierarchical files
+            FastVector fvClassVal = new FastVector();
+            labelCounters = new int[((AXML.Category)this.annotation.Categories[0]).Labels.Count + 1];
+            activityLabels = new string[((AXML.Category)this.annotation.Categories[0]).Labels.Count + 1];
+            for (i = 0; (i < ((AXML.Category)this.annotation.Categories[0]).Labels.Count); i++)
             {
-                Hashtable clusters = FeatureSelector.ClusterByOrientations(OrientationForm.OrientationMatrix);
-                Hashtable clusterFeatures = FeatureSelector.GetFeaturesByMobility(clusters, MobilityForm.MobilityMatrix);
-                this.hrClassifier = new HierarchicalClassifier(this.mitesDecoders[0], this.annotation,
-                    this.sensors, dataDirectory, this.configuration);
-                //copy the arff file to a root file
-                File.Copy(arffFile, dataDirectory + "\\root.arff",true);
-               
-                //String[] masterActivities = new String[clusters.Count];
-                string[] rootFeatures = new string[Extractor.ArffAttributeLabels.Length];                
-                //all activities included for the root
-                ArrayList rootActivities = new ArrayList();
-                foreach (AXML.Label label in ((AXML.Category)this.annotation.Categories[0]).Labels)                
-                    rootActivities.Add(label.Name);                
-                foreach(DictionaryEntry entry in clusters)
-                {
-                    int cluster_id=(int) entry.Key;
-                    ArrayList cluster=(ArrayList) entry.Value;
-                    ArrayList features=(ArrayList) clusterFeatures[cluster_id];
-                    DTClassifier dtClassifier = new DTClassifier();
- 
-                    String[] acts=new String[cluster.Count];
-                    for (int k = 0; (k < cluster.Count); k++)
-                    {
-                        acts[k] = (string)SimilarActivitiesForm.ConfusingActivities[(int)cluster[k]];
-                        dtClassifier.Classes.Add(acts[k]);
-                    }
-
-                    ArrayList filteredFeatures=new ArrayList();
-                    for (int k = 0; (k < Extractor.AttributeLocation.Count); k++)
-                    {
-                        string featureName=Extractor.ArffAttributeLabels[k];
-                        rootFeatures[k] = featureName;
-                        if (Extractor.AttributeLocation[featureName] != null)
-                        {
-                            int featureLocation = (int)Extractor.AttributeLocation[featureName];
-                            for (int l = 0; (l < features.Count); l++)
-                                if (featureLocation == (int)features[l])
-                                    filteredFeatures.Add(featureName);
-                        }
-                    }
-                    String[] attrs=new String[filteredFeatures.Count];
-                    for (int k = 0; (k < filteredFeatures.Count); k++)
-                    {
-                        attrs[k] = (string)filteredFeatures[k];
-                        dtClassifier.Features.Add(attrs[k]);
-                    }
-                   
-                   
-                    //Only generate arff subtree files when there is more than
-                    //one activity and at least one attribute to use.
-                    if ((attrs.Length > 0) && (acts.Length > 1))
-                    {
-                       
-                        FilterList filter = new FilterList();
-                        filter.replaceString(dataDirectory + "\\root.arff", dataDirectory + "\\temp", "cluster" + cluster_id, acts);
-                        filter.filter(arffFile, dataDirectory + "\\cluster" + cluster_id + ".arff", attrs, acts);
-                        File.Copy(dataDirectory + "\\temp", dataDirectory + "\\root.arff",true);
-                       
-                        dtClassifier.Filename = dataDirectory + "\\cluster" + cluster_id + ".arff";
-                        dtClassifier.Name = "cluster" + cluster_id;
-                        hrClassifier.Classifiers.Add(dtClassifier.Name, dtClassifier);
-                        //if a cluster is added, add it and remove its activities from the root
-                        rootActivities.Add("cluster" + cluster_id);
-                        for (int k = 0; (k < cluster.Count); k++)                        
-                            rootActivities.Remove((string)SimilarActivitiesForm.ConfusingActivities[(int)cluster[k]]);                                                  
-                    }
-                }
-
-
-                //root classifier        
-             
-                DTClassifier rootClassifier = new DTClassifier();
-                rootClassifier.Filename = dataDirectory + "\\root.arff";
-                rootClassifier.Name = "root";
-                for (int k = 0; (k < rootActivities.Count); k++)
-                    rootClassifier.Classes.Add(rootActivities[k]);
-                for (int k = 0; (k < rootFeatures.Length); k++)
-                    rootClassifier.Features.Add(rootFeatures[k]);
-                hrClassifier.Classifiers.Add("root", rootClassifier);
-
-                TextWriter tw = new StreamWriter(dataDirectory + "\\hierarchy.xml");
-                tw.WriteLine(this.hrClassifier.toXML());
-                tw.Close();
-               
-              //at this point the HR classifier is ready to be built
+                labelCounters[i] = 0;
+                string label = "";
+                for (j = 0; (j < this.annotation.Categories.Count - 1); j++)
+                    label += ((AXML.Label)((AXML.Category)this.annotation.Categories[j]).Labels[i]).Name.Replace(' ', '_') + "_";
+                label += ((AXML.Label)((AXML.Category)this.annotation.Categories[j]).Labels[i]).Name.Replace(' ', '_');
+                //labelCounters.Add(label, 0);
+                activityLabels[i] = label;
+                labelIndex.Add(label, i);
+                fvClassVal.addElement(label);
             }
+            //activityLabels[i] = "unknown";
+            //labelIndex.Add("unknown", i);
+            //fvClassVal.addElement("unknown");
+            weka.core.Attribute ClassAttribute = new weka.core.Attribute("activity", fvClassVal);
+
+            isClassifying = true;
+
+            //if (isHierarchical == true)
+            //    //Generate the hierarchical files
+            //{
+            //    Hashtable clusters = FeatureSelector.ClusterByOrientations(OrientationForm.OrientationMatrix);
+            //    Hashtable clusterFeatures = FeatureSelector.GetFeaturesByMobility(clusters, MobilityForm.MobilityMatrix);
+            //    this.hrClassifier = new HierarchicalClassifier(this.mitesDecoders[0], this.annotation,
+            //        this.sensors, dataDirectory, this.configuration);
+            //    //copy the arff file to a root file
+            //    File.Copy(arffFile, dataDirectory + "\\root.arff",true);
+               
+            //    //String[] masterActivities = new String[clusters.Count];
+            //    string[] rootFeatures = new string[Extractor.ArffAttributeLabels.Length];                
+            //    //all activities included for the root
+            //    ArrayList rootActivities = new ArrayList();
+            //    foreach (AXML.Label label in ((AXML.Category)this.annotation.Categories[0]).Labels)                
+            //        rootActivities.Add(label.Name);                
+            //    foreach(DictionaryEntry entry in clusters)
+            //    {
+            //        int cluster_id=(int) entry.Key;
+            //        ArrayList cluster=(ArrayList) entry.Value;
+            //        ArrayList features=(ArrayList) clusterFeatures[cluster_id];
+            //        DTClassifier dtClassifier = new DTClassifier();
+ 
+            //        String[] acts=new String[cluster.Count];
+            //        for (int k = 0; (k < cluster.Count); k++)
+            //        {
+            //            acts[k] = (string)SimilarActivitiesForm.ConfusingActivities[(int)cluster[k]];
+            //            dtClassifier.Classes.Add(acts[k]);
+            //        }
+
+            //        ArrayList filteredFeatures=new ArrayList();
+            //        for (int k = 0; (k < Extractor.AttributeLocation.Count); k++)
+            //        {
+            //            string featureName=Extractor.ArffAttributeLabels[k];
+            //            rootFeatures[k] = featureName;
+            //            if (Extractor.AttributeLocation[featureName] != null)
+            //            {
+            //                int featureLocation = (int)Extractor.AttributeLocation[featureName];
+            //                for (int l = 0; (l < features.Count); l++)
+            //                    if (featureLocation == (int)features[l])
+            //                        filteredFeatures.Add(featureName);
+            //            }
+            //        }
+            //        String[] attrs=new String[filteredFeatures.Count];
+            //        for (int k = 0; (k < filteredFeatures.Count); k++)
+            //        {
+            //            attrs[k] = (string)filteredFeatures[k];
+            //            dtClassifier.Features.Add(attrs[k]);
+            //        }
+                   
+                   
+            //        //Only generate arff subtree files when there is more than
+            //        //one activity and at least one attribute to use.
+            //        if ((attrs.Length > 0) && (acts.Length > 1))
+            //        {
+                       
+            //            FilterList filter = new FilterList();
+            //            filter.replaceString(dataDirectory + "\\root.arff", dataDirectory + "\\temp", "cluster" + cluster_id, acts);
+            //            filter.filter(arffFile, dataDirectory + "\\cluster" + cluster_id + ".arff", attrs, acts);
+            //            File.Copy(dataDirectory + "\\temp", dataDirectory + "\\root.arff",true);
+                       
+            //            dtClassifier.Filename = dataDirectory + "\\cluster" + cluster_id + ".arff";
+            //            dtClassifier.Name = "cluster" + cluster_id;
+            //            hrClassifier.Classifiers.Add(dtClassifier.Name, dtClassifier);
+            //            //if a cluster is added, add it and remove its activities from the root
+            //            rootActivities.Add("cluster" + cluster_id);
+            //            for (int k = 0; (k < cluster.Count); k++)                        
+            //                rootActivities.Remove((string)SimilarActivitiesForm.ConfusingActivities[(int)cluster[k]]);                                                  
+            //        }
+            //    }
+
+
+            //    //root classifier        
+             
+            //    DTClassifier rootClassifier = new DTClassifier();
+            //    rootClassifier.Filename = dataDirectory + "\\root.arff";
+            //    rootClassifier.Name = "root";
+            //    for (int k = 0; (k < rootActivities.Count); k++)
+            //        rootClassifier.Classes.Add(rootActivities[k]);
+            //    for (int k = 0; (k < rootFeatures.Length); k++)
+            //        rootClassifier.Features.Add(rootFeatures[k]);
+            //    hrClassifier.Classifiers.Add("root", rootClassifier);
+
+            //    TextWriter tw = new StreamWriter(dataDirectory + "\\hierarchy.xml");
+            //    tw.WriteLine(this.hrClassifier.toXML());
+            //    tw.Close();
+               
+            //  //at this point the HR classifier is ready to be built
+            //}
 #else
 #endif
             //Here initialize the classifier
@@ -1103,8 +1155,21 @@ namespace MITesDataCollection
 
             }
 
+
+            //Start the built in polling thread            
+#if (PocketPC)
+            if (this.sensors.HasBuiltinSensors)
+            {
+                this.pollingThread = new Thread(new ThreadStart(this.pollingData));
+                this.pollingThread.Priority = ThreadPriority.Lowest;
+                this.pollingThread.Start();
+            }
+#endif
+
+
             //Terminate the progress thread
-            t.Abort();
+            //t.Abort();
+            progressThreadQuit = true;
 
             //Initialize the interface
 #if (PocketPC)
@@ -1156,6 +1221,19 @@ namespace MITesDataCollection
 
                 try
                 {
+#if (PocketPC)
+                    portNumber = maxPortSearched = 9;
+                    progressMessage += "Testing COM Port " + portNumber;
+                    if (this.mitesControllers[i].TestPort(portNumber, BYTES_BUFFER_SIZE))
+                    {
+                        progressMessage += "... Success\r\n";
+                    }
+                    else
+                    {
+                        progressMessage += "... Failed\r\n";
+                        portNumber = MITesReceiverController.FIND_PORT;
+                    }
+#else
                     for (int j = maxPortSearched; (j < Constants.MAX_PORT); j++)
                     {
                         portNumber = maxPortSearched = j;
@@ -1168,6 +1246,7 @@ namespace MITesDataCollection
                         else
                             progressMessage += "... Failed\r\n";
                     }
+#endif
                 }
                 catch (Exception)
                 {
@@ -1186,12 +1265,12 @@ namespace MITesDataCollection
                 if (portNumber == MITesReceiverController.FIND_PORT)
                 {
                     progressMessage += "Could not find a valid COM port with a MITes receiver!";
-                    MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
+                    //MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
 #if (PocketPC)
-                    Application.Exit();
-                    System.Diagnostics.Process.GetCurrentProcess().Kill();    
+                    //Application.Exit();
+                    //System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
-                    Environment.Exit(0);
+                    //Environment.Exit(0);
 #endif
                     return false;
                 }
@@ -2290,111 +2369,114 @@ namespace MITesDataCollection
         /// <param name="e"></param>
         void qualityTimer_Tick(object sender, System.EventArgs e)
         {
-            // if (isStartedReceiver)
-            //{
-            bool overallGoodQuality = true;
-            double goodRate = (1 - Extractor.Configuration.MaximumNonconsecutiveFrameLoss) * 100;
-
-            foreach (SXML.Sensor sensor in this.sensors.Sensors)
+            if (isStartedReceiver)
             {
-                int sensor_id = Convert.ToInt32(sensor.ID);
+                bool overallGoodQuality = true;
+                double goodRate = (1 - Extractor.Configuration.MaximumNonconsecutiveFrameLoss) * 100;
+
+                foreach (SXML.Sensor sensor in this.sensors.Sensors)
+                {
+                    int sensor_id = Convert.ToInt32(sensor.ID);
 
 #if (PocketPC)
-                if (sensor_id == MITesDecoder.MAX_CHANNEL) //BUILTIN
-                {
-                    double rate = ((double)this.htcDecoder.SamplingRate) * 100 / sensor.SamplingRate;
-                    if (rate > 100)
-                        rate = 100;
-                    else if (rate < 0)
-                        rate = 0;
-                    this.expectedLabels[sensor_id].Text = rate.ToString("00.00") + "%";
-                    this.samplesPerSecond[sensor_id].Text = this.htcDecoder.SamplingRate.ToString() + "/" + sensor.SamplingRate.ToString();
-
-                    if (rate < goodRate)
+                    if (sensor_id == MITesDecoder.MAX_CHANNEL) //BUILTIN
                     {
-                        this.expectedLabels[sensor_id].ForeColor = Color.Red;
-                        this.samplesPerSecond[sensor_id].ForeColor = Color.Red;
-                        this.labels[sensor_id].ForeColor = Color.Red;
+                        double rate = ((double)this.htcDecoder.SamplingRate) * 100 / sensor.SamplingRate;
+                        if (rate > 100)
+                            rate = 100;
+                        else if (rate < 0)
+                            rate = 0;
+                        this.expectedLabels[sensor_id].Text = rate.ToString("00.00") + "%";
+                        this.samplesPerSecond[sensor_id].Text = this.htcDecoder.SamplingRate.ToString() + "/" + sensor.SamplingRate.ToString();
+
+                        if (rate < goodRate)
+                        {
+                            this.expectedLabels[sensor_id].ForeColor = Color.Red;
+                            this.samplesPerSecond[sensor_id].ForeColor = Color.Red;
+                            this.labels[sensor_id].ForeColor = Color.Red;
+                        }
+                        else
+                        {
+                            this.expectedLabels[sensor_id].ForeColor = Color.Black;
+                            this.samplesPerSecond[sensor_id].ForeColor = Color.Black;
+                            this.labels[sensor_id].ForeColor = Color.Black;
+                        }
+
+                        MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate = rate;
+                        MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter = 0;
+
+                        if (rate < MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate)
+                            overallGoodQuality = false;
                     }
                     else
-                    {
-                        this.expectedLabels[sensor_id].ForeColor = Color.Black;
-                        this.samplesPerSecond[sensor_id].ForeColor = Color.Black;
-                        this.labels[sensor_id].ForeColor = Color.Black;
-                    }
+#endif
+                        if (sensor_id > 0) // don't include HR
+                        {
+                            double rate = ((double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter / (double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate) * 100;
+                            if (rate > 100)
+                                rate = 100;
+                            else if (rate < 0)
+                                rate = 0;
+                            this.expectedLabels[sensor_id].Text = rate.ToString("00.00") + "%";
+                            this.samplesPerSecond[sensor_id].Text = MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter.ToString() + "/" + MITesDataFilterer.MITesPerformanceTracker[sensor_id].PerfectRate.ToString();
 
-                    MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate = rate;
-                    MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter = 0;
+                            if (rate < goodRate)
+                            {
+                                this.expectedLabels[sensor_id].ForeColor = Color.Red;
+                                this.samplesPerSecond[sensor_id].ForeColor = Color.Red;
+                                this.labels[sensor_id].ForeColor = Color.Red;
+                            }
+                            else
+                            {
+                                this.expectedLabels[sensor_id].ForeColor = Color.Black;
+                                this.samplesPerSecond[sensor_id].ForeColor = Color.Black;
+                                this.labels[sensor_id].ForeColor = Color.Black;
+                            }
 
-                    if (rate < MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate)
-                        overallGoodQuality = false;
+                            MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate = rate;
+                            MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter = 0;
+
+                            if (rate < MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate)
+                                overallGoodQuality = false;
+                        }
                 }
-                else 
-#endif                    
-                if (sensor_id > 0) // don't include HR
+
+                if (this.collectDataMode) // if we are collecting data then control the timers
                 {
-                    double rate = ((double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter / (double)MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate) * 100;
-                    if (rate > 100)
-                        rate = 100;
-                    else if (rate < 0)
-                        rate = 0;
-                    this.expectedLabels[sensor_id].Text = rate.ToString("00.00") + "%";
-                    this.samplesPerSecond[sensor_id].Text = MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter.ToString() + "/" + MITesDataFilterer.MITesPerformanceTracker[sensor_id].PerfectRate.ToString();
-
-                    if (rate < goodRate)
-                    {
-                        this.expectedLabels[sensor_id].ForeColor = Color.Red;
-                        this.samplesPerSecond[sensor_id].ForeColor = Color.Red;
-                        this.labels[sensor_id].ForeColor = Color.Red;
-                    }
-                    else
-                    {
-                        this.expectedLabels[sensor_id].ForeColor = Color.Black;
-                        this.samplesPerSecond[sensor_id].ForeColor = Color.Black;
-                        this.labels[sensor_id].ForeColor = Color.Black;
-                    }
-
-                    MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate = rate;
-                    MITesDataFilterer.MITesPerformanceTracker[sensor_id].SampleCounter = 0;
-
-                    if (rate < MITesDataFilterer.MITesPerformanceTracker[sensor_id].GoodRate)
-                        overallGoodQuality = false;
+                    //stop the good timer if the overall timer is running (i.e. something is being annotated), the overall quality is bad
+                    if ((this.overallTimer.isRunning()) && (overallGoodQuality == false) && (this.goodTimer.isRunning()))
+                        this.goodTimer.stop();
+                    //start the good timer if the overall timer is running (i.e. something is being annotated), the overall quality is good
+                    else if ((this.overallTimer.isRunning()) && (overallGoodQuality == true) && (this.goodTimer.isRunning() == false))
+                        this.goodTimer.start();
                 }
-            }
-
-            if (this.collectDataMode) // if we are collecting data then control the timers
-            {
-                //stop the good timer if the overall timer is running (i.e. something is being annotated), the overall quality is bad
-                if ((this.overallTimer.isRunning()) && (overallGoodQuality == false) && (this.goodTimer.isRunning()))
-                    this.goodTimer.stop();
-                //start the good timer if the overall timer is running (i.e. something is being annotated), the overall quality is good
-                else if ((this.overallTimer.isRunning()) && (overallGoodQuality == true) && (this.goodTimer.isRunning() == false))
-                    this.goodTimer.start();
-            }
-            //}
+                //}
 
 #if (PocketPC)
 
 
-            //foreach (SXML.Sensor sensor in this.sensors.BuiltinSensors)
-            //{
-            //    if (sensor.Type == PhoneAccelerometers.Constants.DIAMOND_TOUCH_NAME)
-            //    {
-            //        ((System.Windows.Forms.Label)this.builtInExpectedLabels[sensor.Type]).Text = ((double)(this.htcDecoder.SamplingRate * 100.0 / PhoneAccelerometers.Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE)).ToString("0.00") + "%";
-            //        ((System.Windows.Forms.Label)this.builtInSamplesPerSecond[sensor.Type]).Text = this.htcDecoder.SamplingRate + "/" + PhoneAccelerometers.Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;
-            //    }
-            //}
+                //foreach (SXML.Sensor sensor in this.sensors.BuiltinSensors)
+                //{
+                //    if (sensor.Type == PhoneAccelerometers.Constants.DIAMOND_TOUCH_NAME)
+                //    {
+                //        ((System.Windows.Forms.Label)this.builtInExpectedLabels[sensor.Type]).Text = ((double)(this.htcDecoder.SamplingRate * 100.0 / PhoneAccelerometers.Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE)).ToString("0.00") + "%";
+                //        ((System.Windows.Forms.Label)this.builtInSamplesPerSecond[sensor.Type]).Text = this.htcDecoder.SamplingRate + "/" + PhoneAccelerometers.Constants.DIAMOND_TOUCH_MAX_SAMPLING_RATE;
+                //    }
+                //}
 
-            if (this.tabControl1.TabIndex == 0)
-            {
+                if (this.tabControl1.TabIndex == 0)
+                {
 #endif
-            ReportActivityCounts();
-            ReportHR();
+                    ReportActivityCounts();
+                    ReportHR();
 
 #if (PocketPC)
-            }
+                }
 #endif
+            }
         }
+
+
 
 
 #if (PocketPC)
@@ -2417,6 +2499,9 @@ namespace MITesDataCollection
 #endif
 
         private bool connectionLost = false;
+        private int reconnection_attempts = 0;
+        private int reconnection_timeout = 0;
+        private Thread t = null;
         /// <summary>
         /// This methods is invoked every 10 milliseconds
         /// </summary>
@@ -2434,17 +2519,26 @@ namespace MITesDataCollection
 
 
             
-                        if (connectionLost) //attempt to restablish connection
+            if (connectionLost) //attempt to restablish connection
             {
 
 
-                System.Threading.Thread.Sleep(1000);
+                while (reconnection_timeout > 0)
+                {
+                    reconnection_timeout--;
+                    System.Threading.Thread.Sleep(1000);
+                    progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";
+                }
                 bool btRestablished = false;
                 progressMessage = null;
-                Thread t = new Thread(new ThreadStart(ProgressThread));
-                t.Start();
-                progressMessage += "Attempting to restablish Bluetooth Connection\r\n";
-                progressMessage += "Bluetooth Connection...";
+                if (reconnection_attempts==0)                
+                {
+                    progressThreadQuit = false;
+                    t = new Thread(new ThreadStart(ProgressThread));
+                    t.Start();
+                }
+                progressMessage += "Attempting to reconnect to MITes\r\n";                
+                progressMessage += "Bluetooth Initialization ...";
                 //setup the Bluetooth if needed
                 if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
                 {
@@ -2457,39 +2551,58 @@ namespace MITesDataCollection
                     }
                     catch (Exception exx)
                     {
-                        
-                       // MessageBox.Show("Failed to reconnect to Bluetooth Device... exiting!");
+                        progressMessage += " Failed...\r\n";
+                        reconnection_attempts++;
+                       //MessageBox.Show("Unable to reinitialize BT");
                        // bt.close();
                         //Application.Exit();
                         //System.Diagnostics.Process.GetCurrentProcess().Kill();
                     }
                 }
-                progressMessage += " Established...\r\n";
-
-                progressMessage += "Attempting to reinitialize MITes receivers\r\n";
+                
                 //Intialize the MITes Receivers, decoders and counters based
                 //on the chosen sensors
                 if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
                 {
+                    progressMessage += " Success...\r\n";
+                    progressMessage += "Connecting to MITes attempt " + (reconnection_attempts + 1) + " ...";
+
                     this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
                     this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
-                    this.aMITesActivityCounters = new Hashtable();                    
+                    this.aMITesActivityCounters = new Hashtable();
                     if (InitializeMITes(dataDirectory) == false)
                     {
-                        MessageBox.Show("Exiting: You picked a configuration with " + this.sensors.TotalReceivers + " receivers. Please make sure they are attached to the computer.");
-
-                        bt.close();
-                        Application.Exit();
-                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                        //MessageBox.Show("Exiting: You picked a configuration with " + this.sensors.TotalReceivers + " receivers. Please make sure they are attached to the computer.");
+                        //bt.close();
+                        //Application.Exit();
+                        //System.Diagnostics.Process.GetCurrentProcess().Kill();
+                        progressMessage += " Failed\r\n";                    
+                        reconnection_attempts++;
+                        reconnection_timeout = 10;
+                        progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";
+                        if (reconnection_attempts == 10)
+                        {
+                            Application.Exit();
+                            System.Diagnostics.Process.GetCurrentProcess().Kill();
+                        }
+                        return;
+                    }
+                    else
+                    {
+                        Extractor.SetMITesDecoder(this.mitesDecoders[0]);
+                        btRestablished = false;
+                        progressMessage += "Data collection resumed\r\n";
+                        connectionLost = false;
+                        isStartedReceiver = true;
+                        reconnection_attempts = 0;
+                        //t.Abort();
+                        progressThreadQuit = true;
+                        Thread.Sleep(1000);                  
 
                     }
                 }
 
-                btRestablished = false;
-                progressMessage += "Data collection resumed\r\n";
-                connectionLost = false;
-                isStartedReceiver = true;
-                t.Abort();
+               
             }
 #else
             if (this.Visible)
@@ -2515,6 +2628,7 @@ namespace MITesDataCollection
                     Console.WriteLine(ex.ToString());
                     connectionLost = true;
                     isStartedReceiver = false;
+                    return;
                 }
 
                 for (int i = 1; (i < this.sensors.TotalReceivers); i++)
@@ -2552,10 +2666,10 @@ namespace MITesDataCollection
                     time = Environment.TickCount;
                 }
 
-                #region Arizona
-                double lastTS = Extractor.StoreMITesWindow();
-                Extractor.GenerateFeatureVector(lastTS);
-                #endregion
+               // #region Arizona
+                //double lastTS = Extractor.StoreMITesWindow();
+                //Extractor.GenerateFeatureVector(lastTS);
+                //#endregion
 
 
                 #region Train in realtime and generate ARFF File
@@ -2660,24 +2774,16 @@ namespace MITesDataCollection
                     double lastTimeStamp = Extractor.StoreMITesWindow();
                     if (Extractor.GenerateFeatureVector(lastTimeStamp))
                     {
-                        this.label6.ForeColor = Color.Black;
                         Instance newinstance = new Instance(instances.numAttributes());
                         newinstance.Dataset = instances;
-
-
                         for (int i = 0; (i < Extractor.Features.Length); i++)
-                        {
                             newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
-                        }
                         double predicted = classifier.classifyInstance(newinstance);
-
-
                         string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
 
                         int currentIndex = (int)labelIndex[predicted_activity];
                         labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
                         classificationCounter++;
-
 
                         if (classificationCounter == Extractor.Configuration.SmoothWindows)
                         {
@@ -2686,23 +2792,72 @@ namespace MITesDataCollection
                             string mostActivity = "";
                             for (int j = 0; (j < labelCounters.Length); j++)
                             {
-                                if ((labelCounters[j] > mostCount) && (labelCounters[j] > 3))
+                                if (labelCounters[j] > mostCount)
                                 {
                                     mostActivity = activityLabels[j];
                                     mostCount = labelCounters[j];
                                 }
-
-
                                 labelCounters[j] = 0;
                             }
 
-                            if (mostActivity.Equals(""))
-                                mostActivity = "Not Sure";
-                            this.label6.Text = mostActivity;
+                            pieChart.SetActivity(mostActivity);
+                            pieChart.Invalidate();
+                            //this.label11.Text = "Fahd is "+mostActivity;
                         }
-
                     }
                 }
+
+
+
+                //if (isClassifying == true)
+                //{
+                //    double lastTimeStamp = Extractor.StoreMITesWindow();
+                //    if (Extractor.GenerateFeatureVector(lastTimeStamp))
+                //    {
+                //        this.label6.ForeColor = Color.Black;
+                //        Instance newinstance = new Instance(instances.numAttributes());
+                //        newinstance.Dataset = instances;
+
+
+                //        for (int i = 0; (i < Extractor.Features.Length); i++)
+                //        {
+                //            newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
+                //        }
+                //        double predicted = classifier.classifyInstance(newinstance);
+
+
+                //        string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
+
+                //        int currentIndex = (int)labelIndex[predicted_activity];
+                //        labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
+                //        classificationCounter++;
+
+
+                //        if (classificationCounter == Extractor.Configuration.SmoothWindows)
+                //        {
+                //            classificationCounter = 0;
+                //            int mostCount = 0;
+                //            string mostActivity = "";
+                //            for (int j = 0; (j < labelCounters.Length); j++)
+                //            {
+                //                if ((labelCounters[j] > mostCount) && (labelCounters[j] > 3))
+                //                {
+                //                    mostActivity = activityLabels[j];
+                //                    mostCount = labelCounters[j];
+                //                }
+
+
+                //                labelCounters[j] = 0;
+                //            }
+
+                //            if (mostActivity.Equals(""))
+                //                mostActivity = "Not Sure";
+                //            //this.label6.Text = mostActivity;
+                //            pieChart.SetActivity(mostActivity);
+                //        }
+
+                //    }
+                //}
 
                 #endregion Classifying activities
 
@@ -3081,10 +3236,15 @@ namespace MITesDataCollection
 
             #region Store the sensor data
 
-            if ((this.sensors.HasBuiltinSensors) && (polledData != null))            
-                aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);                            
+            if ((this.sensors.HasBuiltinSensors) && (polledData != null))
+            {
+                //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);
+                //store it in Extractor Buffers as well
+                Extractor.StoreBuiltinData(polledData);
+            }
             else
-                aMITesLoggerPLFormat.SaveRawMITesBuiltinData(null);
+                ;
+                //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(null);
 
             if (flushTimer == 0)           
                 aMITesLoggerPLFormat.FlushBytes();            
