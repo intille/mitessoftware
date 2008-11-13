@@ -231,6 +231,10 @@ namespace MITesFeatures
         }
 
 
+        public static void SetMITesDecoder(MITesDecoder aMITesDecoder)
+        {
+            Extractor.aMITesDecoder = aMITesDecoder;
+        }
         public static void Initialize(MITesDecoder aMITesDecoder, string aDataDirectory,
             AXML.Annotation aannotation, SXML.SensorAnnotation sannotation, GeneralConfiguration configuration)//, string masterDirectory)
         {
@@ -423,7 +427,19 @@ namespace MITesFeatures
 
 
 
+        public static void StoreBuiltinData(GenericAccelerometerData polledData)
+        {
+            int sensorIndex = (int)Extractor.sensorIndicies[polledData.ChannelID];
+            int adjusted_sensor_index = sensorIndex * 4;
+            Extractor.data[adjusted_sensor_index][Extractor.y_index[sensorIndex]] = polledData.X ;
+            Extractor.data[adjusted_sensor_index + 1][Extractor.y_index[sensorIndex]] = polledData.Y;
+            Extractor.data[adjusted_sensor_index + 2][Extractor.y_index[sensorIndex]] = polledData.Z;
+            Extractor.data[adjusted_sensor_index + 3][Extractor.y_index[sensorIndex]] = polledData.Unixtimestamp;
 
+            //increment the y_index for the sensor and wrap around if needed
+            Extractor.y_index[sensorIndex] = (Extractor.y_index[sensorIndex] + 1) % Extractor.EXPECTED_WINDOW_SIZES[sensorIndex];
+
+        }
 
         //start collecting features from MITes decoder, do windowing plus calculate features
         public static double StoreMITesWindow()
@@ -726,6 +742,7 @@ namespace MITesFeatures
             #endregion Calculate Feature Vector
 
            
+        
         }
 #if (!PocketPC)
         public static void toARFF(string aDataDirectory, string masterDirectory, int maxControllers, string sourceFile, int annotators,string[] filter)
