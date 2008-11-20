@@ -24,6 +24,66 @@ namespace ActivitySummary
             }
         }
 
+        public void reset()
+        {
+            int count = 0;
+            foreach (Activity a in this.activities)
+            {
+                if (a.Name != "empty2")
+                {
+                    a.Percent = 1;
+                    count++;
+                }
+            }
+
+            setPercent("empty2", 100 - count);                
+
+        }
+        public void setPercent(string activity, int percent)
+        {
+            foreach (Activity a in this.activities)
+            {
+                if (a.Name == activity)
+                {
+                    a.Percent = percent;
+                    return;
+                }
+            }
+        }
+
+        public void decrement(string activity)
+        {
+            foreach (Activity a in this.activities)
+            {
+                if (a.Name == activity)
+                {
+                    a.Percent = a.Percent - 1;
+                    return;
+                }
+            }
+        }
+
+        public void increment(string activity)
+        {
+            foreach (Activity a in this.activities)
+            {
+                if (a.Name == activity)
+                {
+                    a.Percent = a.Percent+1;
+                    decrement("empty2");
+                    return;
+                }
+            }
+        }
+
+        public int getEmptyPercent()
+        {
+            foreach (Activity a in this.activities)
+                if (a.Name == "empty2")
+                    return a.Percent;
+            return 0;
+        }
+
         public Hashtable toPercentHashtable()
         {
             Hashtable activities = new Hashtable();

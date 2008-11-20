@@ -90,6 +90,7 @@ namespace Charts.twodimensional
         private int currentActivityHours = 0;
         private int currentActivityMinutes = 0;
         private int currentActivitySeconds = 0;
+        private string currentTime = "00:00:00";
         private int totalCalories = 0;
         private int currentCalories = 0;
 
@@ -143,6 +144,12 @@ namespace Charts.twodimensional
             this.currentActivitySeconds = seconds;
         }
 
+        public void SetTime(string currentTime)
+        {
+            this.currentTime = currentTime;
+        }
+
+
         public void SetCalories(int totalCalories, int currentCalories)
         {
             this.totalCalories = totalCalories;
@@ -163,7 +170,9 @@ namespace Charts.twodimensional
             if (currentActivity.Length > 0)
             {
                 graphics.DrawString(currentActivity, new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 100);
-                graphics.DrawString(currentActivityHours.ToString("00") + ":" + currentActivityMinutes.ToString("00") + ":" + currentActivitySeconds.ToString("00"), new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
+               
+                //graphics.DrawString(currentActivityHours.ToString("00") + ":" + currentActivityMinutes.ToString("00") + ":" + currentActivitySeconds.ToString("00"), new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
+                graphics.DrawString(currentTime, new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
             }
             else
             {

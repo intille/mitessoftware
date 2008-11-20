@@ -43,8 +43,9 @@ namespace MITesDataCollection
             base.Dispose(disposing);
         }
 
-
-
+#if (PocketPC)
+        ActivityList aList;
+#endif
         //Intialize different interface components
         private void InitializeInterface()
         {
@@ -484,7 +485,7 @@ namespace MITesDataCollection
             GpStatusPlus stat = NativeMethods.GdiplusStartup(out token, input, out output);            
             pieChart = new Charts.twodimensional.PieChart();
             pieChart.IsStretch = true;
-            ActivityList aList = new ActivitySummary.Reader(null, this.dataDirectory).parse();
+            this.aList = new ActivitySummary.Reader(null, this.dataDirectory).parse();
             pieChart.Data = aList.toPercentHashtable();
             pieChart.SetActivity("No Activity");
             pieChart.SetTime(0, 0,0);

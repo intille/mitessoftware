@@ -168,8 +168,13 @@ namespace TestApplication
             //tw.Close();
 
 
+            string[] filter = new string[2];           
+            filter[0] = "annotation";
+            filter[1] = "setup";
+   
+            Extractor.toARFF(@"C:\SamplePLFormat","..\\NeededFiles\\Master\\", 3,filter);
 
-
+            /* Autism Analysis Start
 
 
             string[] filter = new string[5];
@@ -674,7 +679,7 @@ namespace TestApplication
             //full data test
 
 
-            /************* FULL DATA Test  *****************/
+        
             Instances fullData = new Instances(new StreamReader(@"C:\SamplePLFormat\output-ActivityLabels.arff"));
             //removeAttributeFilter = new Remove();
             //removeAttribute = new int[3];
@@ -1033,47 +1038,10 @@ namespace TestApplication
             tw4.WriteLine("Realtime\n");
             tw4.WriteLine(realtimeMatrix.toString());
             tw4.Close();
-            /*
-            tw2.WriteLine("General Statistics\n------------------\n");
-            tw2.WriteLine("Kappa: " + kappa.ToString("0.00") + "\n");
-            tw2.WriteLine("No. Examples in Agreement: " + agreements.ToString() + "\n");
-            tw2.WriteLine("No. Examples in Disagreement: " + (totalSum - agreements).ToString() + "\n");
-            tw2.WriteLine("Total Examples: " + totalSum.ToString() + "\n");
-            tw2.WriteLine("Disagreement\n------------------\n");
-            for (int i = 0; (i < annotaters); i++)
-            {
-                tw2.WriteLine("RecognitionRate annotater " + i + " :" + ((double)(correctMatricies[i] / totalMatricies[i]) * 100).ToString("0.00") + "%\n");
-                tw2.WriteLine(cMatricies[i].toString());
-                for (int j = 0; (j < cMatricies[i].numColumns()); j++)
-                {
-                    tw2.WriteLine("Class:" + cMatricies[i].className(j) + "\n");
-                    tw2.WriteLine(cMatricies[i].getTwoClassStats(j).ToString());
-                }
-            }
-            tw2.WriteLine("Agreement\n------------------\n");
-            tw2.WriteLine("RecognitionRate:" + ((double)(agreementCorrectMatrix / agreementTotalMatrix) * 100).ToString("0.00") + "%\n");
-            tw2.WriteLine(cMatrix2.toString());
-            for (int j = 0; (j < cMatrix2.numColumns()); j++)
-            {
-                tw2.WriteLine("Class:" + cMatrix2.className(j) + "\n");
-                tw2.WriteLine(cMatrix2.getTwoClassStats(j).ToString());
-            }
-
-            tw2.WriteLine("Combined\n------------------\n");
-            for (int i = 0; (i < annotaters); i++)
-            {
-                tw2.WriteLine("RecognitionRate " + i + " :" + ((double)((correctMatricies[i] + agreementCorrectMatrix) / (totalMatricies[i] + agreementTotalMatrix)) * 100).ToString("0.00") + "%\n");
-                tw2.WriteLine(totalMatrix[i].toString());
-                for (int j = 0; (j < totalMatrix[i].numColumns()); j++)
-                {
-                    tw2.WriteLine("Class:" + totalMatrix[i].className(j) + "\n");
-                    tw2.WriteLine(totalMatrix[i].getTwoClassStats(j).ToString());
-                }
-            }
-            tw2.Close();*/
+   
 
 
-
+            Autism Analysis end*/
 
 
         }

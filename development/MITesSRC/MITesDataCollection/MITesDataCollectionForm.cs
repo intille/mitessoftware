@@ -73,12 +73,13 @@ namespace MITesDataCollection
         bool isWrittenKey = false;
         private bool isPlottingFullScreen = false;
         private string progressMessage;
-        private ATimer goodTimer, overallTimer;
+        private ATimer goodTimer, overallTimer,activityTimer;
         private ArrayList categoryButtons;
         private ArrayList buttonIndex;
         private string longest_label = "";
         public const int GOOD_TIMER = 1;
         public const int OVERALL_TIMER = 2;
+        public const int ACTIVITY_TIMER = 3;
 
         delegate void SetTextCallback(string label, int control_id);
         delegate void SetSignalCallback(bool isGood);
@@ -995,7 +996,7 @@ namespace MITesDataCollection
                     MITesDataFilterer.MITesPerformanceTracker[sensor_id].PerfectRate = (int)((Extractor.Configuration.ExpectedSamplingRate) / this.sensors.NumberSensors[receiver_id]);
                 }
             }
-
+            InitializeTimers();
             //Initializing decision tree classifiers
             progressMessage += "Initializing Decision Tree Classifiers ...";
 
@@ -1196,6 +1197,7 @@ namespace MITesDataCollection
         {
             this.goodTimer = new ATimer(this, GOOD_TIMER);
             this.overallTimer = new ATimer(this, OVERALL_TIMER);
+            this.activityTimer = new ATimer(this, ACTIVITY_TIMER);
 
         }
 
@@ -1319,8 +1321,16 @@ namespace MITesDataCollection
                 {
                     if (Convert.ToInt32(((Sensor)this.sensors.Sensors[j]).Receiver) == i)
                     {
-                        channels[channelCounter] = Convert.ToInt32(((Sensor)this.sensors.Sensors[j]).ID);
-                        channelCounter++;
+                        int channelID=Convert.ToInt32(((Sensor)this.sensors.Sensors[j]).ID);
+#if(PocketPC)
+                        if (channelID != PhoneAccelerometers.Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID)
+                        {
+#endif
+                            channels[channelCounter] = Convert.ToInt32(((Sensor)this.sensors.Sensors[j]).ID);
+                            channelCounter++;
+#if (PocketPC)
+                        }
+#endif
                     }
                 }
                 this.mitesControllers[i].SetChannels(this.sensors.GetNumberSensors(i), channels);
@@ -2059,6 +2069,13 @@ namespace MITesDataCollection
                     this.label3.Text = label;
 
                 }
+#if (PocketPC)
+                else if (control_id == ACTIVITY_TIMER)
+                {
+                    pieChart.SetTime(label);
+                    pieChart.Invalidate();
+                }
+#endif
             }
         }
 
@@ -2482,6 +2499,7 @@ namespace MITesDataCollection
 #if (PocketPC)
         private bool unprocessedBuiltin = false;
         private GenericAccelerometerData builtinData;
+        private string previousActivity = "";
         //private System.Threading.Monitor pollingMutex = new Mutex();
         private void pollingData()
         {
@@ -2502,6 +2520,8 @@ namespace MITesDataCollection
         private int reconnection_attempts = 0;
         private int reconnection_timeout = 0;
         private Thread t = null;
+        private int totalCalories = 0;
+        private int currentCalories = 0;
         /// <summary>
         /// This methods is invoked every 10 milliseconds
         /// </summary>
@@ -2768,7 +2788,7 @@ namespace MITesDataCollection
                 #region Classifying activities
 
                 //Extractor.StoreMITesWindow();
-
+#if (PocketPC)
                 if (isClassifying == true)
                 {
                     double lastTimeStamp = Extractor.StoreMITesWindow();
@@ -2801,13 +2821,53 @@ namespace MITesDataCollection
                             }
 
                             pieChart.SetActivity(mostActivity);
+                            if (this.aList.getEmptyPercent() == 1)
+                                this.aList.reset();
+                            else
+                                this.aList.increment(mostActivity);
+
+                            if (previousActivity != mostActivity)
+                            {
+                                this.activityTimer.stop();
+                                this.activityTimer.reset();
+                                currentCalories = 0;
+                            }
+                            else
+                            {
+                                if (this.activityTimer.isRunning() == false)
+                                    this.activityTimer.start();
+                            }
+
+                            if (mostActivity == "standing")
+                            {
+                                currentCalories += 1;
+                                totalCalories += 1;
+                            }
+                            else if (mostActivity == "walking")
+                            {
+                                currentCalories += 2;
+                                totalCalories += 2;
+                            }
+                            else if (mostActivity == "brisk-walking")
+                            {
+                                currentCalories += 4;
+                                totalCalories += 4;
+                            }
+                            else
+                            {
+                                currentCalories += 1;
+                                totalCalories += 1;
+                            }
+                            pieChart.SetCalories(totalCalories, currentCalories);
+                            pieChart.Data = this.aList.toPercentHashtable();                   
                             pieChart.Invalidate();
+                            previousActivity = mostActivity;
                             //this.label11.Text = "Fahd is "+mostActivity;
                         }
                     }
                 }
 
-
+#endif
 
                 //if (isClassifying == true)
                 //{
@@ -3002,10 +3062,16 @@ namespace MITesDataCollection
                                         this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
 
                                         int receiver_id = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).Receiver);
-                                        int[] channels = new int[6];
-                                        channels[0] = this.calSensor;
-                                        this.mitesControllers[receiver_id].SetChannels(1, channels);
-
+                                        int[] channels = new int[6];      
+#if (PockectPC)                          
+                                        if (this.calSensor != PhoneAccelerometers.Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID)
+                                        {
+#endif
+                                            channels[0] = this.calSensor;
+                                            this.mitesControllers[receiver_id].SetChannels(1, channels);
+#if (PockectPC)  
+                                        }
+#endif
                                     }
                                     else //all sensors are calibrated
                                     {

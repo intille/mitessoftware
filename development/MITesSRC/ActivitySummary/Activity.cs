@@ -65,6 +65,7 @@ namespace ActivitySummary
             }
         }
 
+ 
         public string toString()
         {
             string output = "<" + Constants.ACTIVITY_ELEMENT + ">\n";
