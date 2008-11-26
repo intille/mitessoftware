@@ -27,19 +27,27 @@ namespace MITesDataCollection
             SensorConfigurationForm sensorConfigurationForm = new SensorConfigurationForm();
             BuildModelFeatureForm buildModelFeatureForm = new BuildModelFeatureForm();            
             WhereStoreDataForm whereStoreDataForm = new WhereStoreDataForm();
-        
+
+            ActivityProtocolForm simplifiedActivityProtocolForm = new ActivityProtocolForm();
+            SensorConfigurationForm simplifiedSensorConfigurationForm = new SensorConfigurationForm();
+
             activityProtocolForm.PreviousForm = this;
             activityProtocolForm.NextForm = sensorConfigurationForm;
             sensorConfigurationForm.PreviousForm = activityProtocolForm;
             sensorConfigurationForm.NextForm = whereStoreDataForm;
             whereStoreDataForm.PreviousForm = sensorConfigurationForm;
             whereStoreDataForm.NextForm = null;
-            
-            Form[] nextForms = new Form[2];
+
+            simplifiedActivityProtocolForm.NextForm = simplifiedSensorConfigurationForm;
+            simplifiedActivityProtocolForm.PreviousForm = this;
+            simplifiedSensorConfigurationForm.PreviousForm = simplifiedActivityProtocolForm;
+            simplifiedSensorConfigurationForm.NextForm = null;
+
+            Form[] nextForms = new Form[3];
             nextForms[0] = activityProtocolForm;
             nextForms[1] = buildModelFeatureForm;
+            nextForms[2] = simplifiedActivityProtocolForm;
             SetNextForms(nextForms);
-
             
            
         }
@@ -118,6 +126,12 @@ namespace MITesDataCollection
         {
             this.nextForms[3].Visible = true;
             MainForm.selectedForm = Constants.MAIN_SELECTED_CALIBRATE;  
+        }
+
+        private void button5_Click(object sender, EventArgs e)
+        {
+            this.nextForms[4].Visible = true;
+            MainForm.selectedForm = Constants.MAIN_SELECTED_ANNOTATION;            
         }
 
 

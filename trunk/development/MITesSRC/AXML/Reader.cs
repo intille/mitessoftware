@@ -165,34 +165,28 @@ namespace AXML
                                     else if (jAttribute.Name == Constants.STARTTIME_ATTRIBUTE)
                                     {
                                         //parse date
-                                        string p = @"(\d+):(\d+):(\d+)[.](\d+)";
+                                        string p = @"(\d+):(\d+):(\d+)([.](\d+))?";
                                         Match m = Regex.Match(jAttribute.Value, p);
-                                        if (m.Groups.Count == 5)
-                                        {
-                                            startHour = Convert.ToInt32(m.Groups[1].Value);
-                                            startMinute = Convert.ToInt32(m.Groups[2].Value);
-                                            startSecond = Convert.ToInt32(m.Groups[3].Value);
-                                            startMillisecond = Convert.ToInt32(m.Groups[4].Value);
-
-                                        }
-                                        else
-                                            throw new Exception("Error parsing " + Constants.STARTTIME_ATTRIBUTE + ". " + jAttribute.Value);
+                                        startHour = Convert.ToInt32(m.Groups[1].Value);
+                                        startMinute = Convert.ToInt32(m.Groups[2].Value);
+                                        startSecond = Convert.ToInt32(m.Groups[3].Value);
+                                        startMillisecond = 0;
+                                        if (m.Groups[5].Value.Length>0)                                                                   
+                                            startMillisecond = Convert.ToInt32(m.Groups[5].Value);                                                                              
+                                            
                                     }
+
                                     else if (jAttribute.Name == Constants.ENDTIME_ATTRIBUTE)
                                     {
                                         //parse date
-                                        string p = @"(\d+):(\d+):(\d+)[.](\d+)";
+                                        string p = @"(\d+):(\d+):(\d+)([.](\d+))?";
                                         Match m = Regex.Match(jAttribute.Value, p);
-                                        if (m.Groups.Count == 5)
-                                        {
-                                            endHour = Convert.ToInt32(m.Groups[1].Value);
-                                            endMinute = Convert.ToInt32(m.Groups[2].Value);
-                                            endSecond = Convert.ToInt32(m.Groups[3].Value);
-                                            endMillisecond = Convert.ToInt32(m.Groups[4].Value);
-
-                                        }
-                                        else
-                                            throw new Exception("Error parsing " + Constants.ENDTIME_ATTRIBUTE + ". " + jAttribute.Value);
+                                        endHour = Convert.ToInt32(m.Groups[1].Value);
+                                        endMinute = Convert.ToInt32(m.Groups[2].Value);
+                                        endSecond = Convert.ToInt32(m.Groups[3].Value);
+                                        endMillisecond = 0;
+                                        if (m.Groups[5].Value.Length > 0)
+                                            endMillisecond = Convert.ToInt32(m.Groups[5].Value);
                                     }
                                     else if (jAttribute.Name == Constants.STARTDATE_ATTRIBUTE)
                                     {
@@ -250,7 +244,7 @@ namespace AXML
                                 //TimeSpan ts = startDT - new DateTime(1970, 1, 1, 0, 0, 0, 0);
                                 annotatedRecord.StartUnix = ts.TotalMilliseconds;
                                 //for some data might require day light savings adjustment
-                                annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
+                                //annotatedRecord.StartUnix -= 1 * 60 * 60 * 1000;
                              
                                 annotatedRecord.EndDate = endDT.ToString("MM-dd-yyyy");
                                 annotatedRecord.EndHour = endDT.Hour;
@@ -260,7 +254,7 @@ namespace AXML
                                 ts = endDT.Subtract(new DateTime(1970, 1, 1, 0, 0, 0, 0,0));
                                 //ts = endDT - new DateTime(1970, 1, 1, 0, 0, 0, 0, 0);
                                 annotatedRecord.EndUnix = ts.TotalMilliseconds;    
-                                annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
+                                //annotatedRecord.EndUnix -= 1 * 60 * 60 * 1000;
 
 
                                 //parsing values

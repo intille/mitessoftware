@@ -9,6 +9,17 @@ namespace MITesDataCollection
 {
     static class Program
     {
+        private static bool isDirectoryEmpty(string path)
+        {
+            string[] subDirs = Directory.GetDirectories(path);
+            if (0 == subDirs.Length)
+            {
+                string[] files = Directory.GetFiles(path);
+                return (0 == files.Length);
+            }
+            return false;
+        }
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -29,6 +40,8 @@ namespace MITesDataCollection
             OrientationForm orientationForm = new OrientationForm();         
             CalibrateSensors calibrateSensorsForm = new CalibrateSensors();
             CalibrateSensor calibrateSensorForm = new CalibrateSensor();
+            ActivityProtocolForm annotationActivityProtocolForm = new ActivityProtocolForm();
+            SensorConfigurationForm annotationSensorConfigurationForm = new SensorConfigurationForm();
 
                        
         
@@ -61,12 +74,19 @@ namespace MITesDataCollection
             calibrateSensorForm.NextForm = null;
             calibrateSensorForm.PreviousForm = calibrateSensorsForm;
 
+            //forms that are used for annotation only
+            annotationActivityProtocolForm.PreviousForm = mainForm;
+            annotationActivityProtocolForm.NextForm = annotationSensorConfigurationForm;
+            annotationSensorConfigurationForm.PreviousForm = annotationActivityProtocolForm;
+            annotationSensorConfigurationForm.NextForm = null;
+
             //the forms that are linked to choices on the MainForm
-            Form[] nextForms = new Form[4];
+            Form[] nextForms = new Form[5];
             nextForms[0] = activityProtocolForm;
             nextForms[1] = buildModelFeatureForm;
             nextForms[2] = troubleshootModelForm;
             nextForms[3] = calibrateSensorsForm;
+            nextForms[4] = annotationActivityProtocolForm;
 
 
             mainForm.SetNextForms(nextForms);
@@ -86,11 +106,34 @@ namespace MITesDataCollection
 #else
 #endif
             //choice #1: collect data
-            if (MainForm.SelectedForm == Constants.MAIN_SELECTED_COLLECT_DATA)
+            if ( (MainForm.SelectedForm == Constants.MAIN_SELECTED_COLLECT_DATA) ||
+                (MainForm.SelectedForm == Constants.MAIN_SELECTED_ANNOTATION))
             {
+      
+
+
+                string destinationFolder = "";
+                if (MainForm.SelectedForm == Constants.MAIN_SELECTED_COLLECT_DATA)
+                    destinationFolder = WhereStoreDataForm.SelectedFolder;
+                else
+                {
+                    //Create the storage directory if it does not exist
+                    if (Directory.Exists(Constants.DEFAULT_DATA_STORAGE_DIRECTORY) == false)
+                        Directory.CreateDirectory(Constants.DEFAULT_DATA_STORAGE_DIRECTORY);
+
+                    //Check if the directory is empty
+                    if (isDirectoryEmpty(Constants.DEFAULT_DATA_STORAGE_DIRECTORY) == false)
+                    {
+                        MessageBox.Show("Please delete the content of " + Constants.DEFAULT_DATA_STORAGE_DIRECTORY + ".");
+                        Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                    }
+                    destinationFolder = Constants.DEFAULT_DATA_STORAGE_DIRECTORY;
+                }
+           
                 //check all required paramters were selected
                 if ((ActivityProtocolForm.SelectedProtocol==null)||(ActivityProtocolForm.SelectedProtocol.FileName == "") ||(SensorConfigurationForm.SelectedSensors==null)|| (SensorConfigurationForm.SelectedSensors.FileName == "") ||
-                    (WhereStoreDataForm.SelectedFolder == "") || (WhereStoreDataForm.SelectedFolder==null))
+                    (destinationFolder == "") || (destinationFolder == null))
                 {
                     MessageBox.Show("Exiting: You need to select an activity protocol, sensor configuration and a directory to store your data");
 #if (PocketPC)
@@ -106,7 +149,7 @@ namespace MITesDataCollection
                     try
                     {
                         File.Copy(Constants.ACTIVITY_PROTOCOLS_DIRECTORY + ActivityProtocolForm.SelectedProtocol.FileName,
-                           WhereStoreDataForm.SelectedFolder + "\\" + AXML.Reader.DEFAULT_XML_FILE);
+                           destinationFolder + "\\" + AXML.Reader.DEFAULT_XML_FILE);
 
                     }
                     catch (Exception)
@@ -124,7 +167,7 @@ namespace MITesDataCollection
                     try
                     {
                         File.Copy(Constants.SENSOR_CONFIGURATIONS_DIRECTORY + SensorConfigurationForm.SelectedSensors.FileName,
-                             WhereStoreDataForm.SelectedFolder + "\\" + SXML.Reader.DEFAULT_XML_FILE);
+                             destinationFolder + "\\" + SXML.Reader.DEFAULT_XML_FILE);
                     }
                     catch (Exception)
                     {
@@ -141,7 +184,7 @@ namespace MITesDataCollection
                     try
                     {
                         File.Copy(Constants.MASTER_DIRECTORY + MITesFeatures.core.conf.ConfigurationReader.DEFAULT_XML_FILE,
-                            WhereStoreDataForm.SelectedFolder + "\\" + MITesFeatures.core.conf.ConfigurationReader.DEFAULT_XML_FILE);
+                            destinationFolder + "\\" + MITesFeatures.core.conf.ConfigurationReader.DEFAULT_XML_FILE);
                     }
                     catch (Exception)
                     {
@@ -158,7 +201,7 @@ namespace MITesDataCollection
                     try
                     {
                         File.Copy(Constants.MASTER_DIRECTORY + ActivitySummary.Reader.DEFAULT_XML_FILE,
-                            WhereStoreDataForm.SelectedFolder + "\\" + ActivitySummary.Reader.DEFAULT_XML_FILE);
+                            destinationFolder + "\\" + ActivitySummary.Reader.DEFAULT_XML_FILE);
                     }
                     catch (Exception)
                     {
@@ -172,7 +215,10 @@ namespace MITesDataCollection
                     }
 
 #endif
-                    Application.Run(new MITesDataCollectionForm(WhereStoreDataForm.SelectedFolder));
+                    if (MainForm.SelectedForm==Constants.MAIN_SELECTED_COLLECT_DATA)
+                        Application.Run(new MITesDataCollectionForm(WhereStoreDataForm.SelectedFolder));
+                    else 
+                        Application.Run(new MITesDataCollectionForm());
                 }
             }
 

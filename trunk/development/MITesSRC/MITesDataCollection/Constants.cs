@@ -16,19 +16,22 @@ namespace MITesDataCollection
         public static int MIN_FONT = 9;
         public static int MAX_FONT = 64;
         public static string MITES_DATA_STORAGE_DIRECTORY = "\\SD-MMCard\\MITes\\";
+        public static string DEFAULT_DATA_STORAGE_DIRECTORY = "\\Wockets";
 
         //Main Form Constants
 
-        public static int MAIN_FORM_WIDGETS_COUNT = 4;
+        public static int MAIN_FORM_WIDGETS_COUNT = 5;
         public static string MAIN_FORM_LABEL1 = "What do you want to do?";
         public static string MAIN_FORM_BUTTON1 = "Collect MITes data";
         public static string MAIN_FORM_BUTTON2 = "Estimate Energy";
         public static string MAIN_FORM_BUTTON3 = "Troubleshoot Software";
         public static string MAIN_FORM_BUTTON4 = "Calibrate";
+        public static string MAIN_FORM_BUTTON5 = "Annotate";
         public static int MAIN_SELECTED_COLLECT_DATA = 0;
         public static int MAIN_SELECTED_ESTIMATE_ENERGY=1;
         public static int MAIN_SELECTED_TROUBLESHOOT = 2;
         public static int MAIN_SELECTED_CALIBRATE = 3;
+        public static int MAIN_SELECTED_ANNOTATION = 4;
 
         //Activity FORM Placement
         public static string ACTIVITY_FORM_LABEL1 = "Choose an activity protocol:";
@@ -63,7 +66,7 @@ namespace MITesDataCollection
 
         //PATH Constants
 #if (PocketPC)
-        public static string NEEDED_FILES_PATH = "\\Program Files\\mitesdatacollection\\NeededFiles\\"; //fullpath required for pocketpc
+        public static string NEEDED_FILES_PATH = "\\Program Files\\MITesPhoneInstaller\\NeededFiles\\"; //fullpath required for pocketpc
 #else 
         public static string NEEDED_FILES_PATH = "..\\NeededFiles\\"; //relative to bin
 #endif 
