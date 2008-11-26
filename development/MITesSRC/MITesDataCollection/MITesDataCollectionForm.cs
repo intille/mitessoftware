@@ -459,10 +459,86 @@ namespace MITesDataCollection
 
         #endregion Calibration Constructor
 
+        #region Simplified Annotation
+
+
+
+        public MITesDataCollectionForm()
+        {
+
+
+
+            //Initialize the UNIX QueryPerformanceCounter
+            UnixTime.InitializeTime();
+
+            //intialize the mode of the software
+            this.collectDataMode = false;
+            this.isCollectingDetailedData = false;
+            this.isPlotting = false;
+            this.isExtracting = false;
+
+            //initialize the progress thread
+            progressMessage = null;
+            t = new Thread(new ThreadStart(ProgressThread));
+            t.Start();
+
+            //initialize the interface components
+            InitializeComponent();
+
+            //Initialize where the data will be stored and where the configuration
+            //files exist
+            this.dataDirectory = Constants.DEFAULT_DATA_STORAGE_DIRECTORY;
+
+
+            //load the activity and sensor configuration files
+            progressMessage = "Loading XML protocol and sensors ...";
+            AXML.Reader reader = new AXML.Reader(Constants.MASTER_DIRECTORY, Constants.DEFAULT_DATA_STORAGE_DIRECTORY);
+            this.annotation = reader.parse();
+            this.annotation.DataDirectory = Constants.DEFAULT_DATA_STORAGE_DIRECTORY;
+
+            SXML.Reader sreader = new SXML.Reader(Constants.MASTER_DIRECTORY, Constants.DEFAULT_DATA_STORAGE_DIRECTORY);
+            this.sensors = sreader.parse(Constants.MAX_CONTROLLERS);
+
+            progressMessage += " Completed\r\n";
+
+            progressMessage += "Loading configuration file ...";
+            MITesFeatures.core.conf.ConfigurationReader creader = new MITesFeatures.core.conf.ConfigurationReader(Constants.DEFAULT_DATA_STORAGE_DIRECTORY);
+            this.configuration = creader.parse();
+            progressMessage += " Completed\r\n";
+
+            //calculate how many plots to be drawn
+            if (this.sensors.IsHR)
+                this.maxPlots = this.sensors.Sensors.Count - 1;
+            else
+                this.maxPlots = this.sensors.Sensors.Count;
+
+
+            //Initialize the timers
+            progressMessage += "Initializing Timers ...";
+            InitializeTimers();
+            progressMessage += " Completed\r\n";
+
+            //Initialize different GUI components
+            progressMessage += "Initializing GUI ...";
+            InitializeInterface();
+            progressMessage += " Completed\r\n";
+            this.tabControl1.TabPages.RemoveAt(4);
+            this.tabControl1.TabPages.RemoveAt(3);
+            this.tabControl1.TabPages.RemoveAt(2);
+            this.tabControl1.TabPages.RemoveAt(0);
+           
+            
+            this.tabControl1.SelectedIndex = 0;
+
+            progressThreadQuit = true;
+        }
+        #endregion Simplified Annotation
+
         #region Data collection constructor
 
         public MITesDataCollectionForm(string dataDirectory)
         {
+
 
 
             //Initialize the UNIX QueryPerformanceCounter
@@ -484,7 +560,7 @@ namespace MITesDataCollection
             t = new Thread(new ThreadStart(ProgressThread));
             t.Start();
 
-
+            
             //initialize the interface components
             InitializeComponent();
 
@@ -1925,36 +2001,34 @@ namespace MITesDataCollection
                 this.readDataTimer.Enabled = false;
                 this.qualityTimer.Enabled = false;
 
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+                if (MainForm.SelectedForm != Constants.MAIN_SELECTED_ANNOTATION)
                 {
-                    if (this.mitesControllers[i] != null)
+                    for (int i = 0; (i < this.sensors.TotalReceivers); i++)
                     {
+                        if (this.mitesControllers[i] != null)
+                        {
+                            Thread.Sleep(100);
+                            this.mitesControllers[i].Close();
+                            Thread.Sleep(1000);
+                        }
+                        //aMITesActivityLogger.WriteLogComment(aMsg);
                         Thread.Sleep(100);
-                        this.mitesControllers[i].Close();
-                        Thread.Sleep(1000);
                     }
-                    //aMITesActivityLogger.WriteLogComment(aMsg);
-                    Thread.Sleep(100);
-                }
-
 
 #if (PocketPC)
 
-                if (bt != null)
-                    bt.close();
+                    if (bt != null)
+                        bt.close();
 
-                if (this.sensors.HasBuiltinSensors)
-                {
-
-
-                    this.htcDecoder.isQuitting = true;
-
-                    Thread.Sleep(100);
-                    this.pollingThread.Abort();
-                }
-                aMITesLoggerPLFormat.FlushBytes();
-                aMITesLoggerPLFormat.ShutdownFiles();
-                //ShutdownFiles()
+                    if (this.sensors.HasBuiltinSensors)
+                    {
+                        this.htcDecoder.isQuitting = true;
+                        Thread.Sleep(100);
+                        this.pollingThread.Abort();
+                    }
+                    aMITesLoggerPLFormat.FlushBytes();
+                    aMITesLoggerPLFormat.ShutdownFiles();
+                    //ShutdownFiles()
 #else
                 foreach (Sensor sensor in this.sensors.Sensors)
                 {
@@ -1975,8 +2049,12 @@ namespace MITesDataCollection
                 this.masterCSV.Close();
                 this.hrCSV.Close();
 #endif
-                if (this.sensors.TotalReceivers > 0)
-                    Extractor.Cleanup();
+                    if (this.sensors.TotalReceivers > 0)
+                        Extractor.Cleanup();
+                }
+
+
+
 #if (PocketPC)
 
                 Application.Exit();

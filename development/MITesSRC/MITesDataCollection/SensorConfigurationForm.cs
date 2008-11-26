@@ -75,9 +75,17 @@ namespace MITesDataCollection
         } 
 #endif
         private void button1_Click(object sender, EventArgs e)
-        {           
-            this.nextForm.Visible=true;
-            this.Visible = false;
+        {
+            if (MainForm.SelectedForm == Constants.MAIN_SELECTED_ANNOTATION)
+            {
+                this.Visible = false;
+                ((ChainnedForm)this.previousForm).Cleanup();
+            }
+            else
+            {
+                this.nextForm.Visible = true;
+                this.Visible = false;
+            }
         }
 
         private void button2_Click(object sender, EventArgs e)

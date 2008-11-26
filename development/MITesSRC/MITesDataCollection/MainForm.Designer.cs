@@ -40,13 +40,15 @@ namespace MITesDataCollection
 
 
             Size oldSize = new Size(this.button2.Width, this.button2.Height);
-            this.button2.Width = this.button3.Width = this.button4.Width =this.button1.Width=  widgetWidth;
-            this.button2.Height = this.button3.Height = this.button4.Height=this.button1.Height = widgetHeight;
+            this.button5.Width=this.button2.Width = this.button3.Width = this.button4.Width = this.button1.Width = widgetWidth;
+            this.button5.Height=this.button2.Height = this.button3.Height = this.button4.Height = this.button1.Height = widgetHeight;
             this.button2.Location = new Point(Constants.WIDGET_SPACING, Constants.WIDGET_SPACING);
             this.button3.Location = new Point(Constants.WIDGET_SPACING, Constants.WIDGET_SPACING + this.button2.Location.Y + this.button2.Height);
             this.button4.Location = new Point(Constants.WIDGET_SPACING, Constants.WIDGET_SPACING + this.button3.Location.Y + this.button3.Height);
             this.button1.Location = new Point(Constants.WIDGET_SPACING, Constants.WIDGET_SPACING + this.button4.Location.Y + this.button4.Height);
-            this.button2.Font = this.button3.Font = this.button4.Font = this.button1.Font=
+            this.button5.Location = new Point(Constants.WIDGET_SPACING, Constants.WIDGET_SPACING);
+
+            this.button5.Font=this.button2.Font = this.button3.Font = this.button4.Font = this.button1.Font =
                 GUI.CalculateBestFitFont(this.button2.Parent.CreateGraphics(), Constants.MIN_FONT,
                    Constants.MAX_FONT, this.button2.Size, Constants.MAIN_FORM_BUTTON3, this.button2.Font, (float)0.9, (float)0.9);
 
@@ -54,10 +56,12 @@ namespace MITesDataCollection
             this.button3.Text = Constants.MAIN_FORM_BUTTON2;
             this.button4.Text = Constants.MAIN_FORM_BUTTON3;
             this.button1.Text = Constants.MAIN_FORM_BUTTON4;
+            this.button5.Text = Constants.MAIN_FORM_BUTTON5;
 
             this.button4.Enabled = false;
-            this.button3.Enabled = true;
-            this.button1.Enabled = true;
+            this.button3.Enabled = false;
+            this.button1.Enabled = false;
+            this.button5.Enabled = true;
                   
         }
 
@@ -71,13 +75,13 @@ namespace MITesDataCollection
         /// </summary>
         private void InitializeComponent()
         {
-            this.components = new System.ComponentModel.Container();
             this.mainMenu1 = new System.Windows.Forms.MainMenu();
             this.menuItem1 = new System.Windows.Forms.MenuItem();
             this.button2 = new System.Windows.Forms.Button();
             this.button3 = new System.Windows.Forms.Button();
             this.button4 = new System.Windows.Forms.Button();
             this.button1 = new System.Windows.Forms.Button();
+            this.button5 = new System.Windows.Forms.Button();
             this.SuspendLayout();
             // 
             // mainMenu1
@@ -86,7 +90,6 @@ namespace MITesDataCollection
             // 
             // menuItem1
             // 
-           
             this.menuItem1.Text = "Quit";
             this.menuItem1.Click += new System.EventHandler(this.menuItem1_Click);
             // 
@@ -96,6 +99,7 @@ namespace MITesDataCollection
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(195, 30);
             this.button2.TabIndex = 8;
+            this.button2.Visible = false;
             this.button2.Text = "Collect MITes Data";
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
@@ -105,8 +109,8 @@ namespace MITesDataCollection
             this.button3.Name = "button3";
             this.button3.Size = new System.Drawing.Size(195, 25);
             this.button3.TabIndex = 9;
+            this.button3.Visible = false;
             this.button3.Text = "Estimate Energy Expenditure";
-            this.button3.Visible = true;
             this.button3.Click += new System.EventHandler(this.button3_Click);
             // 
             // button4
@@ -129,12 +133,22 @@ namespace MITesDataCollection
             this.button1.Visible = false;
             this.button1.Click += new System.EventHandler(this.button1_Click);
             // 
+            // button5
+            // 
+            this.button5.Location = new System.Drawing.Point(26, 196);
+            this.button5.Name = "button5";
+            this.button5.Size = new System.Drawing.Size(194, 28);
+            this.button5.TabIndex = 12;
+            this.button5.Text = "Annotation Tool";
+            this.button5.Click += new System.EventHandler(this.button5_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.AutoScroll = true;
             this.ClientSize = new System.Drawing.Size(257, 264);
+            this.Controls.Add(this.button5);
             this.Controls.Add(this.button1);
             this.Controls.Add(this.button4);
             this.Controls.Add(this.button3);
@@ -154,6 +168,7 @@ namespace MITesDataCollection
         private System.Windows.Forms.Button button3;
         private System.Windows.Forms.Button button4;
         private System.Windows.Forms.Button button1;
+        private System.Windows.Forms.Button button5;
 
     }
 }
