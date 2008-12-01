@@ -58,10 +58,11 @@ namespace MITesDataCollection
             this.button1.Text = Constants.MAIN_FORM_BUTTON4;
             this.button5.Text = Constants.MAIN_FORM_BUTTON5;
 
-            this.button4.Enabled = false;
-            this.button3.Enabled = false;
-            this.button1.Enabled = false;
-            this.button5.Enabled = true;
+            this.button4.Enabled = true;
+            this.button3.Enabled = true;
+            this.button1.Enabled = true;
+            this.button5.Enabled = false;
+          
                   
         }
 
@@ -99,7 +100,7 @@ namespace MITesDataCollection
             this.button2.Name = "button2";
             this.button2.Size = new System.Drawing.Size(195, 30);
             this.button2.TabIndex = 8;
-            this.button2.Visible = false;
+            this.button2.Visible = true;
             this.button2.Text = "Collect MITes Data";
             this.button2.Click += new System.EventHandler(this.button2_Click);
             // 
@@ -140,6 +141,7 @@ namespace MITesDataCollection
             this.button5.Size = new System.Drawing.Size(194, 28);
             this.button5.TabIndex = 12;
             this.button5.Text = "Annotation Tool";
+            this.button5.Visible = false;
             this.button5.Click += new System.EventHandler(this.button5_Click);
             // 
             // MainForm

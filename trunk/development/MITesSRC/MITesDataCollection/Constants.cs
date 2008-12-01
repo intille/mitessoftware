@@ -66,7 +66,8 @@ namespace MITesDataCollection
 
         //PATH Constants
 #if (PocketPC)
-        public static string NEEDED_FILES_PATH = "\\Program Files\\MITesPhoneInstaller\\NeededFiles\\"; //fullpath required for pocketpc
+       // public static string NEEDED_FILES_PATH = "\\Program Files\\MITesPhoneInstaller\\NeededFiles\\"; //fullpath required for pocketpc
+        public static string NEEDED_FILES_PATH = "\\Program Files\\mitesdatacollection\\NeededFiles\\";
 #else 
         public static string NEEDED_FILES_PATH = "..\\NeededFiles\\"; //relative to bin
 #endif 
