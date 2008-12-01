@@ -164,7 +164,7 @@ namespace AXML
 
                                     else if (jAttribute.Name == Constants.STARTTIME_ATTRIBUTE)
                                     {
-                                        //parse date
+                                        //parse date   
                                         string p = @"(\d+):(\d+):(\d+)([.](\d+))?";
                                         Match m = Regex.Match(jAttribute.Value, p);
                                         startHour = Convert.ToInt32(m.Groups[1].Value);

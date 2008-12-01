@@ -1,6 +1,7 @@
 using System;
 using System.Threading;
 using HousenCS.IO;
+using Bluetooth;
 
 namespace HousenCS.MITes
 {
@@ -306,6 +307,26 @@ namespace HousenCS.MITes
             return false;
         }
 
+        /// <summary>
+        /// This is the call that needs to be included in the main data processing loop to get
+        /// data from a Bluetooth stream.
+        /// </summary>
+        /// <param name="bs"></param>
+        public void GetSensorData(BluetoothController btc)
+        {
+            bytesFound = btc.read(btc.BluetoothBytesBuffer);
+            UpdateDataRate(bytesFound);
+            if (bytesFound > 0)
+            {
+                Debug("Bytes from fill: " + bytesFound);
+                someMITesDataIndex = 0;
+                someMITesDataIndex = DecodeMITesData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
+            }
+            else
+            {
+                someMITesDataIndex = 0;
+            }
+        }
         /// <summary>
         /// This is the call that needs to be included in the main data processing loop.
         /// It checks for new data on the MITesReceiverController. If it finds some, it 

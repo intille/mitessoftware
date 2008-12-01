@@ -20,6 +20,8 @@ namespace SXML
         private int maximumSensorID;
         private Hashtable sensorsIndex;
         private int totalBuiltInSensors;
+        private int totalBluetoothReceivers;
+        private int totalWiredRecerivers;
 
         public SensorAnnotation(int maxReceivers)
         {
@@ -34,6 +36,8 @@ namespace SXML
             this.totalReceivers=0;
             this.firstAccelerometerID = -1;
             this.maximumSensorID = -1;
+            this.totalBluetoothReceivers = 0;
+            this.totalWiredRecerivers = 0;
         }
 
         
@@ -131,6 +135,30 @@ namespace SXML
             }
         }
 
+
+        public int TotalBluetoothReceivers
+        {
+            get
+            {
+                return this.totalBluetoothReceivers;
+            }
+            set
+            {
+                this.totalBluetoothReceivers = value;
+            }
+        }
+
+        public int TotalWiredReceivers
+        {
+            get
+            {
+                return this.totalWiredRecerivers;
+            }
+            set
+            {
+                this.totalWiredRecerivers = value;
+            }
+        }
         public int[] NumberSensors
         {
             get
