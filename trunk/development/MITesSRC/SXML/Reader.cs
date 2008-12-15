@@ -48,11 +48,55 @@ namespace SXML
                 //Sensor nodes
                 foreach (XmlNode iNode in xNode.ChildNodes) 
                 {
-                   
 
-                   
+
+                    if (iNode.Name == Constants.RECEIVERS_ELEMENT)
+                    {
+                        foreach (XmlNode jNode in iNode.ChildNodes)
+                        {
+                            
+
+                            if (jNode.Name == Constants.RECEIVER_ELEMENT)
+                            {
+                                Receiver receiver = new Receiver();
+                                foreach (XmlAttribute iAttribute in jNode.Attributes)
+                                {
+                                    //read nodes attributes
+                                    if (iAttribute.Name == Constants.ID_ATTRIBUTE)
+                                    {
+                                        receiver.ID = Convert.ToInt32(iAttribute.Value);
+                                    }
+                                    else if (iAttribute.Name == Constants.TYPE_ATTRIBUTE)
+                                    {
+                                        receiver.Type = iAttribute.Value;
+                                        if (receiver.Type == Constants.RECEIVER_BLUETOOTH)
+                                            annotation.TotalBluetoothReceivers++;
+                                        else if (receiver.Type == Constants.RECEIVER_USB)
+                                            annotation.TotalWiredReceivers++;
+                                    }
+                                    else if (iAttribute.Name == Constants.PASSKEY_ATTRIBUTE)
+                                    {
+                                        receiver.PassKey = iAttribute.Value;
+                                    }
+                                    else if (iAttribute.Name == Constants.DECODER_ATTRIBUTE)
+                                    {
+                                        receiver.Decoder = iAttribute.Value;
+                                    }
+                                    else if (iAttribute.Name == Constants.MAC_ATTRIBUTE)
+                                    {
+                                        receiver.MAC = iAttribute.Value;
+
+                                        for (int i = 0; (i < Constants.MAC_SIZE); i++)
+                                            receiver.MacAddress[i] = (byte)(System.Int32.Parse(iAttribute.Value.Substring(i * 2, 2), System.Globalization.NumberStyles.AllowHexSpecifier) & 0xff);
+                                    }
+                                }
+                                annotation.Receivers.Add(receiver);
+                                annotation.TotalReceivers++;
+                            }
+                        }
+                    }
                     //parsing file information
-                    if (iNode.Name == Constants.SENSOR_ELEMENT)
+                    else if (iNode.Name == Constants.SENSOR_ELEMENT)
                     {
                         Sensor sensor = new Sensor();
 
@@ -106,11 +150,11 @@ namespace SXML
                                     {
                                         annotation.NumberSensors[receiver_id] = annotation.NumberSensors[receiver_id] + 1;
                                         sensor.Receiver = jAttribute.Value;
-                                        if (countedReceiver[receiver_id] == false)
-                                        {
-                                            annotation.TotalReceivers++;
-                                            countedReceiver[receiver_id] = true;
-                                        }
+                                        //if (countedReceiver[receiver_id] == false)
+                                        //{
+                                          //  annotation.TotalReceivers++;
+                                           // countedReceiver[receiver_id] = true;
+                                       // }
                                     }
                                     else
                                         throw new Exception("Receiver in sensor file out of bound");

@@ -20,7 +20,8 @@ namespace Bluetooth
         private static object lockObject;
         private const int DEFAULT_READ_TIMEOUT = 100;//100 ms
         private const int DEFAULT_WRITE_TIMEOUT = 100;
-        private const int MAX_TIMEOUTS = 10;
+        private const int MAX_TIMEOUTS = 10;//combined with 50 ms sleep time between reads, this amounts to .5 seconds with no data at all, very unlikely to happen normally
+
         private const int DEFAULT_BUFFER_SIZE = 1024;
         private static Predicate<DateTime> oldEnoughPredicate = new Predicate<DateTime>(isNewEnough);
         private static TimeSpan timeoutExceptionsOldnessCutoff = TimeSpan.FromSeconds(1);
@@ -53,15 +54,11 @@ namespace Bluetooth
         private SerialPort comPort;
         #endregion
 
-
- 
-
-
         static BluetoothStream()
         {
             usingWidcomm = BluetoothRadio.PrimaryRadio == null;
             lockObject = new object();
-              
+
         }
 
         private BluetoothStream()
@@ -87,16 +84,21 @@ namespace Bluetooth
                     if (!btClient.Connected)
                         return;
 
-                    int bytesReceived;
+                    int bytesReceived = 0;
+                    bool readHappened = false;
                     int currentBytes = tail - head;
                     if (currentBytes < 0)
                         currentBytes = DEFAULT_BUFFER_SIZE + currentBytes;
 
                     try
                     {
-                        lock (this)
-                            lock (lockObject)
-                                bytesReceived = btSocket.Receive(singleReadBuffer, (DEFAULT_BUFFER_SIZE - currentBytes > singleReadBuffer.Length) ? singleReadBuffer.Length : DEFAULT_BUFFER_SIZE - currentBytes, SocketFlags.None);
+                        //if (btSocket.Available > 0)
+                        //{
+                        readHappened = true;
+                        //lock (this)
+                        //lock (lockObject)
+                        bytesReceived = btSocket.Receive(singleReadBuffer, (DEFAULT_BUFFER_SIZE - currentBytes > singleReadBuffer.Length) ? singleReadBuffer.Length : DEFAULT_BUFFER_SIZE - currentBytes, SocketFlags.None);
+                        //}
                     }
                     catch (Exception e)
                     {
@@ -105,7 +107,7 @@ namespace Bluetooth
 
                     //this is a timeout. If we get too many of them, we classify that
                     //as a socket that has been disconnected
-                    if (bytesReceived == 0)
+                    if (readHappened && bytesReceived == 0)
                     {
                         List<DateTime> newTimeouts = timeoutTimestamps.FindAll(oldEnoughPredicate);
                         newTimeouts.Add(DateTime.Now);
@@ -219,6 +221,7 @@ namespace Bluetooth
                     openStreams.Remove(stream);
                 }
                 streamsToRemove.Clear();
+
             }
         }
         */
@@ -237,57 +240,66 @@ namespace Bluetooth
         public static BluetoothStream OpenConnection(byte[] addr, string pin)
         {
             BluetoothStream newStream = new BluetoothStream();
-            if (usingWidcomm)
+            try
             {
-                IntPtr stringPtr = prepareCOMportWidcomm(addr);
-                if (stringPtr != IntPtr.Zero)
-                    newStream.comPortName = Marshal.PtrToStringUni(stringPtr);
+                if (usingWidcomm)
+                {
+                    IntPtr stringPtr = prepareCOMportWidcomm(addr);
+                    if (stringPtr != IntPtr.Zero)
+                        newStream.comPortName = Marshal.PtrToStringUni(stringPtr);
+                    else
+                        throw new Exception("Got a null pointer from the WIDCOMM code");
+
+                    //now open the port
+                    newStream.comPort = new SerialPort(newStream.comPortName);
+                    newStream.comPort.Open();
+                }
                 else
-                    throw new Exception("Got a null pointer from the WIDCOMM code");
+                {
+                    newStream.btClient = new BluetoothClient();
+                    byte[] reverseAddr = new byte[addr.Length];
+                    for (int ii = 0; ii < addr.Length; ii++)
+                    {
+                        reverseAddr[reverseAddr.Length - 1 - ii] = addr[ii];
+                    }
 
-                //now open the port
-                newStream.comPort = new SerialPort(newStream.comPortName);
-                newStream.comPort.Open();
+                    newStream.timeoutTimestamps = new List<DateTime>();
+                    newStream.localBuffer = new byte[DEFAULT_BUFFER_SIZE];
+                    newStream.singleReadBuffer = new byte[DEFAULT_BUFFER_SIZE];
+                    lock (lockObject)
+                    {
+                        BluetoothRadio.PrimaryRadio.Mode = RadioMode.Connectable;
+                        BluetoothAddress bt_addr = new BluetoothAddress(reverseAddr);
+                        if (pin != null)
+                            BluetoothSecurity.SetPin(bt_addr, pin);
+
+                        newStream.btClient.Connect(bt_addr, BluetoothService.SerialPort);
+                        newStream.btSocket = newStream.btClient.Client;
+                        newStream.btSocket.Blocking = true;
+
+                    }
+                }
+
+                newStream.readingThread = new Thread(new ThreadStart(newStream.readingFunction));
+                newStream.readingThread.Start();
             }
-            else
+            catch
             {
-                newStream.btClient = new BluetoothClient();
-                byte[] reverseAddr = new byte[addr.Length];
-                for (int ii = 0; ii < addr.Length; ii++)
-                {
-                    reverseAddr[reverseAddr.Length - 1 - ii] = addr[ii];
-                }
-
-                newStream.timeoutTimestamps = new List<DateTime>();
-                newStream.localBuffer = new byte[DEFAULT_BUFFER_SIZE];
-                newStream.singleReadBuffer = new byte[DEFAULT_BUFFER_SIZE];
-                lock (lockObject)
-                {
-                    BluetoothRadio.PrimaryRadio.Mode = RadioMode.Connectable;
-                    BluetoothAddress bt_addr = new BluetoothAddress(reverseAddr);
-                    if (pin != null)
-                        BluetoothSecurity.SetPin(bt_addr, pin);
-
-                    newStream.btClient.Connect(bt_addr, BluetoothService.SerialPort);
-                    newStream.btSocket = newStream.btClient.Client;
-                    newStream.btSocket.Blocking = true;
-
-                }
+                newStream.disposed = true;
+                throw;
             }
-
-            newStream.readingThread = new Thread(new ThreadStart(newStream.readingFunction));
-            newStream.readingThread.Start();
             return newStream;
         }
 
 
-        public int Read(byte[] destination, int offset, int length)       
+
+        public int Read(byte[] destination, int offset, int length)
         {
             if (disposed)
                 throw new ObjectDisposedException("BluetoothStream");
 
-            try
-            {
+            //try
+            //{
                 if (usingWidcomm)
                 {
                     return comPort.Read(destination, offset, length);
@@ -299,11 +311,14 @@ namespace Bluetooth
                         Dispose();
                         throw new Exception("socket is disconnected");
                     }
+
+                    if (tail == head)
+                        return 0;
+
                     lock (this)
                     {
 
-                        if (tail == head)
-                            return 0;
+
                         int bytesCopied;
                         for (bytesCopied = 0; head != tail && bytesCopied < length; head = (head + 1) % DEFAULT_BUFFER_SIZE)
                         {
@@ -314,7 +329,8 @@ namespace Bluetooth
                         //return btSocket.Receive(destination, offset, length, SocketFlags.None);//ms_stream.Read(destination, offset, length);
                     }
                 }
-            }
+            //}
+            /*
             catch (SocketException socketEx)
             {
                 if (socketEx.ErrorCode == 10060)
@@ -342,6 +358,7 @@ namespace Bluetooth
                 Dispose();
                 throw theException;
             }
+             * */
         }
 
         public void Write(byte[] buffer, int offset, int length)
@@ -356,8 +373,8 @@ namespace Bluetooth
                 }
                 else
                 {
-                    lock (lockObject)
-                        btSocket.Send(buffer, offset, length, SocketFlags.None);//ms_stream.Write(buffer, offset, length);
+                    //lock (lockObject)
+                    btSocket.Send(buffer, offset, length, SocketFlags.None);//ms_stream.Write(buffer, offset, length);
                 }
             }
             catch
@@ -399,27 +416,27 @@ namespace Bluetooth
                 if (disposed)
                     return;
                 disposed = true;
-
-
-                if (usingWidcomm)
-                {
-                    //TODO FIXME
-                }
-                else
-                {
-                    lock (lockObject)
-                    {
-                        //ms_stream.Close();
-                        if (btSocket!=null)
-                            btSocket.Close();
-                        if (btClient != null)
-                             btClient.Close();
-                        //ms_stream = null;
-                        btSocket = null;
-                        btClient = null;
-                    }
-                }
             }
+
+            readingThread.Join();
+
+            if (usingWidcomm)
+            {
+                //TODO FIXME
+            }
+            else
+            {
+                //lock (lockObject)
+                //{
+                //ms_stream.Close();
+                btSocket.Close();
+                btClient.Close();
+                //ms_stream = null;
+                btSocket = null;
+                btClient = null;
+                //}
+            }
+
         }
 
         #endregion

@@ -107,7 +107,9 @@ namespace MITesDataCollection
         private ReceiverConfigureForm rcf = null;
         private MITesReceiverController[] mitesControllers;
         private BluetoothController[] bluetoothControllers;
+        private bool[] bluetoothConnectionStatus;
         private MITesDecoder[] mitesDecoders;
+        private MITesDecoder masterDecoder;
 
 
         #endregion
@@ -352,7 +354,7 @@ namespace MITesDataCollection
             {
                 this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
                 this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
-                this.aMITesActivityCounters = new Hashtable();
+                //this.aMITesActivityCounters = new Hashtable();
                 progressMessage += "Initializing MITes ... searching " + this.sensors.TotalReceivers + " receivers\r\n";
                 if (InitializeMITes(dataDirectory) == false)
                 {
@@ -637,10 +639,14 @@ namespace MITesDataCollection
             //Initialize the MITes receivers
             if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
             {
-                if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_USB)
-                    this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
-                else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
-                    this.bluetoothControllers = new BluetoothController[this.sensors.TotalReceivers];
+                //if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_USB)
+                //    this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
+                //else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
+                //    this.bluetoothControllers = new BluetoothController[this.sensors.TotalReceivers];
+                this.masterDecoder = new MITesDecoder();
+                this.mitesControllers = new MITesReceiverController[this.sensors.TotalWiredReceivers];
+                this.bluetoothControllers = new BluetoothController[this.sensors.TotalBluetoothReceivers];
+                this.bluetoothConnectionStatus = new bool[this.sensors.TotalBluetoothReceivers];
                 this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
                 this.aMITesActivityCounters = new Hashtable();
 
@@ -714,7 +720,7 @@ namespace MITesDataCollection
 
             SetFormPositions();
             if (this.sensors.TotalReceivers > 0)
-                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.mitesDecoders[0], GetGraphSize(false));
+                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/ this.masterDecoder, GetGraphSize(false));
             else
                 aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
 
@@ -742,7 +748,8 @@ namespace MITesDataCollection
             //Initialize the feature extraction algorithm but by default do not
             //turn it on
             if (this.sensors.TotalReceivers > 0) // if there is at least 1 MIT
-                Extractor.Initialize(this.mitesDecoders[0], dataDirectory, this.annotation, this.sensors, this.configuration);
+                //Extractor.Initialize(this.mitesDecoders[0], dataDirectory, this.annotation, this.sensors, this.configuration);
+                Extractor.Initialize(this.masterDecoder, dataDirectory, this.annotation, this.sensors, this.configuration);
             else if (this.sensors.Sensors.Count > 0) // only built in
                 Extractor.Initialize(new MITesDecoder(), dataDirectory, this.annotation, this.sensors, this.configuration);
 
@@ -990,10 +997,10 @@ namespace MITesDataCollection
             progressMessage += " Completed\r\n";
 
 
-
             //Initialize the MITes receivers
             if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
             {
+
                 this.mitesControllers = new MITesReceiverController[this.sensors.TotalReceivers];
                 this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
                 this.aMITesActivityCounters = new Hashtable();
@@ -1303,6 +1310,12 @@ namespace MITesDataCollection
 
         }
 
+
+        //Initialize MITes Receivers
+        private bool InitializeWockets(int wocket_id)
+        {
+            return true;
+        }
         //Initialize MITes Receivers
         private bool InitializeMITes(string dataDirectory)
         {
@@ -1312,33 +1325,129 @@ namespace MITesDataCollection
 
 
 
-            if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_USB)
-            {
-                //Do a port search only if we are using wired MITes
-                int maxPortSearched = 1;
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+//            if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_USB)
+//            {
+//                //Do a port search only if we are using wired MITes
+//                int maxPortSearched = 1;
+//                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+//                {
+//                    progressMessage += "Searching for receiver " + i + "...\r\n";
+//                    this.mitesControllers[i] = new MITesReceiverController(MITesReceiverController.FIND_PORT, BYTES_BUFFER_SIZE);
+//                    int portNumber = MITesReceiverController.FIND_PORT;
+
+//                    //#if (PocketPC)
+
+
+//                    try
+//                    {
+//#if (PocketPC)
+//                        portNumber = maxPortSearched = 9;
+//                        progressMessage += "Testing COM Port " + portNumber;
+//                        if (this.mitesControllers[i].TestPort(portNumber, BYTES_BUFFER_SIZE))
+//                        {
+//                            progressMessage += "... Success\r\n";
+//                        }
+//                        else
+//                        {
+//                            progressMessage += "... Failed\r\n";
+//                            portNumber = MITesReceiverController.FIND_PORT;
+//                        }
+//#else
+//                    for (int j = maxPortSearched; (j < Constants.MAX_PORT); j++)
+//                    {
+//                        portNumber = maxPortSearched = j;
+//                        progressMessage += "Testing COM Port " + portNumber;
+//                        if (this.mitesControllers[i].TestPort(portNumber, BYTES_BUFFER_SIZE))
+//                        {
+//                            progressMessage += "... Success\r\n";
+//                            break;
+//                        }
+//                        else
+//                            progressMessage += "... Failed\r\n";
+//                    }
+//#endif
+//                    }
+//                    catch (Exception)
+//                    {
+//                        MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
+//                        for (int j = 0; (j < this.sensors.TotalReceivers); j++)
+//                            this.mitesControllers[j].Close();
+//#if (PocketPC)
+//                        Application.Exit();
+//                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+//#else
+//                    Environment.Exit(0);
+//#endif
+//                    }
+
+
+//                    if (portNumber == MITesReceiverController.FIND_PORT)
+//                    {
+//                        progressMessage += "Could not find a valid COM port with a MITes receiver!";
+//                        //MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
+//#if (PocketPC)
+//                        //Application.Exit();
+//                        //System.Diagnostics.Process.GetCurrentProcess().Kill();    
+//#else
+//                    //Environment.Exit(0);
+//#endif
+//                        return false;
+//                    }
+//                    this.mitesControllers[i].InitializeController(portNumber, BYTES_BUFFER_SIZE, true, MITesReceiverController.USE_THREADS);
+
+//                    this.mitesDecoders[i] = new MITesDecoder();
+//                }
+//            }
+//            else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
+//            {
+                //for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+                foreach(Receiver receiver in this.sensors.Receivers)
                 {
-                    progressMessage += "Searching for receiver " + i + "...\r\n";
-                    this.mitesControllers[i] = new MITesReceiverController(MITesReceiverController.FIND_PORT, BYTES_BUFFER_SIZE);
-                    int portNumber = MITesReceiverController.FIND_PORT;
-
-                    //#if (PocketPC)
-
-
-                    try
+                    if (receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH)
                     {
+                        progressMessage += "Initializing Bluetooth ...";
+                        this.bluetoothControllers[receiver.ID] = new BluetoothController();                     
+                        try
+                        {
+                            //this.bluetoothControllers[i].initialize(this.configuration.MacAddress, this.configuration.Passkey);
+                            this.bluetoothControllers[receiver.ID].initialize(receiver.MacAddress, receiver.PassKey);
+                        }
+                        catch (Exception e)
+                        {
+                            progressMessage += "Could not find a valid Bluetooth Wockets receiver!";
+                            return false;
+                        }
+                        this.bluetoothConnectionStatus[receiver.ID] = true;
+
+                        if (receiver.Decoder==SXML.Constants.DECODER_MITES)
+                            this.mitesDecoders[receiver.ID] = new MITesDecoder();
+                        else if (receiver.Decoder==SXML.Constants.DECODER_WOCKETS)
+                            this.mitesDecoders[receiver.ID]= new MITesDecoder();
+                    }
+                    else if (receiver.Type == SXML.Constants.RECEIVER_USB)
+                    {
+
+                        progressMessage += "Searching for receiver " + receiver.ID + "...\r\n";
+                        this.mitesControllers[receiver.ID] = new MITesReceiverController(MITesReceiverController.FIND_PORT, BYTES_BUFFER_SIZE);
+                        int portNumber = MITesReceiverController.FIND_PORT;
+
+                        //#if (PocketPC)
+
+
+                        try
+                        {
 #if (PocketPC)
-                        portNumber = maxPortSearched = 9;
-                        progressMessage += "Testing COM Port " + portNumber;
-                        if (this.mitesControllers[i].TestPort(portNumber, BYTES_BUFFER_SIZE))
-                        {
-                            progressMessage += "... Success\r\n";
-                        }
-                        else
-                        {
-                            progressMessage += "... Failed\r\n";
-                            portNumber = MITesReceiverController.FIND_PORT;
-                        }
+                            portNumber = 9;
+                            progressMessage += "Testing COM Port " + portNumber;
+                            if (this.mitesControllers[receiver.ID].TestPort(portNumber, BYTES_BUFFER_SIZE))
+                            {
+                                progressMessage += "... Success\r\n";
+                            }
+                            else
+                            {
+                                progressMessage += "... Failed\r\n";
+                                portNumber = MITesReceiverController.FIND_PORT;
+                            }
 #else
                     for (int j = maxPortSearched; (j < Constants.MAX_PORT); j++)
                     {
@@ -1353,56 +1462,40 @@ namespace MITesDataCollection
                             progressMessage += "... Failed\r\n";
                     }
 #endif
-                    }
-                    catch (Exception)
-                    {
-                        MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
-                        for (int j = 0; (j < this.sensors.TotalReceivers); j++)
-                            this.mitesControllers[j].Close();
+                        }
+                        catch (Exception)
+                        {
+                            MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
+                            for (int j = 0; (j < this.sensors.TotalReceivers); j++)
+                                this.mitesControllers[j].Close();
 #if (PocketPC)
-                        Application.Exit();
-                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+                            Application.Exit();
+                            System.Diagnostics.Process.GetCurrentProcess().Kill();
 #else
                     Environment.Exit(0);
 #endif
-                    }
+                        }
 
 
-                    if (portNumber == MITesReceiverController.FIND_PORT)
-                    {
-                        progressMessage += "Could not find a valid COM port with a MITes receiver!";
-                        //MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
+                        if (portNumber == MITesReceiverController.FIND_PORT)
+                        {
+                            progressMessage += "Could not find a valid COM port with a MITes receiver!";
+                            //MessageBox.Show("Exiting: Could not find a valid COM port with a MITes receiver!");
 #if (PocketPC)
-                        //Application.Exit();
-                        //System.Diagnostics.Process.GetCurrentProcess().Kill();    
+                            //Application.Exit();
+                            //System.Diagnostics.Process.GetCurrentProcess().Kill();    
 #else
                     //Environment.Exit(0);
 #endif
-                        return false;
-                    }
-                    this.mitesControllers[i].InitializeController(portNumber, BYTES_BUFFER_SIZE, true, MITesReceiverController.USE_THREADS);
+                            return false;
+                        }
+                        this.mitesControllers[receiver.ID].InitializeController(portNumber, BYTES_BUFFER_SIZE, true, MITesReceiverController.USE_THREADS);
 
-                    this.mitesDecoders[i] = new MITesDecoder();
-                }
-            }
-            else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
-            {
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
-                {
-                    progressMessage += "Initializing Bluetooth ...";
-                    this.bluetoothControllers[i] = new BluetoothController();
-                    try
-                    {
-                        this.bluetoothControllers[i].initialize(this.configuration.MacAddress, this.configuration.Passkey);
+                        this.mitesDecoders[receiver.ID] = new MITesDecoder();
+
                     }
-                    catch (Exception e)
-                    {
-                        progressMessage += "Could not find a valid Bluetooth Wockets receiver!";
-                        return false;
-                    }
-                    this.mitesDecoders[i] = new MITesDecoder();
                 }
-            }
+           // }
 
             aMITesActivityLogger = new MITesActivityLogger(dataDirectory + "\\data\\activity\\MITesActivityData");
             aMITesActivityLogger.SetupDirectories(dataDirectory);
@@ -1417,13 +1510,14 @@ namespace MITesDataCollection
                 int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
                 if (sensor_id != 0)
                     aMITesActivityCounters.Add(sensor_id, new MITesActivityCounter(this.mitesDecoders[0], sensor_id));
+                    //aMITesActivityCounters.Add(sensor_id, new MITesActivityCounter(this.masterDecoder, sensor_id));
             }
-            aMITesHRAnalyzer = new MITesHRAnalyzer(this.mitesDecoders[0]);
-            aMITesDataFilterer = new MITesDataFilterer(this.mitesDecoders[0]);
-            aMITesLogger = new MITesLoggerNew(this.mitesDecoders[0],
+            aMITesHRAnalyzer = new MITesHRAnalyzer(this.masterDecoder);//this.mitesDecoders[0]);
+            aMITesDataFilterer = new MITesDataFilterer(this.masterDecoder);//this.mitesDecoders[0]);
+            aMITesLogger = new MITesLoggerNew(this.masterDecoder,//this.mitesDecoders[0],
                 dataDirectory + "\\data\\raw\\MITesAccelBytes",
                 dataDirectory + "\\data\\log\\MITesLogFileBytes");
-            aMITesLoggerPLFormat = new MITesLoggerPLFormat(this.mitesDecoders[0],
+            aMITesLoggerPLFormat = new MITesLoggerPLFormat(this.masterDecoder,//this.mitesDecoders[0],
                                                          dataDirectory + "\\data\\raw\\PLFormat\\");
             //aMITesLogger.SetActive(false);
 
@@ -1628,7 +1722,7 @@ namespace MITesDataCollection
 
                 //adjust the size of the plotter
                 if (this.sensors.TotalReceivers>0)
-                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.mitesDecoders[0], new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
+                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
                 else
                     aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
                 SetFormPositions();
@@ -2405,12 +2499,12 @@ namespace MITesDataCollection
 
         private void SetPlotterFullScreen()
         {
-            aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.mitesDecoders[0], GetGraphSize(true));
+            aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, GetGraphSize(true));
         }
 
         private void SetPlotterPartialScreen()
         {
-            aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.mitesDecoders[0], GetGraphSize(false));
+            aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, GetGraphSize(false));
         }
 
         /// <summary>
@@ -2711,56 +2805,47 @@ namespace MITesDataCollection
                 //setup the Bluetooth if needed
                 if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
                 {
-                    this.bluetoothControllers = new BluetoothController[this.sensors.TotalReceivers];
-                    this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
-                    this.aMITesActivityCounters = new Hashtable();
-                    if (InitializeMITes(dataDirectory) == false)
+                    //this.bluetoothControllers = new BluetoothController[this.sensors.TotalReceivers];
+                    //this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
+                    //this.aMITesActivityCounters = new Hashtable();
+                    btRestablished = true;
+                    foreach (Receiver receiver in this.sensors.Receivers)
                     {
-                        //MessageBox.Show("Exiting: You picked a configuration with " + this.sensors.TotalReceivers + " receivers. Please make sure they are attached to the computer.");
-                        //bt.close();
-                        //Application.Exit();
-                        //System.Diagnostics.Process.GetCurrentProcess().Kill();
-                        progressMessage += " Still cannot find BT ... trying in a bit\r\n";                       
-                        reconnection_timeout = 10;
-                        progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";
-                    }
-                    else
-                    {
-                        btRestablished = true;
-                    }
-                    reconnection_attempts++;
+                        if ( (receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH) && (this.bluetoothConnectionStatus[receiver.ID]==false))
+                        {
+                            progressMessage += "Initializing Bluetooth ...";
+                            this.bluetoothControllers[receiver.ID] = new BluetoothController();
+                            try
+                            {
+                                //this.bluetoothControllers[i].initialize(this.configuration.MacAddress, this.configuration.Passkey);
+                                this.bluetoothControllers[receiver.ID].initialize(receiver.MacAddress, receiver.PassKey);
+                                this.bluetoothConnectionStatus[receiver.ID] = true;
+                                this.mitesDecoders[receiver.ID] = new MITesDecoder();
+                            }
+                            catch (Exception)
+                            {
+                                
+                                progressMessage += " Still cannot find BT ... trying in a bit\r\n";                       
+                                reconnection_timeout = 10;
+                                progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";                              
+                            }
 
-/*
-                    for (int i=0;(i<this.sensors.TotalReceivers);i++){
-                        this.bluetoothControllers[i] = new BluetoothController();
-                        try
-                        {
-                            this.bluetoothControllers[i].initialize(this.configuration.MacAddress, this.configuration.Passkey);
-                            btRestablished = true;
+                            btRestablished = btRestablished & this.bluetoothConnectionStatus[receiver.ID];
+                     
                         }
-                        catch (Exception)
-                        {
-                            progressMessage += "Still cannot find BT... trying in a bit\r\n";                           
-                        }
-                     }*/
-                    /*
-                    this.bt.close();                    
-                    this.bt = new BluetoothController();
-                    try
-                    {
-                        this.bluetoothPort = bt.initialize(this.configuration.MacAddress, this.configuration.Passkey);
-                        btRestablished = true;
                     }
-                    catch (Exception exx)
-                    {
-                        progressMessage += " Failed...\r\n";
-                        reconnection_attempts++;
-                       //MessageBox.Show("Unable to reinitialize BT");
-                       // bt.close();
-                        //Application.Exit();
-                        //System.Diagnostics.Process.GetCurrentProcess().Kill();
-                    }
-                     */
+
+                    //if (InitializeMITes(dataDirectory) == false)
+                    //{
+                    //    progressMessage += " Still cannot find BT ... trying in a bit\r\n";                       
+                    //    reconnection_timeout = 10;
+                    //    progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";
+                    //}
+                    //else
+                    //{
+                    //    btRestablished = true;
+                    //}
+                    reconnection_attempts++;
                 }
                 
                 //Intialize the MITes Receivers, decoders and counters based
@@ -2772,12 +2857,12 @@ namespace MITesDataCollection
 
                     
                
-                    Extractor.SetMITesDecoder(this.mitesDecoders[0]);
+                    //Extractor.SetMITesDecoder(this.mitesDecoders[0]);
                     btRestablished = false;
                     progressMessage += "Data collection resumed\r\n";
                     connectionLost = false;
                     if (this.sensors.TotalReceivers > 0)
-                        aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.mitesDecoders[0], GetGraphSize(false));
+                        aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, GetGraphSize(false));
                     else
                         aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
                     isStartedReceiver = true;
@@ -2802,7 +2887,7 @@ namespace MITesDataCollection
             #region Collect MITes Data
             if (isStartedReceiver)
             {
-               
+                int currentBT = -1;
                 //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
                 try
                 {
@@ -2813,20 +2898,30 @@ namespace MITesDataCollection
                     }
                     else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
                     {
-                        for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI                        
-                            this.mitesDecoders[i].GetSensorData(this.bluetoothControllers[i]);
+                        //for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+                        foreach(Receiver receiver in this.sensors.Receivers)
+                        { // FIX SSI                        
+                            currentBT = receiver.ID;
+                            if (receiver.Decoder==SXML.Constants.DECODER_MITES)
+                                this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], false);
+                            else
+                                this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], true);
+                        }
                     }
                 }
                 catch (Exception ex)
                 {
+                    this.bluetoothConnectionStatus[currentBT] = false;
                     Console.WriteLine(ex.ToString());
                     connectionLost = true;
                     isStartedReceiver = false;
                     return;
                 }
 
-                for (int i = 1; (i < this.sensors.TotalReceivers); i++)
-                    this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);
+                this.masterDecoder.someMITesDataIndex = 0;
+                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
+                    //this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);                    
+                    this.masterDecoder.MergeDataOrderProperly(this.mitesDecoders[i]);
             }
 
             #endregion Collect MITes Data
@@ -3210,16 +3305,21 @@ namespace MITesDataCollection
                 {
 
                     //store sum of abs values of consecutive accelerometer readings
-                    for (int i = 0; (i < this.mitesDecoders[0].someMITesDataIndex); i++)
+                    //for (int i = 0; (i < this.mitesDecoders[0].someMITesDataIndex); i++)
+                    for (int i = 0; (i < this.masterDecoder.someMITesDataIndex); i++)
                     {
-                        if ((this.mitesDecoders[0].someMITesData[i].type != (int)MITesTypes.NOISE) &&
-                              (this.mitesDecoders[0].someMITesData[i].type == (int)MITesTypes.ACCEL))
+                        if ((this.masterDecoder.someMITesData[i].type != (int)MITesTypes.NOISE) &&
+                              (this.masterDecoder.someMITesData[i].type == (int)MITesTypes.ACCEL))
                         {
                             int channel = 0, x = 0, y = 0, z = 0;
-                            channel = (int)this.mitesDecoders[0].someMITesData[i].channel;
-                            x = (int)this.mitesDecoders[0].someMITesData[i].x;
-                            y = (int)this.mitesDecoders[0].someMITesData[i].y;
-                            z = (int)this.mitesDecoders[0].someMITesData[i].z;
+                            //channel = (int)this.mitesDecoders[0].someMITesData[i].channel;
+                           // x = (int)this.mitesDecoders[0].someMITesData[i].x;
+                           // y = (int)this.mitesDecoders[0].someMITesData[i].y;
+                           // z = (int)this.mitesDecoders[0].someMITesData[i].z;
+                            channel = (int)this.masterDecoder.someMITesData[i].channel;
+                            x = (int)this.masterDecoder.someMITesData[i].x;
+                            y = (int)this.masterDecoder.someMITesData[i].y;
+                            z = (int)this.masterDecoder.someMITesData[i].z;
 
 
 
@@ -3377,13 +3477,16 @@ namespace MITesDataCollection
 
 
 
-                sum += this.mitesDecoders[0].GetLastByteNum();               
+                //sum += this.mitesDecoders[0].GetLastByteNum();               
+                sum += this.masterDecoder.GetLastByteNum();               
                 aMITesDataFilterer.RemoveZeroNoise();
-                this.mitesDecoders[0].UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
+                //this.mitesDecoders[0].UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
+                this.masterDecoder.UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
 
                 if (printSamplingCount > 500)
                 {
-                    ((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.mitesDecoders[0].GetSamplingRate();
+                    //((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.mitesDecoders[0].GetSamplingRate();
+                    ((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.masterDecoder.GetSamplingRate();
                     //textBoxRate.Text = "Samp: " + aMITesDecoder.GetSamplingRate();
                     //aMITesLogger.WriteLogComment(textBoxUV.Text);
                     printSamplingCount = 0;

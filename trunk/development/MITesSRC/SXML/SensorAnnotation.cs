@@ -8,6 +8,7 @@ namespace SXML
     public class SensorAnnotation
     {
         private string dataset;
+        private ArrayList receivers;
         private ArrayList sensors;
 
         private bool hasBuiltIn;
@@ -26,6 +27,7 @@ namespace SXML
         public SensorAnnotation(int maxReceivers)
         {
             this.sensors = new ArrayList();
+            this.receivers = new ArrayList();
             this.totalBuiltInSensors = 0;
             this.hasBuiltIn = false;
             this.sensorsIndex = new Hashtable();
@@ -97,6 +99,14 @@ namespace SXML
             get
             {
                 return this.sensors;
+            }
+        }
+
+        public ArrayList Receivers
+        {
+            get
+            {
+                return this.receivers;
             }
         }
 
