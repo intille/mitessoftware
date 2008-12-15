@@ -43,6 +43,7 @@ namespace HousenCS.MITes
         public static readonly int MAX_PACKET_SIZE = 6;
         public static readonly int MIN_PACKET_SIZE = 5;
 
+        public static readonly int WOCKET_PACKET_SIZE = 7;
         /// <summary>
         /// The maximum valid channel that the receiver can use.  
         /// </summary>
@@ -57,6 +58,8 @@ namespace HousenCS.MITes
         /// Storage for packet to be decoded. 
         /// </summary>
         public byte[] packet = new byte[MAX_PACKET_SIZE];
+        public byte[] packet2 = new byte[WOCKET_PACKET_SIZE];
+        public int packet2Position = 0;
         private int v = 0;
         private int lV = 0;
         private static bool DEBUG = false;
@@ -312,15 +315,18 @@ namespace HousenCS.MITes
         /// data from a Bluetooth stream.
         /// </summary>
         /// <param name="bs"></param>
-        public void GetSensorData(BluetoothController btc)
-        {
+        public void GetSensorData(BluetoothController btc,bool wockets)
+        {            
             bytesFound = btc.read(btc.BluetoothBytesBuffer);
             UpdateDataRate(bytesFound);
             if (bytesFound > 0)
             {
                 Debug("Bytes from fill: " + bytesFound);
                 someMITesDataIndex = 0;
-                someMITesDataIndex = DecodeMITesData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
+                if (wockets==false)
+                    someMITesDataIndex = DecodeMITesData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
+                else
+                    someMITesDataIndex = DecodeWocketsData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
             }
             else
             {
@@ -742,7 +748,64 @@ namespace HousenCS.MITes
         {
             DecodeLastPacket(aMITesData, SWAP_BYTES); // Default to swap bytes
         }
+        //set the sync bit,no compession, length and channel
+    //frame.byte1 |= 0xA8 | UNCOMPRESSED_LENGTH;
+    //frame.byte2 |= (crc>>1);
+    //frame.byte3 |= ((crc<<7)>>1) | ((unsigned char) ((x>>4)&0x3f));
+    //frame.byte4 |=  ((unsigned char) ((x<<3) &0x78)) | ((unsigned char) ((y>>7)&0x07));
+    //frame.byte5 |= ((unsigned char) (y&0x7f));
+    //frame.byte6 |= ((unsigned char) ((z>>3)&0x7f));
+    //frame.byte7 |= ((unsigned char) ((z<<4)&0x70));
 
+        public void DecodeWocketsFrame(MITesData aMITesData,byte[] raw)
+        {
+            aMITesData.channel = 23;
+            aMITesData.x= (short)((((short)(raw[2]&0x3f))<<4) | (((short)(raw[3]&0x78))>>3));
+            aMITesData.y = (short)((((short)(raw[3] & 0x07)) << 7) | ((short)(raw[4] & 0x7f)));
+            aMITesData.z = (short)((((short)(raw[5] & 0x7f)) << 3) | (((short)(raw[6] & 0x70)) >> 4));
+            aMITesData.type = ((int)MITesTypes.ACCEL);
+            SetTime(aMITesData);
+            SetUnixTime(aMITesData);         
+        }
+
+        
+        public int DecodeWocketsData(byte[] bytes, int numBytes, MITesData[] someData, int dataIndex)
+        {
+            int i = 0;
+            int valuesGrabbed = 0;
+            bool header_started=false;
+                    
+            if (numBytes != 0) // Have some data
+            {
+                while (i < numBytes)
+                {                    
+                    if ((bytes[i] & 0x80) != 0) //grab the next 6 bytes
+                    {
+                        packet2Position = 0;
+                        header_started = true;
+                    }
+          
+                    if ( (header_started==true) && (packet2Position<WOCKET_PACKET_SIZE))
+                        packet2[packet2Position] = bytes[i];
+
+                    packet2Position++;
+                    i++;
+                    if (packet2Position == WOCKET_PACKET_SIZE) //a full packet was received
+                    {
+                        DecodeWocketsFrame(someData[dataIndex], packet2);
+                        dataIndex++;
+                        packet2Position = 0;
+                        header_started = false;
+                        valuesGrabbed++;
+                    }
+                }
+            }
+
+            if (valuesGrabbed < someData.Length)
+                return valuesGrabbed;
+            else
+                return someData.Length;
+        }
         /// <summary>
         /// The main call to decode data grabbed from the serial port int MITesData objects.
         /// </summary>

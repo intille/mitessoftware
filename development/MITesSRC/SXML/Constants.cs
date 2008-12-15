@@ -16,6 +16,8 @@ namespace SXML
         public const string COLOR_ELEMENT = "COLOR";
         public const string CALIBRATION_ELEMENT = "CALIBRATION";
         public const string RECEIVER_ELEMENT = "RECEIVER";
+        public const string RECEIVERS_ELEMENT = "RECEIVERS";
+        public const string SENSORS_ELEMENT = "SENSORS";
 
         public const string CONFIGURATIONS_ELEMENT = "CONFIGURATIONS";
         public const string SENSORSET_ELEMENT = "SENSORSET";
@@ -41,10 +43,25 @@ namespace SXML
         public const string DISPLAY_TYPE_ATTRIBUTE = "displaytype";
         public const string DISPLAY_X = "x";
         public const string DISPLAY_Y = "y";
+        public const string MAC_ATTRIBUTE = "mac";
+        public const string PASSKEY_ATTRIBUTE = "passkey";
+        public const string DECODER_ATTRIBUTE = "decoder";
 
         //Sensor Classes
         public const string MITES = "MITes";
         public const string BUILTIN = "BUILTIN";
+        public const string WOCKETS = "Wockets";
+
+        //receiver types
+        public const string RECEIVER_USB = "usb";
+        public const string RECEIVER_BLUETOOTH = "bluetooth";
+
+        //types of decoders
+        public const string DECODER_MITES = "mites";
+        public const string DECODER_WOCKETS = "wockets";
+
+        public static int MAC_SIZE = 6;
+
         
 
     }
