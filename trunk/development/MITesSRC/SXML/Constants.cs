@@ -59,6 +59,7 @@ namespace SXML
         //types of decoders
         public const string DECODER_MITES = "mites";
         public const string DECODER_WOCKETS = "wockets";
+        public const string DECODER_SPARKFUN= "sparkfun";
 
         public static int MAC_SIZE = 6;
 

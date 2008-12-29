@@ -42,8 +42,13 @@ namespace HousenCS.MITes
         /// </summary>
         public static readonly int MAX_PACKET_SIZE = 6;
         public static readonly int MIN_PACKET_SIZE = 5;
-
         public static readonly int WOCKET_PACKET_SIZE = 7;
+        public static readonly int SPARKFUN_PACKET_SIZE = 15;
+
+        public static readonly int MITES_SENSOR = 0;
+        public static readonly int WOCKETS_SENSOR = 1;
+        public static readonly int SPARKFUN_SENSOR = 2;
+
         /// <summary>
         /// The maximum valid channel that the receiver can use.  
         /// </summary>
@@ -59,7 +64,9 @@ namespace HousenCS.MITes
         /// </summary>
         public byte[] packet = new byte[MAX_PACKET_SIZE];
         public byte[] packet2 = new byte[WOCKET_PACKET_SIZE];
+        public byte[] packet3 = new byte[SPARKFUN_PACKET_SIZE];
         public int packet2Position = 0;
+        public int packet3Position = 0;
         private int v = 0;
         private int lV = 0;
         private static bool DEBUG = false;
@@ -315,7 +322,7 @@ namespace HousenCS.MITes
         /// data from a Bluetooth stream.
         /// </summary>
         /// <param name="bs"></param>
-        public void GetSensorData(BluetoothController btc,bool wockets)
+        public void GetSensorData(BluetoothController btc,int type)
         {            
             bytesFound = btc.read(btc.BluetoothBytesBuffer);
             UpdateDataRate(bytesFound);
@@ -323,10 +330,12 @@ namespace HousenCS.MITes
             {
                 Debug("Bytes from fill: " + bytesFound);
                 someMITesDataIndex = 0;
-                if (wockets==false)
+                if (type==MITES_SENSOR)
                     someMITesDataIndex = DecodeMITesData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
-                else
+                else if (type == WOCKETS_SENSOR)
                     someMITesDataIndex = DecodeWocketsData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
+                else if (type == SPARKFUN_SENSOR)
+                    someMITesDataIndex = DecodeSparkfunData(btc.BluetoothBytesBuffer, bytesFound, someMITesData, someMITesDataIndex);
             }
             else
             {
@@ -759,13 +768,62 @@ namespace HousenCS.MITes
 
         public void DecodeWocketsFrame(MITesData aMITesData,byte[] raw)
         {
-            aMITesData.channel = 23;
+            aMITesData.channel = (byte)((raw[0]&0x38)>>3);
             aMITesData.x= (short)((((short)(raw[2]&0x3f))<<4) | (((short)(raw[3]&0x78))>>3));
             aMITesData.y = (short)((((short)(raw[3] & 0x07)) << 7) | ((short)(raw[4] & 0x7f)));
             aMITesData.z = (short)((((short)(raw[5] & 0x7f)) << 3) | (((short)(raw[6] & 0x70)) >> 4));
             aMITesData.type = ((int)MITesTypes.ACCEL);
             SetTime(aMITesData);
             SetUnixTime(aMITesData);         
+        }
+
+        public void DecodeSparkfunFrame(MITesData aMITesData, byte[] raw)
+        {
+            aMITesData.channel = 26;
+            aMITesData.x = (short)((((short)raw[4])<<8) | ((short)raw[5]));
+            aMITesData.y = (short)((((short)raw[6]) << 8) | ((short)raw[7]));
+            aMITesData.z = (short)((((short)raw[8]) << 8) | ((short)raw[9]));
+            aMITesData.type = ((int)MITesTypes.ACCEL);
+            SetTime(aMITesData);
+            SetUnixTime(aMITesData);
+        }
+
+        public int DecodeSparkfunData(byte[] bytes, int numBytes, MITesData[] someData, int dataIndex)
+        {
+            int i = 0;
+            int valuesGrabbed = 0;
+            bool header_started = false;
+
+            if (numBytes != 0) // Have some data
+            {
+                while (i < numBytes)
+                {
+                    if ((bytes[i])=='#') //grab the next 6 bytes
+                    {
+                        packet3Position = 0;
+                        header_started = true;
+                    }
+
+                    if ((header_started == true) && (packet3Position < SPARKFUN_PACKET_SIZE))
+                        packet3[packet3Position] = bytes[i];
+
+                    packet3Position++;
+                    i++;
+                    if ((packet3Position == SPARKFUN_PACKET_SIZE) && (packet3[SPARKFUN_PACKET_SIZE-1]=='$')) //a full packet was received
+                    {
+                        DecodeSparkfunFrame(someData[dataIndex], packet3);
+                        dataIndex++;
+                        packet3Position = 0;
+                        header_started = false;
+                        valuesGrabbed++;
+                    }
+                }
+            }
+
+            if (valuesGrabbed < someData.Length)
+                return valuesGrabbed;
+            else
+                return someData.Length;
         }
 
         

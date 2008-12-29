@@ -244,6 +244,9 @@ namespace Bluetooth
             {
                 if (usingWidcomm)
                 {
+                    bool canStart = initializeWidcommBluetooth();
+                    if (!canStart)
+                        throw new Exception("Couldn't instantiate the Widcomm object in C++");
                     IntPtr stringPtr = prepareCOMportWidcomm(addr);
                     if (stringPtr != IntPtr.Zero)
                         newStream.comPortName = Marshal.PtrToStringUni(stringPtr);
