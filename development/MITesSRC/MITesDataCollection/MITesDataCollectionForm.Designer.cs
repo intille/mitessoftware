@@ -740,6 +740,14 @@ namespace MITesDataCollection
             this.sensorLabels.Add("SampRate", samplingLabel);
             //this.tabPage1.Controls.Add(samplingLabel);
             this.panel1.Controls.Add(samplingLabel);
+            System.Windows.Forms.Label errorLabel = new System.Windows.Forms.Label();
+            errorLabel.Size = new System.Drawing.Size(this.panel1.ClientSize.Width - 10, 30);
+            errorLabel.Location = new System.Drawing.Point(5, 100);
+            errorLabel.Visible = false;
+            this.panel1.Controls.Add(errorLabel);
+            this.sensorLabels.Add("ErrorLabel", errorLabel);
+
+
 
             //Initialize Buttons
 

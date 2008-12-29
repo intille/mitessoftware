@@ -101,7 +101,7 @@ namespace MITesDataCollection
             //int aid6 = 17;
         //MITEs Constants
 
-        public static int MAX_CONTROLLERS = 3;
+        public static int MAX_CONTROLLERS = 10;
         public static int ACCEL_ID1 = 1;
         public static int ACCEL_ID2 = 4;
         public static int ACCEL_ID3 = 7;
