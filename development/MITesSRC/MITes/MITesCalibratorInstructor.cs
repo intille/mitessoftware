@@ -77,11 +77,11 @@ namespace HousenCS.MITes
 /// 
 /// </summary>
 /// <returns></returns>
-		public String DoTest9()
-		{
-			String str = "Rate: " + aMITesSensorCalibrator.GetLastSamplingRateComputed ();
-			return str;
-		}
+        //public String DoTest9()
+        //{
+        //    String str = "Rate: " + aMITesSensorCalibrator.GetLastSamplingRateComputed ();
+        //    return str;
+        //}
 /// <summary>
 /// 
 /// </summary>

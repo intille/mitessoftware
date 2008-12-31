@@ -244,6 +244,8 @@ namespace HousenCS.MITes
 		/// <param name="maxPlots"></param>
 		/// <param name="aMITesDecoder"></param>
 		/// <param name="aSize"></param>
+        /// 
+        private int[] columns;
 		public MITesScalablePlotter(System.Windows.Forms.Panel aPanel, DeviceTypes aDeviceType, int maxPlots, MITesDecoder aMITesDecoder, Size aSize)
 		{
 			this.plotAreaSize = aSize; 
@@ -251,6 +253,9 @@ namespace HousenCS.MITes
 			//this.aTab = aTab;
             this.aPanel = aPanel;
 			this.maxPlots = maxPlots;
+            this.columns = new int[this.maxPlots];
+            for (int i = 0; i < this.maxPlots; i++)
+                this.columns[i] = 0;
 			devType = aDeviceType; 
 			CheckDeviceType(devType);
 
@@ -319,6 +324,7 @@ namespace HousenCS.MITes
 			}
 		}
 
+        
 		/// <summary>
 		/// 
 		/// </summary>
@@ -337,6 +343,23 @@ namespace HousenCS.MITes
 				return false;
 			}
 		}
+
+        public bool checkIsSeenAllID(int sensorID)
+        {
+            bool t = true;
+            for (int i = 0; (i < this.maxPlots); i++)            
+                t = t & isSeenID[i];            
+            if (t)
+            {            
+                ResetIsSeenID();
+                return true;
+            }
+            else
+            {
+                isSeenID[sensorID] = true;
+                return false;
+            }
+        }
 
 		/// <summary>
 		/// The MITesDecoder maps the sensor channel ID onto an index value used when 
@@ -492,7 +515,7 @@ namespace HousenCS.MITes
                                 }
                             }
 
-                            if (checkIsSeenID(id)) // Set isSeenID array
+                            if (checkIsSeenAllID(id)) // Set isSeenID array
                             {
                                 aPanel.Invalidate(new System.Drawing.Rectangle(col - 1, 0, 2, plotAreaSize.Height));
                                 col++;

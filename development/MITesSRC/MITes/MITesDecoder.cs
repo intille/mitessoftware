@@ -162,10 +162,10 @@ namespace HousenCS.MITes
         /// computation of the value. 
         /// </summary>
         /// <returns>The sampling rate in MITesData/sec</returns>
-        public int GetLastSamplingRateComputed()
-        {
-            return lastSamplingRateComputed;
-        }
+        //public int GetLastSamplingRateComputed()
+        //{
+        //    return lastSamplingRateComputed;
+        //}
 
         /// <summary>
         /// Computes the sampling rate of incoming MITesData (forces the computation to
@@ -215,40 +215,40 @@ namespace HousenCS.MITes
             }
         }
 
-        private int byteSum = 0;
-        private int lastByteNumGrabbed = 0;
-        private int startTime = Environment.TickCount;
-        private double timePer300Bytes = 0.0;
-        private void UpdateDataRate(int n)
-        {
-            lastByteNumGrabbed = n;
-            byteSum += n;
-            if (byteSum >= 300)
-            {
-                timePer300Bytes = (Environment.TickCount - startTime) / 1000.0;
-                startTime = Environment.TickCount;
-                byteSum = 0;
-            }
-        }
+        //private int byteSum = 0;
+        //private int lastByteNumGrabbed = 0;
+        //private int startTime = Environment.TickCount;
+        //private double timePer300Bytes = 0.0;
+        //private void UpdateDataRate(int n)
+        //{
+        //    lastByteNumGrabbed = n;
+        //    byteSum += n;
+        //    if (byteSum >= 300)
+        //    {
+        //        timePer300Bytes = (Environment.TickCount - startTime) / 1000.0;
+        //        startTime = Environment.TickCount;
+        //        byteSum = 0;
+        //    }
+        //}
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
-        public int GetLastByteNum()
-        {
-            return lastByteNumGrabbed;
-        }
+        ///// <summary>
+        ///// 
+        ///// </summary>
+        ///// <returns></returns>
+        //public int GetLastByteNum()
+        //{
+        //    return lastByteNumGrabbed;
+        //}
 
 
         /// <summary>
         /// Return the time it takes to read 300 bytes off the serial port.
         /// </summary>
         /// <returns>The time in milliseconds</returns>
-        public double GetTimePer300Bytes()
-        {
-            return timePer300Bytes;
-        }
+        //public double GetTimePer300Bytes()
+        //{
+        //    return timePer300Bytes;
+        //}
 
         /// <summary>
         /// Merge the recovered MITes data from two MITesDecoder objects. Adding the data from the decoder
@@ -325,7 +325,7 @@ namespace HousenCS.MITes
         public void GetSensorData(BluetoothController btc,int type)
         {            
             bytesFound = btc.read(btc.BluetoothBytesBuffer);
-            UpdateDataRate(bytesFound);
+            //UpdateDataRate(bytesFound);
             if (bytesFound > 0)
             {
                 Debug("Bytes from fill: " + bytesFound);
@@ -354,7 +354,7 @@ namespace HousenCS.MITes
             //			if (mrc.IsNewData())
             //			{
             bytesFound = mrc.FillBytesBuffer(mrc.serialBytesBuffer);
-            UpdateDataRate(bytesFound);
+            //UpdateDataRate(bytesFound);
             if (bytesFound > 0)
             {
                 Debug("Bytes from fill: " + bytesFound);
