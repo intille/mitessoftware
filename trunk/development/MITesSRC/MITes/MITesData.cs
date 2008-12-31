@@ -124,7 +124,11 @@ namespace HousenCS.MITes
         /// The maximum number of steps of real resolution output by the mobile MITes. This 
         /// value is dependent on the resistor that is used.   
         /// </summary>
-        public static readonly int NUM_ACCEL_STEPS = 558;
+        //public static readonly int NUM_ACCEL_STEPS = 558;
+
+        //for wockets and Built in Accelerometers
+        public static readonly int NUM_ACCEL_STEPS = 1023;
+
 
         /// <summary>
         /// The channel number from which the data came from (typically 0 for all sensors other than accelerometers, and 1-68 for accelerometers).

@@ -32,7 +32,6 @@ namespace HousenCS.MITes
         /// </summary>
         /// <returns></returns>
         /// 
-        /** Fahd Albinali Start **/
         // Modified this method to update individual performance counters based on the channel ID for each
         // MITes sensor. 
         public int CountNonNoise()
@@ -50,7 +49,6 @@ namespace HousenCS.MITes
             }
             return nonNoiseCount;
         }
-        /** Fahd Albinali End **/
     
 
 

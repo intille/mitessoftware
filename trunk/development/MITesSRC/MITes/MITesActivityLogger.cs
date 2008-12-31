@@ -336,11 +336,11 @@ namespace HousenCS.MITes
 		/// <summary>
 		/// 
 		/// </summary>
-		public void WriteSensorStatus(MITesSensorCalibrator aMITesSensorCalibrator)
-		{
-			String str = aMITesSensorCalibrator.GetStatusLine();
-			WriteLogComment(str);
-		}
+        //public void WriteSensorStatus(MITesSensorCalibrator aMITesSensorCalibrator)
+        //{
+        //    String str = aMITesSensorCalibrator.GetStatusLine();
+        //    WriteLogComment(str);
+        //}
 
 		/// <summary>
 		/// Get the last time that any type of data was written

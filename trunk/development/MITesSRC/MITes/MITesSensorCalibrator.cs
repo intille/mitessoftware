@@ -19,10 +19,10 @@ namespace HousenCS.MITes
 		/// 
 		/// </summary>
 		/// <returns></returns>
-		public int GetLastSamplingRateComputed()
-		{
-			return aMITesDecoder.GetLastSamplingRateComputed ();
-		}
+        //public int GetLastSamplingRateComputed()
+        //{
+        //    return aMITesDecoder.GetLastSamplingRateComputed ();
+        //}
 
 		/// <summary>
 		/// 

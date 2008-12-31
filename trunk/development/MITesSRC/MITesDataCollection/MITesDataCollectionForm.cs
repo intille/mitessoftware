@@ -62,12 +62,8 @@ namespace MITesDataCollection
         private bool isPlotting = true;
         private Bitmap backBuffer = null;
         private int printSamplingCount = 0;
-        private int stepsToWarning = 0;
         private int time = Environment.TickCount;
         private int pollingTime = Environment.TickCount;
-        private double ave = 0;
-        private int sum = 0;
-        private int count = 0;
         int okTimer = 0;
         int flushTimer = 0;
         bool isWrittenKey = false;
@@ -108,7 +104,7 @@ namespace MITesDataCollection
         private ReceiverConfigureForm rcf = null;
         private MITesReceiverController[] mitesControllers;
         private BluetoothController[] bluetoothControllers;
-        private bool[] bluetoothConnectionStatus;
+        //private bool[] bluetoothConnectionStatus;
         private MITesDecoder[] mitesDecoders;
         private MITesDecoder masterDecoder;
 
@@ -610,7 +606,7 @@ namespace MITesDataCollection
                 this.bluetoothControllers = new BluetoothController[this.sensors.TotalBluetoothReceivers];
 
                 //Initialize array to store Bluetooth connection status
-                this.bluetoothConnectionStatus = new bool[this.sensors.TotalBluetoothReceivers];
+                //this.bluetoothConnectionStatus = new bool[this.sensors.TotalBluetoothReceivers];
 
                 //Initialize a decoder for each sensor
                 this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
@@ -818,8 +814,8 @@ namespace MITesDataCollection
             this.isCollectingDetailedData = true;
 #endif
 
-            if (this.sensors.TotalReceivers > 0)
-                isStartedReceiver = true;
+            //if (this.sensors.TotalReceivers > 0)
+            //    isStartedReceiver = true;
             //Start the built in polling thread            
 #if (PocketPC)
             if (this.sensors.HasBuiltinSensors)
@@ -833,6 +829,7 @@ namespace MITesDataCollection
             //Terminate the progress thread
             progressThreadQuit = true;
 
+           
             //Enable all timer functions
             this.readDataTimer.Enabled = true;
             this.qualityTimer.Enabled = true;
@@ -1694,7 +1691,7 @@ namespace MITesDataCollection
             foreach (Receiver receiver in this.sensors.Receivers)
             {
                 //If reception channel is of type Bluetooth and is not already initialized
-                if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH)  && (this.bluetoothConnectionStatus[receiver.ID] == false))
+                if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH)  && (receiver.Running == false))
                 {
                     //Create a Bluetooth controller
                     progressMessage += "Initializing Bluetooth for "+receiver.Decoder+":"+receiver.MAC+" ...\r\n";
@@ -1709,7 +1706,7 @@ namespace MITesDataCollection
                         return false;
                     }                   
                     this.mitesDecoders[receiver.ID] = new MITesDecoder();
-                    this.bluetoothConnectionStatus[receiver.ID] = true;
+                    receiver.Running = true;
 
                     //for MITes, we need to initialize the channels as well
                     if (receiver.Decoder == SXML.Constants.DECODER_MITES) 
@@ -1854,7 +1851,7 @@ namespace MITesDataCollection
                             progressMessage += "Could not find a valid Bluetooth Wockets receiver!";
                             return false;
                         }
-                        this.bluetoothConnectionStatus[receiver.ID] = true;
+                        receiver.Running = true;
 
                         if (receiver.Decoder==SXML.Constants.DECODER_MITES)
                             this.mitesDecoders[receiver.ID] = new MITesDecoder();
@@ -2983,10 +2980,7 @@ namespace MITesDataCollection
         }
         private void GraphAccelerometerValues()
         {
-
-            if (isStartedReceiver)
-                aMITesPlotter.SetAccelResultsData();
-         //   aMITesPlotter.setPlotVals();
+            aMITesPlotter.SetAccelResultsData();
         }
 
         private void Form1_Paint(object sender, PaintEventArgs e)
@@ -3085,8 +3079,8 @@ namespace MITesDataCollection
         /// <param name="e"></param>
         void qualityTimer_Tick(object sender, System.EventArgs e)
         {
-            if (isStartedReceiver)
-            {
+            //if (isStartedReceiver)
+            //{
                 bool overallGoodQuality = true;
                 double goodRate = (1 - Extractor.Configuration.MaximumNonconsecutiveFrameLoss) * 100;
 
@@ -3189,17 +3183,16 @@ namespace MITesDataCollection
 #if (PocketPC)
                 }
 #endif
+           // }
             }
-        }
 
 
-
-
+   
+        #region Builtin Accelerometr Polling Thread
 #if (PocketPC)
         private bool unprocessedBuiltin = false;
         private GenericAccelerometerData builtinData;
         private string previousActivity = "";
-        //private System.Threading.Monitor pollingMutex = new Mutex();
         private void pollingData()
         {
             while (true)
@@ -3214,6 +3207,7 @@ namespace MITesDataCollection
             }
         }
 #endif
+        #endregion Builtin Accelerometr Polling Thread
 
         private bool connectionLost = false;
         private int reconnection_attempts = 0;
@@ -3224,6 +3218,7 @@ namespace MITesDataCollection
         private int ttwcounter = 0;
         private bool btRestablished = false;
 
+        #region Bluetooth Reconnection Thread
         private bool reconnectionThreadQuit = false;
         //This method is executed as a seperate thread to manage the progress
         //form
@@ -3252,7 +3247,7 @@ namespace MITesDataCollection
                 bool btConnected = true;
                 foreach (Receiver receiver in this.sensors.Receivers)
                 {
-                    if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH) && (this.bluetoothConnectionStatus[receiver.ID] == false))
+                    if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH) && (receiver.Running == false))
                     {
                         SetErrorLabel("Reconnecting to wocket ("+reconnection_attempts+") " + receiver.MAC);
                         //progressMessage += "Initializing Bluetooth ...";
@@ -3260,14 +3255,14 @@ namespace MITesDataCollection
                         try
                         {
                             this.bluetoothControllers[receiver.ID].initialize(receiver.MacAddress, receiver.PassKey);
-                            this.bluetoothConnectionStatus[receiver.ID] = true;
+                            receiver.Running= true;
                             this.mitesDecoders[receiver.ID] = new MITesDecoder();
                         }
                         catch (Exception)
                         {
                             reconnection_timeout = 10;
                         }
-                        btConnected = btConnected & this.bluetoothConnectionStatus[receiver.ID];
+                        btConnected = btConnected & receiver.Running;
 
                     }
                 }
@@ -3280,25 +3275,27 @@ namespace MITesDataCollection
                 reconnection_attempts++;
             }
 
-            reconnectionThreadQuit = false;            
+            reconnectionThreadQuit = false;
         }
-    
+        #endregion Bluetooth Reconnection Thread
 
 
 
         private void readDataTimer_Tick(object sender, EventArgs e)
         {
-            GenericAccelerometerData polledData = null;
+
 
             if (okTimer > 3000)
                 okTimer = -1;
             okTimer++;
 
+            #region Bluetooth Reconnection Code
 #if (PocketPC)
 
-
-
-            if (connectionLost) //attempt to restablish connection
+            //TODO: If 2 connections are lost consecutively, might attempt to start 2 threads
+            //at the same time, make sure that does not happen
+            //If a connection is lost for any Bluetooth reception channel, start a reconnection thread
+            if (connectionLost)
             {
                 reconnectionThreadQuit = false;
                 ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = true;
@@ -3308,91 +3305,73 @@ namespace MITesDataCollection
 
             }
 
-                //Intialize the MITes Receivers, decoders and counters based
-                //on the chosen sensors
-                if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
-                {
-                    t.Abort();
-                    //progressMessage += " Success...\r\n";
-                    //progressMessage += "Connecting to MITes attempt " + (reconnection_attempts + 1) + " ...";
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text="Data connection resumed...";
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Refresh();
-
-                    //Extractor.SetMITesDecoder(this.mitesDecoders[0]);
-                    btRestablished = false;
-                    //progressMessage += "Data collection resumed\r\n";              
-                    if (this.sensors.TotalReceivers > 0)
-                        aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, GetGraphSize(false));
-                    else
-                        aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
-
-                    reconnection_attempts = 0;
-                    Thread.Sleep(1000);
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible=false;
-
-
-                }
-
-
-            
-#else
-            if (this.Visible)
-                this.Visible = false;
-#endif
-
-
-            //Collect any pending data
-
-            #region Collect MITes Data
-            if (isStartedReceiver)
+            //If connection is re-established re-initialize vairables and abort reconnection thread
+            if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
             {
-                int currentBT = -1;
-                //aMITesDecoder.GetSensorData(this.mitesControllers[0]);
-                try
-                {
-                    if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_USB)
-                    {
-                        for (int i = 0; (i < this.sensors.TotalReceivers); i++) // FIX SSI                        
-                            this.mitesDecoders[i].GetSensorData(this.mitesControllers[i]);
-                    }
-                    else if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
-                    {
-                        //for (int i = 0; (i < this.sensors.TotalReceivers); i++)
-                        foreach (Receiver receiver in this.sensors.Receivers)
-                        { // FIX SSI                        
-                            currentBT = receiver.ID;
-                            if (this.bluetoothConnectionStatus[receiver.ID] == true)
-                            {
-                                if (receiver.Decoder == SXML.Constants.DECODER_MITES)
-                                    this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.MITES_SENSOR);
-                                else if (receiver.Decoder == SXML.Constants.DECODER_WOCKETS)
-                                    this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.WOCKETS_SENSOR);
-                                else if (receiver.Decoder == SXML.Constants.DECODER_SPARKFUN)
-                                    this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.SPARKFUN_SENSOR);
-                            }
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    this.bluetoothConnectionStatus[currentBT] = false;
-                    Console.WriteLine(ex.ToString());
-                    connectionLost = true;
-                    //isStartedReceiver = false;
-                    return;
-                }
-
-                this.masterDecoder.someMITesDataIndex = 0;
-                for (int i = 0; (i < this.sensors.TotalReceivers); i++)
-                    //this.mitesDecoders[0].MergeDataOrderProperly(this.mitesDecoders[i]);                    
-                    this.masterDecoder.MergeDataOrderProperly(this.mitesDecoders[i]);
+                t.Abort();
+                ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text = "Data connection resumed...";
+                ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Refresh();
+                btRestablished = false;                
+                if (this.sensors.TotalReceivers > 0)
+                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
+                else
+                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
+                reconnection_attempts = 0;
+                Thread.Sleep(1000);
+                ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = false;
             }
 
-            #endregion Collect MITes Data
+#endif
 
-            #region Collect Builtin Data
+                #endregion Bluetooth Reconnection Code
+
+            #region Poll All Wockets and MITes and Decode Data
+       
+            Receiver currentReceiver = null;
+            try
+            {
+                //Poll each CONNECTED receiver channel with the right decoder
+                foreach (Receiver receiver in this.sensors.Receivers)
+                {
+                    currentReceiver = receiver;
+                    if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH) && (receiver.Running == true))
+                    {
+                        if (receiver.Decoder == SXML.Constants.DECODER_MITES)
+                            this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.MITES_SENSOR);
+                        else if (receiver.Decoder == SXML.Constants.DECODER_WOCKETS)
+                            this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.WOCKETS_SENSOR);
+                        else if (receiver.Decoder == SXML.Constants.DECODER_SPARKFUN)
+                            this.mitesDecoders[receiver.ID].GetSensorData(this.bluetoothControllers[receiver.ID], MITesDecoder.SPARKFUN_SENSOR);
+                    }
+                    else if (receiver.Type == SXML.Constants.RECEIVER_USB)
+                        this.mitesDecoders[receiver.ID].GetSensorData(this.mitesControllers[receiver.ID]);
+                }
+
+            }
+            //Thrown when there is a Bluetooth failure                    
+            //TODO: Make sure no USB failure happening
+            catch (Exception ex)
+            {
+
+                currentReceiver.Running = false;
+                connectionLost = true;
+                return;
+            }
+
+            //Reset the index of the master decoder and copy all data in order into the master decoder
+            this.masterDecoder.someMITesDataIndex = 0;    
+            //Only decode running receivers (i.e. with no connection failure)              
+            foreach (Receiver receiver in this.sensors.Receivers)
+                if (receiver.Running)
+                    this.masterDecoder.MergeDataOrderProperly(this.mitesDecoders[receiver.ID]);
+
+
+            #endregion Poll All Wockets and MITes and Decode Data
+
+            #region Poll Builtin Data
 
 #if (PocketPC)
+            GenericAccelerometerData polledData = null;
             if (unprocessedBuiltin == true)
             {
                 this.builtinData.Timestamp = Environment.TickCount;
@@ -3400,646 +3379,564 @@ namespace MITesDataCollection
                 polledData = this.builtinData;
             }
 #endif
-            #endregion Collect Builtin Data
+            #endregion Poll Builtin Data
 
-
-
-            //Post process the data if needed
-            if (isStartedReceiver)
+            #region Train in realtime and generate ARFF File
+            if (IsTraining == true)
             {
-                count++;
-                if ((Environment.TickCount - time) >= 1000)
+                //We are autotraining each activity after the other
+                if (AutoTraining == true)
                 {
-                    ave = sum / (double)count;
+                    //Get current activity to train
+                    string current_activity = ((AXML.Label)((AXML.Category)this.annotation.Categories[0]).Labels[autoTrainingIndex]).Name;
 
-                    //textBoxDist.Text = "R: " + count + " T: " + sum;
-                    aMITesLogger.WriteLogComment("R: " + count + " T: " + sum);
-                    sum = 0;
-                    count = 0;
-                    time = Environment.TickCount;
-                }
-
-                // #region Arizona
-                //double lastTS = Extractor.StoreMITesWindow();
-                //Extractor.GenerateFeatureVector(lastTS);
-                //#endregion
-
-
-                #region Train in realtime and generate ARFF File
-                if (IsTraining == true)
-                {
-                    //We are autotraining each activity after the other
-                    if (AutoTraining == true)
+                    //Check if trained
+                    if (Extractor.IsTrained(current_activity))
                     {
-                        //Get current activity to train
-                        string current_activity = ((AXML.Label)((AXML.Category)this.annotation.Categories[0]).Labels[autoTrainingIndex]).Name;
+                        //store the completed annotation and reset the variables
+                        this.currentRecord.EndDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
+                        this.currentRecord.EndHour = DateTime.Now.Hour;
+                        this.currentRecord.EndMinute = DateTime.Now.Minute;
+                        this.currentRecord.EndSecond = DateTime.Now.Second;
+                        TimeSpan ts = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0));
+                        this.currentRecord.EndUnix = ts.TotalSeconds;
+                        this.annotation.Data.Add(this.currentRecord);
+                        //each time an activity is stopped, rewrite the file on disk, need to backup file to avoid corruption
+                        this.annotation.ToXMLFile();
+                        this.annotation.ToCSVFile();
+                        isExtracting = false;
 
-                        //Check if trained
-                        if (Extractor.IsTrained(current_activity))
+                        //Point to the next activity and Calculate the delay to start training
+                        this.startActivityTime = Environment.TickCount + Extractor.Configuration.TrainingWaitTime * 1000;//Constants.TRAINING_GAP;
+                        autoTrainingIndex++;
+
+
+                        //If we exceeded the last activity then training is completed
+                        if (autoTrainingIndex == ((AXML.Category)this.annotation.Categories[0]).Labels.Count)
                         {
-                            //store the completed annotation and reset the variables
-                            this.currentRecord.EndDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
-                            this.currentRecord.EndHour = DateTime.Now.Hour;
-                            this.currentRecord.EndMinute = DateTime.Now.Minute;
-                            this.currentRecord.EndSecond = DateTime.Now.Second;
+                            this.trainingLabel.Text = "Training Completed";
+                            this.goodTimer.reset();
+                            this.overallTimer.reset();
+                            Thread.Sleep(3000);
+                            EndTraining();
+
+                        }
+                        else // if there are still activities to train beep twice and reset good timer
+                        {
+                            this.goodTimer.reset();
+                            PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
+                            PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
+                        }
+                    }
+                    //if the current activity is not trained and the start time is more that the current time
+                    //then calculate the feature vector
+                    else if (this.startActivityTime < Environment.TickCount) // TRAINING_GAP passed
+                    {
+                        //initialize for extraction
+                        if (isExtracting == false)
+                        {
+                            this.trainingLabel.Text = "Training " + current_activity;
+                            this.goodTimer.start();
+                            //store the current state of the categories
+                            this.currentRecord = new AnnotatedRecord();
+                            this.currentRecord.StartDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
+                            this.currentRecord.StartHour = DateTime.Now.Hour;
+                            this.currentRecord.StartMinute = DateTime.Now.Minute;
+                            this.currentRecord.StartSecond = DateTime.Now.Second;
                             TimeSpan ts = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0));
-                            this.currentRecord.EndUnix = ts.TotalSeconds;
-                            this.annotation.Data.Add(this.currentRecord);
-                            //each time an activity is stopped, rewrite the file on disk, need to backup file to avoid corruption
-                            this.annotation.ToXMLFile();
-                            this.annotation.ToCSVFile();
-                            isExtracting = false;
-
-                            //Point to the next activity and Calculate the delay to start training
-                            this.startActivityTime = Environment.TickCount + Extractor.Configuration.TrainingWaitTime * 1000;//Constants.TRAINING_GAP;
-                            autoTrainingIndex++;
-
-
-                            //If we exceeded the last activity then training is completed
-                            if (autoTrainingIndex == ((AXML.Category)this.annotation.Categories[0]).Labels.Count)
-                            {
-                                this.trainingLabel.Text = "Training Completed";
-                                this.goodTimer.reset();
-                                this.overallTimer.reset();
-                                Thread.Sleep(3000);
-                                EndTraining();
-
-                            }
-                            else // if there are still activities to train beep twice and reset good timer
-                            {
-                                this.goodTimer.reset();
-                                PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
-                                PlaySound(@"\Windows\Voicbeep", IntPtr.Zero, (int)(PlaySoundFlags.SND_FILENAME | PlaySoundFlags.SND_SYNC));
-                            }
+                            this.currentRecord.StartUnix = ts.TotalSeconds;
+                            this.currentRecord.Labels.Add(new AXML.Label(current_activity, "none"));
+                            isExtracting = true;
                         }
-                        //if the current activity is not trained and the start time is more that the current time
-                        //then calculate the feature vector
-                        else if (this.startActivityTime < Environment.TickCount) // TRAINING_GAP passed
+
+
+                        //Extract feature vector from accelerometer data and write an arff line
+                        double lastTimeStamp = Extractor.StoreMITesWindow();
+                        if (Extractor.GenerateFeatureVector(lastTimeStamp))
                         {
-                            //initialize for extraction
-                            if (isExtracting == false)
-                            {
-                                this.trainingLabel.Text = "Training " + current_activity;
-                                this.goodTimer.start();
-                                //store the current state of the categories
-                                this.currentRecord = new AnnotatedRecord();
-                                this.currentRecord.StartDate = DateTime.Now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
-                                this.currentRecord.StartHour = DateTime.Now.Hour;
-                                this.currentRecord.StartMinute = DateTime.Now.Minute;
-                                this.currentRecord.StartSecond = DateTime.Now.Second;
-                                TimeSpan ts = (DateTime.Now - new DateTime(1970, 1, 1, 0, 0, 0));
-                                this.currentRecord.StartUnix = ts.TotalSeconds;
-                                this.currentRecord.Labels.Add(new AXML.Label(current_activity, "none"));
-                                isExtracting = true;
-                            }
-
-
-                            //Extract feature vector from accelerometer data and write an arff line
-                            double lastTimeStamp = Extractor.StoreMITesWindow();
-                            if (Extractor.GenerateFeatureVector(lastTimeStamp))
-                            {
-                                Extractor.TrainingTime[current_activity] = (int)Extractor.TrainingTime[current_activity] + Extractor.Configuration.OverlapTime;// get it from configuration
-                                string arffSample = Extractor.toString() + "," + current_activity.Replace(' ', '_');
-                                this.tw.WriteLine(arffSample);
-                                this.label8.Text = Extractor.DiscardedLossRateWindows.ToString();
-                            }
-                        }
-                        //if we are waiting for the activity to be trained
-                        else
-                            this.trainingLabel.Text = "Training " + current_activity + " in " + ((int)(this.startActivityTime - Environment.TickCount) / 1000) + " secs";
-
-                    }
-                    else // Manual Training
-                    {
-                    }
-                }
-
-
-
-                #endregion Train in realtime and generate ARFF File
-
-                #region Classifying activities
-
-                //Extractor.StoreMITesWindow();
-#if (PocketPC)
-                if (isClassifying == true)
-                {
-                    double lastTimeStamp = Extractor.StoreMITesWindow();
-                    if (Extractor.GenerateFeatureVector(lastTimeStamp))
-                    {
-                        Instance newinstance = new Instance(instances.numAttributes());
-                        newinstance.Dataset = instances;
-                        for (int i = 0; (i < Extractor.Features.Length); i++)
-                            newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
-                        double predicted = classifier.classifyInstance(newinstance);
-                        string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
-
-                        int currentIndex = (int)labelIndex[predicted_activity];
-                        labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
-                        classificationCounter++;
-
-                        if (classificationCounter == Extractor.Configuration.SmoothWindows)
-                        {
-                            classificationCounter = 0;
-                            int mostCount = 0;
-                            string mostActivity = "";
-                            for (int j = 0; (j < labelCounters.Length); j++)
-                            {
-                                if (labelCounters[j] > mostCount)
-                                {
-                                    mostActivity = activityLabels[j];
-                                    mostCount = labelCounters[j];
-                                }
-                                labelCounters[j] = 0;
-                            }
-
-                            pieChart.SetActivity(mostActivity);
-                            if (this.aList.getEmptyPercent() == 1)
-                                this.aList.reset();
-                            else
-                                this.aList.increment(mostActivity);
-
-                            if (previousActivity != mostActivity)
-                            {
-                                this.activityTimer.stop();
-                                this.activityTimer.reset();
-                                currentCalories = 0;
-                            }
-                            else
-                            {
-                                if (this.activityTimer.isRunning() == false)
-                                    this.activityTimer.start();
-                            }
-
-                            if (mostActivity == "standing")
-                            {
-                                currentCalories += 1;
-                                totalCalories += 1;
-                            }
-                            else if (mostActivity == "walking")
-                            {
-                                currentCalories += 2;
-                                totalCalories += 2;
-                            }
-                            else if (mostActivity == "brisk-walking")
-                            {
-                                currentCalories += 4;
-                                totalCalories += 4;
-                            }
-                            else
-                            {
-                                currentCalories += 1;
-                                totalCalories += 1;
-                            }
-                            pieChart.SetCalories(totalCalories, currentCalories);
-                            pieChart.Data = this.aList.toPercentHashtable();
-                            pieChart.Invalidate();
-                            previousActivity = mostActivity;
-                            //this.label11.Text = "Fahd is "+mostActivity;
+                            Extractor.TrainingTime[current_activity] = (int)Extractor.TrainingTime[current_activity] + Extractor.Configuration.OverlapTime;// get it from configuration
+                            string arffSample = Extractor.toString() + "," + current_activity.Replace(' ', '_');
+                            this.tw.WriteLine(arffSample);
+                            this.label8.Text = Extractor.DiscardedLossRateWindows.ToString();
                         }
                     }
+                    //if we are waiting for the activity to be trained
+                    else
+                        this.trainingLabel.Text = "Training " + current_activity + " in " + ((int)(this.startActivityTime - Environment.TickCount) / 1000) + " secs";
+
                 }
-
-#endif
-
-                //if (isClassifying == true)
-                //{
-                //    double lastTimeStamp = Extractor.StoreMITesWindow();
-                //    if (Extractor.GenerateFeatureVector(lastTimeStamp))
-                //    {
-                //        this.label6.ForeColor = Color.Black;
-                //        Instance newinstance = new Instance(instances.numAttributes());
-                //        newinstance.Dataset = instances;
-
-
-                //        for (int i = 0; (i < Extractor.Features.Length); i++)
-                //        {
-                //            newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
-                //        }
-                //        double predicted = classifier.classifyInstance(newinstance);
-
-
-                //        string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
-
-                //        int currentIndex = (int)labelIndex[predicted_activity];
-                //        labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
-                //        classificationCounter++;
-
-
-                //        if (classificationCounter == Extractor.Configuration.SmoothWindows)
-                //        {
-                //            classificationCounter = 0;
-                //            int mostCount = 0;
-                //            string mostActivity = "";
-                //            for (int j = 0; (j < labelCounters.Length); j++)
-                //            {
-                //                if ((labelCounters[j] > mostCount) && (labelCounters[j] > 3))
-                //                {
-                //                    mostActivity = activityLabels[j];
-                //                    mostCount = labelCounters[j];
-                //                }
-
-
-                //                labelCounters[j] = 0;
-                //            }
-
-                //            if (mostActivity.Equals(""))
-                //                mostActivity = "Not Sure";
-                //            //this.label6.Text = mostActivity;
-                //            pieChart.SetActivity(mostActivity);
-                //        }
-
-                //    }
-                //}
-
-                #endregion Classifying activities
-
-                #region Storing CSV data for the grapher
-#if (PocketPC)
-#else
-
-                if (isCollectingDetailedData == true)
+                else // Manual Training
                 {
-                    if (activityCountWindowSize > Extractor.Configuration.QualityWindowSize) //write a line to CSV and initialize
-                    {
-                        DateTime now = DateTime.Now;
-                        DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
-                        TimeSpan diff = now.Subtract(origin);
-                        string timestamp = diff.TotalMilliseconds + "," + now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
-                        string master_csv_line = timestamp;
-                        string hr_csv_line = timestamp;
-                        //to restore the date
-                        //DateTime restored = origin.AddMilliseconds(diff.TotalMilliseconds);
-                        if (this.overallTimer.isRunning())
-                        {
-                            foreach (Button button in this.categoryButtons)
-                                master_csv_line += "," + button.Text;
-                        }
-                        else
-                        {
-                            foreach (Button button in this.categoryButtons)
-                                master_csv_line += ",";
-                        }
-
-                        foreach (Sensor sensor in this.sensors.Sensors)
-                        {
-                            string csv_line1 = timestamp;
-                            string csv_line2 = timestamp;
-                            string csv_line3 = timestamp;
-
-
-                            int sensor_id = Convert.ToInt32(sensor.ID);
-                            if (sensor_id > 0) //No HR
-                            {
-                                if (acCounters[sensor_id] > 0)
-                                {
-                                    csv_line2 += "," + MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate;
-
-                                    csv_line1 += "," + ((double)(averageX[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
-                                    csv_line1 += ((double)(averageY[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
-                                    csv_line1 += ((double)(averageZ[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00");
-
-                                    csv_line3 += "," + ((int)(averageRawX[sensor_id] / acCounters[sensor_id])) + ",";
-                                    csv_line3 += ((int)(averageRawY[sensor_id] / acCounters[sensor_id])) + ",";
-                                    csv_line3 += ((int)(averageRawZ[sensor_id] / acCounters[sensor_id]));
-
-
-
-                                    master_csv_line += "," + MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate;
-                                    master_csv_line += "," + ((int)(averageRawX[sensor_id] / acCounters[sensor_id])) + ",";
-                                    master_csv_line += ((int)(averageRawY[sensor_id] / acCounters[sensor_id])) + ",";
-                                    master_csv_line += ((int)(averageRawZ[sensor_id] / acCounters[sensor_id]));
-                                    master_csv_line += "," + ((double)(averageX[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
-                                    master_csv_line += ((double)(averageY[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
-                                    master_csv_line += ((double)(averageZ[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00");
-
-
-                                }
-                                else
-                                {
-                                    csv_line1 += ",,,,";
-                                    csv_line3 += ",,,,";
-                                    csv_line2 += ",0";
-                                    master_csv_line += ",0,,,,,,";
-                                }
-
-                                this.activityCountCSVs[sensor_id].WriteLine(csv_line1);
-                                this.samplingCSVs[sensor_id].WriteLine(csv_line2);
-                                this.averagedRaw[sensor_id].WriteLine(csv_line3);
-                            }
-
-                            averageX[sensor_id] = 0;
-                            averageY[sensor_id] = 0;
-                            averageZ[sensor_id] = 0;
-                            averageRawX[sensor_id] = 0;
-                            averageRawY[sensor_id] = 0;
-                            averageRawZ[sensor_id] = 0;
-                            prevX[sensor_id] = 0;
-                            prevY[sensor_id] = 0;
-                            prevY[sensor_id] = 0;
-                            acCounters[sensor_id] = 0;
-                        }
-
-
-                        if (hrCount > 0)
-                        {
-                            this.hrCSV.WriteLine(hr_csv_line + "," + (int)(sumHR / hrCount));
-                            this.masterCSV.WriteLine(master_csv_line + "," + (int)(sumHR / hrCount));
-                        }
-                        else
-                        {
-                            this.hrCSV.WriteLine(hr_csv_line + ",");
-                            this.masterCSV.WriteLine(master_csv_line + ",");
-                        }
-
-                        hrCount = 0;
-                        sumHR = 0;
-                        activityCountWindowSize = 0;
-                    }
-
-                    activityCountWindowSize += 10; //add 10 milliseconds
                 }
-
-#endif
-
-                #endregion Storing CSV data for the grapher
-
-
-                if ((isCalibrating) || (isCollectingDetailedData == true))
-                {
-
-                    //store sum of abs values of consecutive accelerometer readings
-                    //for (int i = 0; (i < this.mitesDecoders[0].someMITesDataIndex); i++)
-                    for (int i = 0; (i < this.masterDecoder.someMITesDataIndex); i++)
-                    {
-                        if ((this.masterDecoder.someMITesData[i].type != (int)MITesTypes.NOISE) &&
-                              (this.masterDecoder.someMITesData[i].type == (int)MITesTypes.ACCEL))
-                        {
-                            int channel = 0, x = 0, y = 0, z = 0;
-                            //channel = (int)this.mitesDecoders[0].someMITesData[i].channel;
-                            // x = (int)this.mitesDecoders[0].someMITesData[i].x;
-                            // y = (int)this.mitesDecoders[0].someMITesData[i].y;
-                            // z = (int)this.mitesDecoders[0].someMITesData[i].z;
-                            channel = (int)this.masterDecoder.someMITesData[i].channel;
-                            x = (int)this.masterDecoder.someMITesData[i].x;
-                            y = (int)this.masterDecoder.someMITesData[i].y;
-                            z = (int)this.masterDecoder.someMITesData[i].z;
-
-
-
-                            if (isCalibrating)
-                            {
-                                if (this.calSensor == -1)
-                                {
-                                    if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
-                                    {
-                                        this.calX = new int[Constants.CALIBRATION_SAMPLES];
-                                        this.calY = new int[Constants.CALIBRATION_SAMPLES];
-                                        this.calZ = new int[Constants.CALIBRATION_SAMPLES];
-                                        this.calSensor = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID);
-                                        this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
-
-                                        int receiver_id = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).Receiver);
-                                        int[] channels = new int[6];
-#if (PockectPC)                          
-                                        if (this.calSensor != PhoneAccelerometers.Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID)
-                                        {
-#endif
-                                        channels[0] = this.calSensor;
-                                        this.mitesControllers[receiver_id].SetChannels(1, channels);
-#if (PockectPC)  
-                                        }
-#endif
-                                    }
-                                    else //all sensors are calibrated
-                                    {
-                                        TextWriter tw = new StreamWriter("SensorData.xml");
-                                        tw.WriteLine(this.sensors.toXML());
-                                        tw.Close();
-                                        MessageBox.Show("Calibration... Completed");
-#if (PocketPC)
-                                        Application.Exit();
-                                        System.Diagnostics.Process.GetCurrentProcess().Kill();
-#else
-                                        Environment.Exit(0);
-#endif
-                                    }
-
-                                }
-
-                                if (channel == this.calSensor)
-                                {
-                                    if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
-                                    {
-                                        this.calX[this.calCounter] = x;
-                                        this.calY[this.calCounter] = y;
-                                        this.calCounter++;
-                                    }
-                                    else //vertical
-                                    {
-                                        this.calZ[this.calCounter] = z;
-                                        this.calCounter++;
-                                    }
-
-                                    // if all required samples are collected
-                                    if (this.calCounter == Constants.CALIBRATION_SAMPLES)
-                                    {
-
-                                        if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
-                                        {
-
-                                            this.calSensorPosition = Constants.CALIBRATION_SIDE_VERTICAL_POSITION;
-                                            double meanX = 0.0, meanY = 0.0;
-                                            double stdX = 0.0, stdY = 0.0;
-                                            this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " vertical on a flat surface then click start.";
-                                            this.pictureBox2.Image = this.verticalMITes;
-                                            this.button2.Enabled = true;
-                                            for (int j = 0; (j < this.calCounter); j++)
-                                            {
-                                                meanX += (double)this.calX[j];
-                                                meanY += (double)this.calY[j];
-                                            }
-                                            meanX = meanX / this.calCounter;
-                                            meanY = meanY / this.calCounter;
-
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XMean = meanX;
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YMean = meanY;
-                                            for (int j = 0; (j < this.calCounter); j++)
-                                            {
-                                                stdX += Math.Pow(this.calX[j] - meanX, 2);
-                                                stdY += Math.Pow(this.calY[j] - meanY, 2);
-                                            }
-                                            stdX = Math.Sqrt(stdX / (this.calCounter - 1));
-                                            stdY = Math.Sqrt(stdY / (this.calCounter - 1));
-
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XStd = stdX;
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YStd = stdY;
-                                        }
-                                        else
-                                        {
-
-
-                                            if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
-                                            {
-                                                this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
-                                                this.pictureBox2.Image = this.horizontalMITes;
-                                                this.button2.Enabled = true;
-                                            }
-                                            this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
-                                            double meanZ = 0.0;
-                                            double stdZ = 0.0;
-
-                                            for (int j = 0; (j < this.calCounter); j++)
-                                                meanZ += (double)this.calZ[j];
-                                            meanZ = meanZ / this.calCounter;
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZMean = meanZ;
-
-                                            for (int j = 0; (j < this.calCounter); j++)
-                                                stdZ += Math.Pow(this.calZ[j] - meanZ, 2);
-                                            stdZ = Math.Sqrt(stdZ / (this.calCounter - 1));
-                                            ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZStd = stdZ;
-                                            this.currentCalibrationSensorIndex++;
-                                            this.calSensor = -1;
-                                        }
-
-                                        this.isCalibrating = false;
-                                        this.calCounter = 0;
-
-
-                                    }
-                                }
-
-                            }
-                            else if (isCollectingDetailedData)//detailed data - not calibrating
-                            {
-#if (PocketPC)
-#else
-                                if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
-                                {
-                                    if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x > 0) && (y > 0) && (z > 0))
-                                    {
-                                        averageX[channel] = averageX[channel] + Math.Abs(prevX[channel] - x);
-                                        averageRawX[channel] = averageRawX[channel] + x;
-                                        averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
-                                        averageRawY[channel] = averageRawY[channel] + y;
-                                        averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
-                                        averageRawZ[channel] = averageRawZ[channel] + z;
-                                        acCounters[channel] = acCounters[channel] + 1;
-                                    }
-
-                                    prevX[channel] = x;
-                                    prevY[channel] = y;
-                                    prevZ[channel] = z;
-                                }
-#endif
-                            }
-                        }
-                    }
-
-                }
-
-
-
-
-                //sum += this.mitesDecoders[0].GetLastByteNum();               
-                sum += this.masterDecoder.GetLastByteNum();
-                aMITesDataFilterer.RemoveZeroNoise();
-                //this.mitesDecoders[0].UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
-                this.masterDecoder.UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
-
-                if (printSamplingCount > 500)
-                {
-                    //((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.mitesDecoders[0].GetSamplingRate();
-                    ((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.masterDecoder.GetSamplingRate();
-                    //textBoxRate.Text = "Samp: " + aMITesDecoder.GetSamplingRate();
-                    //aMITesLogger.WriteLogComment(textBoxUV.Text);
-                    printSamplingCount = 0;
-                }
-                else
-                    printSamplingCount++;
-
-
-
-                // Check HR values
-                int hr = aMITesHRAnalyzer.Update();
-#if (PocketPC)
-
-#else
-                if (hr > 0)
-                {
-                    sumHR += hr;
-                    hrCount++;
-                }
-#endif
-
-
-
-                //Compute/get Activity Counts
-                for (int i = 0; (i < this.sensors.Sensors.Count); i++)
-                {
-                    int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
-                    if (sensor_id > 0)
-                        ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).UpdateActivityCounts();
-                    //else if (sensor_id == 0)
-                    //    aMITesHRAnalyzer.Update();
-                }
-
-
-                for (int i = 0; (i < this.sensors.Sensors.Count); i++)
-                {
-                    int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
-                    if (sensor_id > 0)
-                        ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).PrintMaxMin();
-
-                }
-
-                if (((MITesActivityCounter)this.aMITesActivityCounters[this.sensors.FirstAccelerometer]).IsNewEpoch(1000))
-                {
-                    aMITesHRAnalyzer.ComputeEpoch(30000);
-                    //if (this.tabControl1.TabIndex == 0)
-                    //  ReportHR();
-
-                    for (int i = 0; (i < this.sensors.Sensors.Count); i++)
-                    {
-                        int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
-                        if (sensor_id > 0)
-                            ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).ComputeEpoch();
-                    }
-
-
-
-                    if (!isWrittenKey) // Write the key once at the top of the file
-                    {
-                        isWrittenKey = true;
-                        aMITesActivityLogger.StartReportKeyLine();
-                        for (int i = 0; (i < this.sensors.Sensors.Count); i++)
-                        {
-                            int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
-                            if (sensor_id > 0)
-                                aMITesActivityLogger.AddKeyLine(((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]));
-                        }
-
-                        aMITesActivityLogger.AddKeyLine(aMITesHRAnalyzer);
-                        aMITesActivityLogger.SaveReportKeyLine();
-                    }
-                    aMITesActivityLogger.StartReportLine();
-
-                    for (int i = 0; (i < this.sensors.Sensors.Count); i++)
-                    {
-                        int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
-                        if (sensor_id > 0)
-                            aMITesActivityLogger.AddReportLine(((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]));
-                    }
-
-                    aMITesActivityLogger.AddReportLine(aMITesHRAnalyzer);
-                    aMITesActivityLogger.SaveReportLine();
-                }
-
-
-
-                stepsToWarning++;
             }
 
+
+
+            #endregion Train in realtime and generate ARFF File
+
+            #region Classifying activities
+
+            //Extractor.StoreMITesWindow();
+#if (PocketPC)
+            if (isClassifying == true)
+            {
+                double lastTimeStamp = Extractor.StoreMITesWindow();
+                if (Extractor.GenerateFeatureVector(lastTimeStamp))
+                {
+                    Instance newinstance = new Instance(instances.numAttributes());
+                    newinstance.Dataset = instances;
+                    for (int i = 0; (i < Extractor.Features.Length); i++)
+                        newinstance.setValue(instances.attribute(i), Extractor.Features[i]);
+                    double predicted = classifier.classifyInstance(newinstance);
+                    string predicted_activity = newinstance.dataset().classAttribute().value_Renamed((int)predicted);
+
+                    int currentIndex = (int)labelIndex[predicted_activity];
+                    labelCounters[currentIndex] = (int)labelCounters[currentIndex] + 1;
+                    classificationCounter++;
+
+                    if (classificationCounter == Extractor.Configuration.SmoothWindows)
+                    {
+                        classificationCounter = 0;
+                        int mostCount = 0;
+                        string mostActivity = "";
+                        for (int j = 0; (j < labelCounters.Length); j++)
+                        {
+                            if (labelCounters[j] > mostCount)
+                            {
+                                mostActivity = activityLabels[j];
+                                mostCount = labelCounters[j];
+                            }
+                            labelCounters[j] = 0;
+                        }
+
+                        pieChart.SetActivity(mostActivity);
+                        if (this.aList.getEmptyPercent() == 1)
+                            this.aList.reset();
+                        else
+                            this.aList.increment(mostActivity);
+
+                        if (previousActivity != mostActivity)
+                        {
+                            this.activityTimer.stop();
+                            this.activityTimer.reset();
+                            currentCalories = 0;
+                        }
+                        else
+                        {
+                            if (this.activityTimer.isRunning() == false)
+                                this.activityTimer.start();
+                        }
+
+                        if (mostActivity == "standing")
+                        {
+                            currentCalories += 1;
+                            totalCalories += 1;
+                        }
+                        else if (mostActivity == "walking")
+                        {
+                            currentCalories += 2;
+                            totalCalories += 2;
+                        }
+                        else if (mostActivity == "brisk-walking")
+                        {
+                            currentCalories += 4;
+                            totalCalories += 4;
+                        }
+                        else
+                        {
+                            currentCalories += 1;
+                            totalCalories += 1;
+                        }
+                        pieChart.SetCalories(totalCalories, currentCalories);
+                        pieChart.Data = this.aList.toPercentHashtable();
+                        pieChart.Invalidate();
+                        previousActivity = mostActivity;
+                        //this.label11.Text = "Fahd is "+mostActivity;
+                    }
+                }
+            }
+
+#endif
+
+
+            #endregion Classifying activities
+
+            #region Storing CSV data for the grapher (PC Only)
+#if (!PocketPC)
+
+            if (isCollectingDetailedData == true)
+            {
+                if (activityCountWindowSize > Extractor.Configuration.QualityWindowSize) //write a line to CSV and initialize
+                {
+                    DateTime now = DateTime.Now;
+                    DateTime origin = new DateTime(1970, 1, 1, 0, 0, 0, 0);
+                    TimeSpan diff = now.Subtract(origin);
+                    string timestamp = diff.TotalMilliseconds + "," + now.ToString("yyyy'-'MM'-'dd' 'HH':'mm':'ssK");
+                    string master_csv_line = timestamp;
+                    string hr_csv_line = timestamp;
+                    //to restore the date
+                    //DateTime restored = origin.AddMilliseconds(diff.TotalMilliseconds);
+                    if (this.overallTimer.isRunning())
+                    {
+                        foreach (Button button in this.categoryButtons)
+                            master_csv_line += "," + button.Text;
+                    }
+                    else
+                    {
+                        foreach (Button button in this.categoryButtons)
+                            master_csv_line += ",";
+                    }
+
+                    foreach (Sensor sensor in this.sensors.Sensors)
+                    {
+                        string csv_line1 = timestamp;
+                        string csv_line2 = timestamp;
+                        string csv_line3 = timestamp;
+
+
+                        int sensor_id = Convert.ToInt32(sensor.ID);
+                        if (sensor_id > 0) //No HR
+                        {
+                            if (acCounters[sensor_id] > 0)
+                            {
+                                csv_line2 += "," + MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate;
+
+                                csv_line1 += "," + ((double)(averageX[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
+                                csv_line1 += ((double)(averageY[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
+                                csv_line1 += ((double)(averageZ[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00");
+
+                                csv_line3 += "," + ((int)(averageRawX[sensor_id] / acCounters[sensor_id])) + ",";
+                                csv_line3 += ((int)(averageRawY[sensor_id] / acCounters[sensor_id])) + ",";
+                                csv_line3 += ((int)(averageRawZ[sensor_id] / acCounters[sensor_id]));
+
+
+
+                                master_csv_line += "," + MITesDataFilterer.MITesPerformanceTracker[sensor_id].LastSamplingRate;
+                                master_csv_line += "," + ((int)(averageRawX[sensor_id] / acCounters[sensor_id])) + ",";
+                                master_csv_line += ((int)(averageRawY[sensor_id] / acCounters[sensor_id])) + ",";
+                                master_csv_line += ((int)(averageRawZ[sensor_id] / acCounters[sensor_id]));
+                                master_csv_line += "," + ((double)(averageX[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
+                                master_csv_line += ((double)(averageY[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00") + ",";
+                                master_csv_line += ((double)(averageZ[sensor_id] / (double)acCounters[sensor_id])).ToString("00.00");
+
+
+                            }
+                            else
+                            {
+                                csv_line1 += ",,,,";
+                                csv_line3 += ",,,,";
+                                csv_line2 += ",0";
+                                master_csv_line += ",0,,,,,,";
+                            }
+
+                            this.activityCountCSVs[sensor_id].WriteLine(csv_line1);
+                            this.samplingCSVs[sensor_id].WriteLine(csv_line2);
+                            this.averagedRaw[sensor_id].WriteLine(csv_line3);
+                        }
+
+                        averageX[sensor_id] = 0;
+                        averageY[sensor_id] = 0;
+                        averageZ[sensor_id] = 0;
+                        averageRawX[sensor_id] = 0;
+                        averageRawY[sensor_id] = 0;
+                        averageRawZ[sensor_id] = 0;
+                        prevX[sensor_id] = 0;
+                        prevY[sensor_id] = 0;
+                        prevY[sensor_id] = 0;
+                        acCounters[sensor_id] = 0;
+                    }
+
+
+                    if (hrCount > 0)
+                    {
+                        this.hrCSV.WriteLine(hr_csv_line + "," + (int)(sumHR / hrCount));
+                        this.masterCSV.WriteLine(master_csv_line + "," + (int)(sumHR / hrCount));
+                    }
+                    else
+                    {
+                        this.hrCSV.WriteLine(hr_csv_line + ",");
+                        this.masterCSV.WriteLine(master_csv_line + ",");
+                    }
+
+                    hrCount = 0;
+                    sumHR = 0;
+                    activityCountWindowSize = 0;
+                }
+
+                activityCountWindowSize += 10; //add 10 milliseconds
+            }
+
+#endif
+
+            #endregion Storing CSV data for the grapher (PC Only)
+
+            #region Calibration and CSV Calculateion Code
+            if ((isCalibrating) || (isCollectingDetailedData == true))
+            {
+
+                //store sum of abs values of consecutive accelerometer readings
+                for (int i = 0; (i < this.masterDecoder.someMITesDataIndex); i++)
+                {
+                    if ((this.masterDecoder.someMITesData[i].type != (int)MITesTypes.NOISE) &&
+                          (this.masterDecoder.someMITesData[i].type == (int)MITesTypes.ACCEL))
+                    {
+                        int channel = 0, x = 0, y = 0, z = 0;
+                        channel = (int)this.masterDecoder.someMITesData[i].channel;
+                        x = (int)this.masterDecoder.someMITesData[i].x;
+                        y = (int)this.masterDecoder.someMITesData[i].y;
+                        z = (int)this.masterDecoder.someMITesData[i].z;
+
+
+                        #region Calibration Calculation
+                        if (isCalibrating)
+                        {
+                            if (this.calSensor == -1)
+                            {
+                                if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
+                                {
+                                    this.calX = new int[Constants.CALIBRATION_SAMPLES];
+                                    this.calY = new int[Constants.CALIBRATION_SAMPLES];
+                                    this.calZ = new int[Constants.CALIBRATION_SAMPLES];
+                                    this.calSensor = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID);
+                                    this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
+
+                                    int receiver_id = Convert.ToInt32(((Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).Receiver);
+                                    int[] channels = new int[6];
+#if (PockectPC)                          
+                                    if (this.calSensor != PhoneAccelerometers.Constants.BUILT_IN_ACCELEROMETER_CHANNEL_ID)
+                                    {
+#endif
+                                    channels[0] = this.calSensor;
+                                    this.mitesControllers[receiver_id].SetChannels(1, channels);
+#if (PockectPC)  
+                                    }
+#endif
+                                }
+                                else //all sensors are calibrated
+                                {
+                                    TextWriter tw = new StreamWriter("SensorData.xml");
+                                    tw.WriteLine(this.sensors.toXML());
+                                    tw.Close();
+                                    MessageBox.Show("Calibration... Completed");
+#if (PocketPC)
+                                    Application.Exit();
+                                    System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+                                    Environment.Exit(0);
+#endif
+                                }
+
+                            }
+
+                            if (channel == this.calSensor)
+                            {
+                                if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
+                                {
+                                    this.calX[this.calCounter] = x;
+                                    this.calY[this.calCounter] = y;
+                                    this.calCounter++;
+                                }
+                                else //vertical
+                                {
+                                    this.calZ[this.calCounter] = z;
+                                    this.calCounter++;
+                                }
+
+                                // if all required samples are collected
+                                if (this.calCounter == Constants.CALIBRATION_SAMPLES)
+                                {
+
+                                    if (this.calSensorPosition == Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION)
+                                    {
+
+                                        this.calSensorPosition = Constants.CALIBRATION_SIDE_VERTICAL_POSITION;
+                                        double meanX = 0.0, meanY = 0.0;
+                                        double stdX = 0.0, stdY = 0.0;
+                                        this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " vertical on a flat surface then click start.";
+                                        this.pictureBox2.Image = this.verticalMITes;
+                                        this.button2.Enabled = true;
+                                        for (int j = 0; (j < this.calCounter); j++)
+                                        {
+                                            meanX += (double)this.calX[j];
+                                            meanY += (double)this.calY[j];
+                                        }
+                                        meanX = meanX / this.calCounter;
+                                        meanY = meanY / this.calCounter;
+
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XMean = meanX;
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YMean = meanY;
+                                        for (int j = 0; (j < this.calCounter); j++)
+                                        {
+                                            stdX += Math.Pow(this.calX[j] - meanX, 2);
+                                            stdY += Math.Pow(this.calY[j] - meanY, 2);
+                                        }
+                                        stdX = Math.Sqrt(stdX / (this.calCounter - 1));
+                                        stdY = Math.Sqrt(stdY / (this.calCounter - 1));
+
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).XStd = stdX;
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).YStd = stdY;
+                                    }
+                                    else
+                                    {
+
+
+                                        if (this.currentCalibrationSensorIndex < this.sensors.Sensors.Count)
+                                        {
+                                            this.label17.Text = "Calibration Completed! Please place the sensor " + ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ID + " horizontal on a flat surface then click start.";
+                                            this.pictureBox2.Image = this.horizontalMITes;
+                                            this.button2.Enabled = true;
+                                        }
+                                        this.calSensorPosition = Constants.CALIBRATION_FLAT_HORIZONTAL_POSITION;
+                                        double meanZ = 0.0;
+                                        double stdZ = 0.0;
+
+                                        for (int j = 0; (j < this.calCounter); j++)
+                                            meanZ += (double)this.calZ[j];
+                                        meanZ = meanZ / this.calCounter;
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZMean = meanZ;
+
+                                        for (int j = 0; (j < this.calCounter); j++)
+                                            stdZ += Math.Pow(this.calZ[j] - meanZ, 2);
+                                        stdZ = Math.Sqrt(stdZ / (this.calCounter - 1));
+                                        ((SXML.Sensor)this.sensors.Sensors[this.currentCalibrationSensorIndex]).ZStd = stdZ;
+                                        this.currentCalibrationSensorIndex++;
+                                        this.calSensor = -1;
+                                    }
+
+                                    this.isCalibrating = false;
+                                    this.calCounter = 0;
+
+
+                                }
+                            }
+
+                        }
+                        #endregion Calibration Calculation
+
+                        #region CSV values calculation (PC Only)
+#if (!PocketPC)
+                        else if (isCollectingDetailedData)
+                        {
+
+                            if (channel <= this.sensors.MaximumSensorID) //if junk comes ignore it
+                            {
+                                if ((prevX[channel] > 0) && (prevY[channel] > 0) && (prevZ[channel] > 0) && (x > 0) && (y > 0) && (z > 0))
+                                {
+                                    averageX[channel] = averageX[channel] + Math.Abs(prevX[channel] - x);
+                                    averageRawX[channel] = averageRawX[channel] + x;
+                                    averageY[channel] = averageY[channel] + Math.Abs(prevY[channel] - y);
+                                    averageRawY[channel] = averageRawY[channel] + y;
+                                    averageZ[channel] = averageZ[channel] + Math.Abs(prevZ[channel] - z);
+                                    averageRawZ[channel] = averageRawZ[channel] + z;
+                                    acCounters[channel] = acCounters[channel] + 1;
+                                }
+
+                                prevX[channel] = x;
+                                prevY[channel] = y;
+                                prevZ[channel] = z;
+                            }
+
+                        }
+#endif
+                        #endregion CSV values calculation (PC Only)
+                    }
+                }
+            }
+            #endregion Calibration and CSV Calculateion Code
+
+            //Remove data with any values =0 or 1022
+            aMITesDataFilterer.RemoveZeroNoise();
+
+            this.masterDecoder.UpdateSamplingRate(aMITesDataFilterer.CountNonNoise());
+
+            if (printSamplingCount > 500)
+            {
+                //((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: " + this.mitesDecoders[0].GetSamplingRate();
+                ((System.Windows.Forms.Label)this.sensorLabels["SampRate"]).Text = "Samp: ttt";//+this.masterDecoder.GetSamplingRate();
+                //textBoxRate.Text = "Samp: " + aMITesDecoder.GetSamplingRate();
+                //aMITesLogger.WriteLogComment(textBoxUV.Text);
+                printSamplingCount = 0;
+            }
+            else
+                printSamplingCount++;
+
+
+
+            // Check HR values
+            int hr = aMITesHRAnalyzer.Update();
+#if (PocketPC)
+
+#else
+            if (hr > 0)
+            {
+                sumHR += hr;
+                hrCount++;
+            }
+#endif
+
+
+
+            //Compute/get Activity Counts
+            for (int i = 0; (i < this.sensors.Sensors.Count); i++)
+            {
+                int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
+                if (sensor_id > 0)
+                    ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).UpdateActivityCounts();
+                //else if (sensor_id == 0)
+                //    aMITesHRAnalyzer.Update();
+            }
+
+
+            for (int i = 0; (i < this.sensors.Sensors.Count); i++)
+            {
+                int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
+                if (sensor_id > 0)
+                    ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).PrintMaxMin();
+
+            }
+
+            if (((MITesActivityCounter)this.aMITesActivityCounters[this.sensors.FirstAccelerometer]).IsNewEpoch(1000))
+            {
+                aMITesHRAnalyzer.ComputeEpoch(30000);
+                //if (this.tabControl1.TabIndex == 0)
+                //  ReportHR();
+
+                for (int i = 0; (i < this.sensors.Sensors.Count); i++)
+                {
+                    int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
+                    if (sensor_id > 0)
+                        ((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]).ComputeEpoch();
+                }
+
+
+
+                if (!isWrittenKey) // Write the key once at the top of the file
+                {
+                    isWrittenKey = true;
+                    aMITesActivityLogger.StartReportKeyLine();
+                    for (int i = 0; (i < this.sensors.Sensors.Count); i++)
+                    {
+                        int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
+                        if (sensor_id > 0)
+                            aMITesActivityLogger.AddKeyLine(((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]));
+                    }
+
+                    aMITesActivityLogger.AddKeyLine(aMITesHRAnalyzer);
+                    aMITesActivityLogger.SaveReportKeyLine();
+                }
+                aMITesActivityLogger.StartReportLine();
+
+                for (int i = 0; (i < this.sensors.Sensors.Count); i++)
+                {
+                    int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
+                    if (sensor_id > 0)
+                        aMITesActivityLogger.AddReportLine(((MITesActivityCounter)this.aMITesActivityCounters[sensor_id]));
+                }
+
+                aMITesActivityLogger.AddReportLine(aMITesHRAnalyzer);
+                aMITesActivityLogger.SaveReportLine();
+            }
+           
 
             #region Store the sensor data
 
