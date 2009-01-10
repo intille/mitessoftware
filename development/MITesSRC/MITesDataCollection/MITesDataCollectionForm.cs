@@ -541,6 +541,9 @@ namespace MITesDataCollection
 
         #region Wockets Data Collection
 
+        private Thread t = null;
+        private Thread[] ts;
+
         public MITesDataCollectionForm(string dataDirectory)
         {
 
@@ -604,12 +607,14 @@ namespace MITesDataCollection
                 //Initialize arrays to store USB and Bluetooth controllers
                 this.mitesControllers = new MITesReceiverController[this.sensors.TotalWiredReceivers];
                 this.bluetoothControllers = new BluetoothController[this.sensors.TotalBluetoothReceivers];
+                this.ts = new Thread[this.sensors.TotalBluetoothReceivers];
 
                 //Initialize array to store Bluetooth connection status
                 //this.bluetoothConnectionStatus = new bool[this.sensors.TotalBluetoothReceivers];
 
                 //Initialize a decoder for each sensor
                 this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
+                
                 this.aMITesActivityCounters = new Hashtable();
 
                 #region Bluetooth reception channels initialization
@@ -3209,77 +3214,19 @@ namespace MITesDataCollection
 #endif
         #endregion Builtin Accelerometr Polling Thread
 
-        private bool connectionLost = false;
-        private int reconnection_attempts = 0;
-        private int reconnection_timeout = 0;
-        private Thread t = null;
+
         private int totalCalories = 0;
         private int currentCalories = 0;
         private int ttwcounter = 0;
         private bool btRestablished = false;
 
         #region Bluetooth Reconnection Thread
-        private bool reconnectionThreadQuit = false;
-        //This method is executed as a seperate thread to manage the progress
-        //form
-        private void ReconnectionThread()
-        {
 
-            reconnection_attempts = 0;
-            while (reconnectionThreadQuit == false)
-            {
-#if (PocketPC)
-                Thread.Sleep(1000);
-#else
-                Thread.Sleep(20);
-#endif
-
-                while (reconnection_timeout > 0)
-                {
-
-                    reconnection_timeout--;
-                    System.Threading.Thread.Sleep(1000);
-                    //progressMessage += "Retrying in ... " + reconnection_timeout + " seconds\r\n";              
-                    SetErrorLabel("Retrying in ... " + reconnection_timeout + " seconds");               
-
-                }
-
-                bool btConnected = true;
-                foreach (Receiver receiver in this.sensors.Receivers)
-                {
-                    if ((receiver.Type == SXML.Constants.RECEIVER_BLUETOOTH) && (receiver.Running == false))
-                    {
-                        SetErrorLabel("Reconnecting to wocket ("+reconnection_attempts+") " + receiver.MAC);
-                        //progressMessage += "Initializing Bluetooth ...";
-                        this.bluetoothControllers[receiver.ID] = new BluetoothController();
-                        try
-                        {
-                            this.bluetoothControllers[receiver.ID].initialize(receiver.MacAddress, receiver.PassKey);
-                            receiver.Running= true;
-                            this.mitesDecoders[receiver.ID] = new MITesDecoder();
-                        }
-                        catch (Exception)
-                        {
-                            reconnection_timeout = 10;
-                        }
-                        btConnected = btConnected & receiver.Running;
-
-                    }
-                }
-
-                if (btConnected == true)
-                {
-                    btRestablished = true;
-                    reconnectionThreadQuit = true;
-                }
-                reconnection_attempts++;
-            }
-
-            reconnectionThreadQuit = false;
-        }
+       
         #endregion Bluetooth Reconnection Thread
 
 
+        
 
         private void readDataTimer_Tick(object sender, EventArgs e)
         {
@@ -3289,24 +3236,61 @@ namespace MITesDataCollection
                 okTimer = -1;
             okTimer++;
 
+  
+
             #region Bluetooth Reconnection Code
 #if (PocketPC)
 
             //TODO: If 2 connections are lost consecutively, might attempt to start 2 threads
             //at the same time, make sure that does not happen
             //If a connection is lost for any Bluetooth reception channel, start a reconnection thread
-            if (connectionLost)
+            //if (connectionLost)
+            //{
+             //   reconnectionThreadQuit = false;
+              //  ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = true;
+               // t = new Thread(new ThreadStart(ReconnectionThread));
+               // t.Start();
+               // connectionLost = false;
+
+            //}
+
+            //Start a reconnection thread
+            foreach (Receiver receiver in this.sensors.Receivers)
             {
-                reconnectionThreadQuit = false;
-                ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = true;
-                t = new Thread(new ThreadStart(ReconnectionThread));
-                t.Start();
-                connectionLost = false;
+                if ((!receiver.Running) && (!receiver.Restarting))
+                {
+
+                    //reconnectionThreadQuit[receiver.ID] = false;
+                    BluetoothConnector btc=new BluetoothConnector(receiver, this.bluetoothControllers, this.mitesDecoders);
+                    ts[receiver.ID] = new Thread(new ThreadStart(btc.Reconnect));
+                    ts[receiver.ID].Start();
+                    receiver.Restarting = true;
+                }
+                else if (receiver.Restarted)
+                {
+                    ts[receiver.ID].Abort();
+                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text = "Data connection resumed for" + receiver.ID + "...";
+                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Refresh();
+                  //  lock (this)
+                   // {
+                                                                        
+                     //   if (this.sensors.TotalReceivers > 0)
+                       //     aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
+                        //else
+                         //   aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
+                        //reconnection_attempts = 0;
+                       // Thread.Sleep(1000);
+                   // }
+                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = false;
+                    receiver.Restarted = false;
+                    receiver.Restarting = false;
+                    receiver.Running = true;
+                }
 
             }
 
             //If connection is re-established re-initialize vairables and abort reconnection thread
-            if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
+/*            if ((btRestablished) && (this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
             {
                 t.Abort();
                 ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text = "Data connection resumed...";
@@ -3320,7 +3304,7 @@ namespace MITesDataCollection
                 Thread.Sleep(1000);
                 ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = false;
             }
-
+            */
 #endif
 
                 #endregion Bluetooth Reconnection Code
@@ -3347,6 +3331,14 @@ namespace MITesDataCollection
                         this.mitesDecoders[receiver.ID].GetSensorData(this.mitesControllers[receiver.ID]);
                 }
 
+                if (++ttwcounter == 6000)
+                {
+                    TextWriter ttw = new StreamWriter("\\Internal Storage\\ts.txt");
+                    ttw.WriteLine(DateTime.Now.ToLongTimeString());
+                    ttw.Close();
+                    ttwcounter = 0;
+                }
+
             }
             //Thrown when there is a Bluetooth failure                    
             //TODO: Make sure no USB failure happening
@@ -3354,7 +3346,7 @@ namespace MITesDataCollection
             {
 
                 currentReceiver.Running = false;
-                connectionLost = true;
+                //connectionLost = true;
                 return;
             }
 

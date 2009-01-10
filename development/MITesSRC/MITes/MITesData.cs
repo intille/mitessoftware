@@ -127,7 +127,7 @@ namespace HousenCS.MITes
         //public static readonly int NUM_ACCEL_STEPS = 558;
 
         //for wockets and Built in Accelerometers
-        public static readonly int NUM_ACCEL_STEPS = 1023;
+        public static readonly int NUM_ACCEL_STEPS = 1024;
 
 
         /// <summary>
