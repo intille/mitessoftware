@@ -42,7 +42,16 @@ namespace SXML
             this.totalWiredRecerivers = 0;
         }
 
-        
+        public int GetSensor(int receiverID)
+        {
+            foreach (Sensor sensor in this.sensors)
+            {
+                if (receiverID == Convert.ToInt32(sensor.Receiver))
+                    return Convert.ToInt32(sensor.ID);
+            }
+
+            return -1;
+        }
         public Hashtable SensorsIndex
         {
             get
