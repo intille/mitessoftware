@@ -30,8 +30,16 @@ namespace MITesDataCollection
             // TODO At some point close this properly
             if (!Directory.Exists("\\Wockets"))
                 Directory.CreateDirectory("\\Wockets");
-            this.log = new StreamWriter("\\Wockets\\log-" + receiver.ID + ".txt", true);
-
+            try
+            {
+                this.log = new StreamWriter("\\Wockets\\log-" + receiver.ID + ".txt", true);
+            }
+            catch (IOException e)
+            {
+                // If an exception is thrown, then make sure we don't crash. NIH demo only. 
+                // TODO remove and fix more elegantly
+               this.log = new StreamWriter("\\Wockets\\log-" + receiver.ID + "-" + Environment.TickCount + ".txt", true);
+            }
         }
 
         //This method is executed as a seperate thread to manage the progress
