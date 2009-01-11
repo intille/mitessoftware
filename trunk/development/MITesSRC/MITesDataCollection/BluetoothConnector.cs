@@ -27,6 +27,10 @@ namespace MITesDataCollection
             this.bluetoothControllers = bluetoothControllers;
             this.mitesDecoders = mitesDecoders;
 
+            // TODO At some point close this properly
+            if (!Directory.Exists("\\Wockets"))
+                Directory.CreateDirectory("\\Wockets");
+            this.log = new StreamWriter("\\Wockets\\log-" + receiver.ID + ".txt", true);
 
         }
 
@@ -34,9 +38,6 @@ namespace MITesDataCollection
         //form
         public void Reconnect()
         {
-            if (!Directory.Exists("\\Wockets"))
-                Directory.CreateDirectory("\\Wockets");
-            this.log = new StreamWriter("\\Wockets\\log-" + receiver.ID + ".txt", true);
             reconnection_attempts = 0;
             //while (true)
             //{
@@ -97,8 +98,6 @@ namespace MITesDataCollection
             // }
             this.log.WriteLine("Exiting Bluetooth reconnector");
             this.log.Flush();
-            this.log.Close();
-
 
             //reconnectionThreadQuit = false;
             // }
