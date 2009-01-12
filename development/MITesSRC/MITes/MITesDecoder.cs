@@ -2,6 +2,7 @@ using System;
 using System.Threading;
 using HousenCS.IO;
 using Bluetooth;
+using System.IO;
 
 namespace HousenCS.MITes
 {
@@ -317,14 +318,26 @@ namespace HousenCS.MITes
             return false;
         }
 
+        int byteCounter = 0;
+        int calls = 0;
         /// <summary>
         /// This is the call that needs to be included in the main data processing loop to get
         /// data from a Bluetooth stream.
         /// </summary>
         /// <param name="bs"></param>
         public void GetSensorData(BluetoothController btc,int type)
-        {            
+        {
+            calls++;
             bytesFound = btc.read(btc.BluetoothBytesBuffer);
+            byteCounter += bytesFound;
+            if (calls >= 20)
+            {
+                calls = 0;
+                if (byteCounter == 0)  
+                    throw new Exception();
+                
+                byteCounter = 0;
+            }
             //UpdateDataRate(bytesFound);
             if (bytesFound > 0)
             {
@@ -826,13 +839,15 @@ namespace HousenCS.MITes
                 return someData.Length;
         }
 
-        
+
+        TextWriter decoderlog=null;
         public int DecodeWocketsData(byte[] bytes, int numBytes, MITesData[] someData, int dataIndex)
         {
             int i = 0;
             int valuesGrabbed = 0;
             bool header_started=false;
-                    
+            //if (decoderlog==null)
+              //  decoderlog = new StreamWriter("\\Wockets\\decoding.txt",true);       
             if (numBytes != 0) // Have some data
             {
                 while (i < numBytes)
@@ -848,16 +863,31 @@ namespace HousenCS.MITes
 
                     packet2Position++;
                     i++;
-                    if (packet2Position == WOCKET_PACKET_SIZE) //a full packet was received
+
+                   /* if (dataIndex == MAX_MITES_DATA)
+                    {
+                        decoderlog.WriteLine("DataIndex: " +dataIndex);
+                        decoderlog.Flush();
+                    }*/
+                    if ((packet2Position == WOCKET_PACKET_SIZE)) //a full packet was received
                     {
                         DecodeWocketsFrame(someData[dataIndex], packet2);
-                        dataIndex++;
+                        if (dataIndex<MAX_MITES_DATA-1)
+                            dataIndex++;
                         packet2Position = 0;
                         header_started = false;
                         valuesGrabbed++;
+                         
                     }
+                    //else
+                    //{
+                     //   decoderlog.WriteLine("Overflow while decoding");
+                    //}
                 }
             }
+
+            //decoderlog.WriteLine("Decoded: " + valuesGrabbed);
+            //decoderlog.Flush();
 
             if (valuesGrabbed < someData.Length)
                 return valuesGrabbed;
