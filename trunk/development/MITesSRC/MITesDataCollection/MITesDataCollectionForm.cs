@@ -3226,7 +3226,7 @@ namespace MITesDataCollection
         #endregion Bluetooth Reconnection Thread
 
 
-        
+     
 
         private void readDataTimer_Tick(object sender, EventArgs e)
         {
@@ -3237,6 +3237,7 @@ namespace MITesDataCollection
             okTimer++;
 
   
+            
 
             #region Bluetooth Reconnection Code
 #if (PocketPC)
@@ -3257,20 +3258,24 @@ namespace MITesDataCollection
             //Start a reconnection thread
             foreach (Receiver receiver in this.sensors.Receivers)
             {
-                if ((!receiver.Running) && (!receiver.Restarting))
+                if (!receiver.Running) //&& (!receiver.Restarting))
                 {
-
+                    aMITesActivityLogger.WriteLogComment("Connection broke with " + receiver.ID + ". Restarting");   
                     //reconnectionThreadQuit[receiver.ID] = false;
+
                     BluetoothConnector btc=new BluetoothConnector(receiver, this.bluetoothControllers, this.mitesDecoders);
-                    ts[receiver.ID] = new Thread(new ThreadStart(btc.Reconnect));
-                    ts[receiver.ID].Start();
+                    aMITesActivityLogger.WriteLogComment("Initializing reconnection thread");   
+                    //ts[receiver.ID] = new Thread(new ThreadStart(btc.Reconnect));
+                    //ts[receiver.ID].Start();
+                    btc.Reconnect();
+                    aMITesActivityLogger.WriteLogComment("Reconnection thread started");     
                     receiver.Restarting = true;
+                  
                 }
                 else if (receiver.Restarted)
-                {
-                    ts[receiver.ID].Abort();
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text = "Data connection resumed for" + receiver.ID + "...";
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Refresh();
+                {               
+                    //((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Text = "Data connection resumed for" + receiver.ID + "...";
+                    //((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Refresh();
                   //  lock (this)
                    // {
                                                                         
@@ -3281,10 +3286,12 @@ namespace MITesDataCollection
                         //reconnection_attempts = 0;
                        // Thread.Sleep(1000);
                    // }
-                    ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = false;
+                   // ((System.Windows.Forms.Label)this.sensorLabels["ErrorLabel"]).Visible = false;
+                    aMITesActivityLogger.WriteLogComment("Reconnection completed"); 
                     receiver.Restarted = false;
                     receiver.Restarting = false;
                     receiver.Running = true;
+                    //ts[receiver.ID].Abort();
                 }
 
             }

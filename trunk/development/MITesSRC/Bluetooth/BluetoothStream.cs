@@ -54,10 +54,18 @@ namespace Bluetooth
         private SerialPort comPort;
         #endregion
 
+        private static TextWriter tw=null;
+
+
+
+
+
         static BluetoothStream()
         {
             usingWidcomm = BluetoothRadio.PrimaryRadio == null;
             lockObject = new object();
+            if (tw==null)
+                tw = new StreamWriter("\\Wockets\\bt.txt");
 
         }
 
@@ -70,10 +78,17 @@ namespace Bluetooth
         {
             Dispose();
         }
-
+        public static int okcounter;
+        int counter;
+        int prevokcounter;
         private void readingFunction()
         {
-            while (!disposed)
+            //LOG STARTED
+            tw.WriteLine("New Reading Thread started");
+            tw.Flush();
+            counter = 0;
+            //while (!disposed)
+            if (!disposed)
             {
                 if (usingWidcomm)
                 {
@@ -98,13 +113,38 @@ namespace Bluetooth
                         //lock (this)
                         //lock (lockObject)
                         bytesReceived = btSocket.Receive(singleReadBuffer, (DEFAULT_BUFFER_SIZE - currentBytes > singleReadBuffer.Length) ? singleReadBuffer.Length : DEFAULT_BUFFER_SIZE - currentBytes, SocketFlags.None);
+                        //LOG BYTES RECEIVED...
+                        tw.WriteLine(btClient.ToString() + " bytes read:" + bytesReceived);
+                        tw.Flush();
+
+
                         //}
                     }
                     catch (Exception e)
                     {
+
+                        //LOG CONNECTION LOST
+                        tw.WriteLine(btClient.ToString() + " connection lost");
+                        tw.Flush();
                         throw e;
                     }
-
+                 /*
+                   if (okcounter == prevokcounter)
+                        counter++;
+                    else
+                        counter = 0;
+                    prevokcounter = okcounter;
+                    if (counter == 1000)
+                    {
+                        tw.WriteLine(btClient.ToString() + " starved other threads");
+                        tw.Flush();
+                        counter = 0;
+                        okcounter = 0;
+                        prevokcounter = 0;
+                        disposed = true;
+                        
+                    }
+                  */
                     //this is a timeout. If we get too many of them, we classify that
                     //as a socket that has been disconnected
                     if (readHappened && bytesReceived == 0)
@@ -283,8 +323,10 @@ namespace Bluetooth
                     }
                 }
 
-                newStream.readingThread = new Thread(new ThreadStart(newStream.readingFunction));
-                newStream.readingThread.Start();
+               // if (newStream.readingThread != null)
+               //     newStream.readingThread.Abort();
+               // newStream.readingThread = new Thread(new ThreadStart(newStream.readingFunction));
+                //newStream.readingThread.Start();
             }
             catch
             {
@@ -298,6 +340,7 @@ namespace Bluetooth
 
         public int Read(byte[] destination, int offset, int length)
         {
+            readingFunction();
             if (disposed)
                 throw new ObjectDisposedException("BluetoothStream");
 
@@ -421,7 +464,7 @@ namespace Bluetooth
                 disposed = true;
             }
 
-            readingThread.Join();
+         //   readingThread.Join();
 
             if (usingWidcomm)
             {
