@@ -31,6 +31,13 @@ namespace Charts.twodimensional
                 _totalValue += _values[i];
             _isSortedDesc = false;
             _isGrouped = false;
+            SortKeysDesc();
+        }
+
+        public void SortKeysDesc()
+        {
+            Array.Sort(_keys, _keys, new DescendingKeyComparer());
+            _isSortedDesc = true;
         }
 
         public void SortValuesDesc()
@@ -82,6 +89,14 @@ namespace Charts.twodimensional
         public int Compare(Object x, Object y)
         {
             return Decimal.Compare((long)y, (long)x);
+        }
+    }
+
+    class DescendingKeyComparer : IComparer
+    {
+        public int Compare(Object x, Object y)
+        {
+            return String.Compare((string)y, (string)x);
         }
     }
 }

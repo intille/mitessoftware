@@ -6,6 +6,9 @@ using System;
 using weka.core;
 using weka.classifiers;
 using weka.support;
+using System.Xml.Serialization;
+using System.IO;
+
 namespace weka.classifiers.trees.j48
 {
 	
@@ -76,6 +79,7 @@ namespace weka.classifiers.trees.j48
 		/// </summary>
 		private static long PRINTED_NODES = 0;
 		
+
 		/// <summary> Gets the next unique node ID.
 		/// 
 		/// </summary>
@@ -95,14 +99,22 @@ namespace weka.classifiers.trees.j48
 			
 			PRINTED_NODES = 0;
 		}
-		
+
+        public ClassifierTree()
+        {
+
+        }
 		/// <summary> Constructor. </summary>
 		public ClassifierTree(ModelSelection toSelectLocModel)
 		{
 			
 			m_toSelectModel = toSelectLocModel;
 		}
-		
+
+
+        public virtual void toXML(TextWriter tw)
+        {
+        }
 		/// <summary> Method for building a classifier tree.
 		/// 
 		/// </summary>

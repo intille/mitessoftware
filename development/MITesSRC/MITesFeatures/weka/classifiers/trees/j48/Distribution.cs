@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -20,7 +23,8 @@ namespace weka.classifiers.trees.j48
 #endif
 	public class Distribution : System.ICloneable
 	{
-		
+
+
 		/// <summary>Weight of instances per class per bag. </summary>
 		private double[][] m_perClassPerBag;
 		
@@ -32,6 +36,143 @@ namespace weka.classifiers.trees.j48
 		
 		/// <summary>Total weight of instances. </summary>
 		private double totaL;
+
+
+        public void toXML(TextWriter tw)
+        {
+            tw.WriteLine("<" + Constants.DISTRIBUTION + " " +
+         Constants.TOTAL + "=\"" + totaL + "\"   " +
+         " xmlns=\"urn:mites-schema\">\n");
+
+            tw.WriteLine("<" + Constants.PERCLASSPERBAG + " "+Constants.XSIZE+"=\"" + m_perClassPerBag.Length + "\" "+Constants.YSIZE+"=\"" + m_perClassPerBag[0].Length + "\" >\n");
+            for (int i = 0; (i < m_perClassPerBag.Length); i++)           
+                for (int j = 0; (j < m_perClassPerBag[i].Length); j++)
+                    tw.WriteLine("<"+Constants.VALUE+" "+Constants.I+"=\""+i+"\" "+Constants.J+"=\""+j+"\" "+Constants.VAL+"=\"" + m_perClassPerBag[i][j] + "\" />");
+            tw.WriteLine("</" + Constants.PERCLASSPERBAG + ">\n");
+
+            tw.WriteLine("<" + Constants.PERBAG + " "+Constants.XSIZE+"=\"" + m_perBag.Length + "\">\n");
+            for (int i = 0; (i < m_perBag.Length); i++)
+                tw.WriteLine("<"+Constants.VALUE+"  "+Constants.I+"=\"" + i + "\" "+Constants.VAL+"=\"" + m_perBag[i] + "\" />\n");            
+            tw.WriteLine("</" + Constants.PERBAG + ">\n");
+
+           tw.WriteLine("<" + Constants.PERCLASS + " " + Constants.XSIZE + "=\"" + m_perClass.Length + "\">\n");
+            for (int i = 0; (i < m_perClass.Length); i++)
+                tw.WriteLine("<"+Constants.VALUE+"  "+Constants.I+"=\"" + i + "\" "+Constants.VAL+"=\"" + m_perClass[i] + "\" />\n");
+            tw.WriteLine("</" + Constants.PERCLASS + ">\n");
+
+            tw.WriteLine("</" + Constants.DISTRIBUTION + ">");
+       
+
+
+        }
+
+        public Distribution(XmlNode distribution)
+        {
+            foreach (XmlAttribute xAttribute in distribution.Attributes)
+            {
+                if (xAttribute.Name == Constants.TOTAL)
+                    this.totaL= Convert.ToDouble(xAttribute.Value);
+            }
+
+              //Going through the subtrees
+            foreach (XmlNode iNode in distribution.ChildNodes)
+            {
+                if (iNode.Name == Constants.PERCLASSPERBAG)
+                {
+                    int xsize=-1;
+                    int ysize=-1;
+                    foreach (XmlAttribute xAttribute in iNode.Attributes)
+                    {
+                        if (xAttribute.Name == Constants.XSIZE)
+                            xsize = Convert.ToInt32(xAttribute.Value);
+                        else if (xAttribute.Name == Constants.YSIZE)
+                            ysize = Convert.ToInt32(xAttribute.Value);
+                    }
+
+                    m_perClassPerBag = new double[xsize][];
+                    for (int i = 0; (i < xsize); i++)
+                        m_perClassPerBag[i] = new double[ysize];
+
+                    foreach (XmlNode jNode in iNode.ChildNodes)
+                    {
+                        if (jNode.Name == Constants.VALUE)
+                        {
+                            int i = -1;
+                            int j = -1;
+                            double val = -1;
+                            foreach (XmlAttribute xAttribute in jNode.Attributes)
+                            {
+                                if (xAttribute.Name == Constants.I)
+                                   i = Convert.ToInt32(xAttribute.Value);
+                               else if (xAttribute.Name == Constants.J)
+                                   j = Convert.ToInt32(xAttribute.Value);
+                               else if (xAttribute.Name == Constants.VAL)
+                                  val = Convert.ToDouble(xAttribute.Value);
+                            }
+                            m_perClassPerBag[i][j]=val;
+                        }
+                    }
+                }
+                else if (iNode.Name == Constants.PERBAG)
+                {
+
+                    int xsize = -1;
+                    foreach (XmlAttribute xAttribute in iNode.Attributes)
+                    {
+                        if (xAttribute.Name == Constants.XSIZE)
+                            xsize = Convert.ToInt32(xAttribute.Value);               
+                    }
+                    m_perBag = new double[xsize];
+
+                    foreach (XmlNode jNode in iNode.ChildNodes)
+                    {
+                        if (jNode.Name == Constants.VALUE)
+                        {
+                            int i = -1;        
+                            double val = -1;
+                            foreach (XmlAttribute xAttribute in jNode.Attributes)
+                            {
+                                if (xAttribute.Name == Constants.I)
+                                    i = Convert.ToInt32(xAttribute.Value);
+                                else if (xAttribute.Name == Constants.VAL)
+                                    val = Convert.ToDouble(xAttribute.Value);
+                            }
+                            m_perBag[i] = val;
+                        }
+                    }
+
+                }
+                else if (iNode.Name == Constants.PERCLASS)
+                {
+
+                    int xsize = -1;
+                    foreach (XmlAttribute xAttribute in iNode.Attributes)
+                    {
+                        if (xAttribute.Name == Constants.XSIZE)
+                            xsize = Convert.ToInt32(xAttribute.Value);
+                    }
+                    m_perClass = new double[xsize];
+
+                    foreach (XmlNode jNode in iNode.ChildNodes)
+                    {
+                        if (jNode.Name == Constants.VALUE)
+                        {
+                            int i = -1;
+                            double val = -1;
+                            foreach (XmlAttribute xAttribute in jNode.Attributes)
+                            {
+                                if (xAttribute.Name == Constants.I)
+                                    i = Convert.ToInt32(xAttribute.Value);
+                                else if (xAttribute.Name == Constants.VAL)
+                                    val = Convert.ToDouble(xAttribute.Value);
+                            }
+                            m_perClass[i] = val;
+                        }
+                    }
+
+                }
+            }
+        }
 		
 		/// <summary> Creates and initializes a new distribution.</summary>
 		public Distribution(int numBags, int numClasses)

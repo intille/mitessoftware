@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -26,7 +29,16 @@ namespace weka.classifiers.trees.j48
 		
 		/// <summary>All the training data </summary>
 		private Instances m_allData; // 
-		
+
+
+        public override void toXML(TextWriter tw)
+        {
+            tw.WriteLine("<" + Constants.C45MODELSELECTION_ELEMENT+ " " +
+            Constants.MIN_NO_OBJ_ATTRIBUTE + "=\"" + this.m_minNoObj + "\"   " +
+            " xmlns=\"urn:mites-schema\">\n");
+            tw.WriteLine("</" + Constants.C45MODELSELECTION_ELEMENT + ">");
+            
+        }
 		/// <summary> Initializes the split selection method with the given parameters.
 		/// 
 		/// </summary>
@@ -41,7 +53,19 @@ namespace weka.classifiers.trees.j48
 			m_minNoObj = minNoObj;
 			m_allData = allData;
 		}
-		
+
+        public C45ModelSelection(XmlNode model, Instances allData)
+        {
+
+            foreach (XmlAttribute xAttribute in model.Attributes)
+            {
+                if (xAttribute.Name == Constants.MIN_NO_OBJ_ATTRIBUTE)
+                    this.m_minNoObj = Convert.ToInt32(xAttribute.Value);
+            }
+
+            m_allData = allData;
+                    
+        }
 		/// <summary> Sets reference to training data to null.</summary>
 		public virtual void  cleanup()
 		{

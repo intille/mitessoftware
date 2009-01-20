@@ -7,6 +7,8 @@ using weka.core;
 using weka.classifiers;
 using weka.support;
 using System.IO;
+using MITesFeatures;
+using System.Xml;
 #if !PocketPC
 using System.Runtime.Serialization.Formatters.Binary; 
 #endif
@@ -102,7 +104,103 @@ namespace weka.classifiers.trees
 		private bool m_noCleanup = false;
 		/// <summary>Random number seed for reduced-error pruning. </summary>
 		private int m_Seed = 1;
-		
+
+
+
+        public override void toXML(TextWriter tw)
+        {
+            tw.WriteLine("<" + Constants.DECISION_TREE_ELEMENT + " " +
+                Constants.SERIAL_VERSION_ATTRIBUTE + "=\"" + serialVersionUID + "\"  " +
+                Constants.PRUNED_ATTRIBUTE+ "=\"" + this.m_unpruned + "\"   "+
+                Constants.CONFIDENCE_ATTRIBUTE + "=\"" + this.m_CF + "\"   " +
+                Constants.MIN_NUM_OBJECTS_ATTRIBUTE + "=\"" + this.m_minNumObj + "\"   " +
+                Constants.USE_LAPLACE_ATTRIBUTE + "=\"" + this.m_useLaplace + "\"   " +
+                Constants.REDUCED_ERROR_PRUNING_ATTRIBUTE + "=\"" + this.m_reducedErrorPruning + "\"   " +
+                Constants.NUM_FOLDS_ATTRIBUTE + "=\"" + this.m_numFolds + "\"   " +
+                Constants.BINARY_SPLITS_ATTRIBUTE + "=\"" + this.m_binarySplits + "\"   " +
+                Constants.SUBTREE_RAISING_ATTRIBUTE + "=\"" + this.m_subtreeRaising + "\"   " +
+                Constants.NO_CLEANUP_ATTRIBUTE + "=\"" + this.m_noCleanup + "\"   " +
+                Constants.SEED_ATTRIBUTE+ "=\"" + this.m_Seed + "\"   " +
+                " xmlns=\"urn:mites-schema\">\n");
+            m_root.toXML(tw);
+          tw.WriteLine("</" + Constants.DECISION_TREE_ELEMENT + ">\n");
+           
+        }
+
+        public override void buildClassifier(string fileName, Instances instances)
+        {
+
+            XmlDocument dom = new XmlDocument();
+            dom.Load(fileName);
+            XmlNode xNode = dom.DocumentElement;
+
+            if ((xNode.Name == Constants.DECISION_TREE_ELEMENT) && (xNode.HasChildNodes))
+            {
+
+                foreach (XmlAttribute xAttribute in xNode.Attributes)
+                {
+                    if (xAttribute.Name == Constants.PRUNED_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_unpruned = true;
+                        else
+                            this.m_unpruned = false;
+                    }
+                    else if (xAttribute.Name == Constants.CONFIDENCE_ATTRIBUTE)                    
+                        this.m_CF = (float) Convert.ToDouble(xAttribute.Value);
+                    else if (xAttribute.Name == Constants.MIN_NUM_OBJECTS_ATTRIBUTE)
+                        this.m_minNumObj = Convert.ToInt32(xAttribute.Value);
+                    else if (xAttribute.Name == Constants.USE_LAPLACE_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_useLaplace = true;
+                        else
+                            this.m_useLaplace = false;     
+                    }
+                    else if (xAttribute.Name == Constants.REDUCED_ERROR_PRUNING_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_reducedErrorPruning = true;
+                        else
+                            this.m_reducedErrorPruning = false;        
+                    }
+                    else if (xAttribute.Name == Constants.NUM_FOLDS_ATTRIBUTE)
+                        this.m_numFolds = Convert.ToInt32(xAttribute.Value);
+                    else if (xAttribute.Name == Constants.BINARY_SPLITS_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_binarySplits = true;
+                        else
+                            this.m_binarySplits = false;  
+                    }
+                    else if (xAttribute.Name == Constants.SUBTREE_RAISING_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_subtreeRaising = true;
+                        else
+                            this.m_subtreeRaising = false;
+                    }
+                    else if (xAttribute.Name == Constants.NO_CLEANUP_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_noCleanup = true;
+                        else
+                            this.m_noCleanup = false;
+                    }
+                    else if (xAttribute.Name == Constants.SEED_ATTRIBUTE)
+                        this.m_Seed = Convert.ToInt32(xAttribute.Value);                    
+                }
+
+                //Going through the subtrees
+                foreach (XmlNode iNode in xNode.ChildNodes)
+                {
+                    if (iNode.Name == Constants.C45_PRUNEABLE_ELEMENT)
+                    {
+                        this.m_root = new C45PruneableClassifierTree(iNode, instances);
+                    }
+                }
+            }
+        }
 		/// <summary> Generates the classifier.
 		/// 
 		/// </summary>

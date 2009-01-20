@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 
 namespace weka.classifiers.trees.j48
 {
@@ -85,7 +88,57 @@ namespace weka.classifiers.trees.j48
 		
 		/// <summary>Static reference to splitting criterion. </summary>
 		private static GainRatioSplitCrit gainRatioCrit = new GainRatioSplitCrit();
-		
+
+
+        public override void toXML(TextWriter tw)
+        {
+          tw.WriteLine( "<" + Constants.C45SPLIT_ELEMENT + " " +
+            Constants.COMPLEXITY_ATTRIBUTE + "=\"" + this.m_complexityIndex + "\"   " +
+            Constants.ATTRIBUTE_SPLITON_ATTRIBUTE + "=\"" + this.m_attIndex + "\"   " +
+            Constants.MIN_NO_OBJ_ATTRIBUTE + "=\"" + this.m_minNoObj + "\"   " +
+            Constants.SPLIT_POINT_ATTRIBUTE + "=\"" + this.m_splitPoint + "\"   " +
+            Constants.INFO_GAIN_ATTRIBUTE + "=\"" + this.m_infoGain + "\"   " +
+            Constants.GAIN_RATIO_ATTRIBUTE + "=\"" + this.m_gainRatio + "\"   " +
+            Constants.SUM_WEIGHTS_ATTRIBUTE + "=\"" + this.m_sumOfWeights + "\"   " +
+            Constants.NUM_SPLITS_ATTRIBUTE + "=\"" + this.m_index + "\"   " +
+            Constants.NUM_SUBSETS_ATTRIBUTE + "=\"" + this.m_numSubsets + "\"   " +
+            " xmlns=\"urn:mites-schema\">\n");
+           this.m_distribution.toXML(tw);
+            tw.WriteLine("</" + Constants.C45SPLIT_ELEMENT + ">");
+           
+
+        }
+
+        public C45Split(XmlNode split)
+        {
+
+            foreach (XmlAttribute xAttribute in split.Attributes)
+            {
+                if (xAttribute.Name == Constants.NUM_SUBSETS_ATTRIBUTE)
+                    this.m_numSubsets = Convert.ToInt32(xAttribute.Value);
+                else if (xAttribute.Name == Constants.NUM_SPLITS_ATTRIBUTE)
+                    this.m_index = Convert.ToInt32(xAttribute.Value);
+                else if (xAttribute.Name == Constants.SUM_WEIGHTS_ATTRIBUTE)
+                    this.m_sumOfWeights = Convert.ToDouble(xAttribute.Value);
+                else if (xAttribute.Name == Constants.GAIN_RATIO_ATTRIBUTE)
+                    this.m_gainRatio = Convert.ToDouble(xAttribute.Value);
+                else if (xAttribute.Name == Constants.INFO_GAIN_ATTRIBUTE)
+                    this.m_infoGain = Convert.ToDouble(xAttribute.Value);
+                else if (xAttribute.Name == Constants.SPLIT_POINT_ATTRIBUTE)
+                    this.m_splitPoint = Convert.ToDouble(xAttribute.Value);
+                else if (xAttribute.Name == Constants.MIN_NO_OBJ_ATTRIBUTE)
+                    this.m_minNoObj = Convert.ToInt32(xAttribute.Value);
+                else if (xAttribute.Name == Constants.ATTRIBUTE_SPLITON_ATTRIBUTE)
+                    this.m_attIndex = Convert.ToInt32(xAttribute.Value);
+                else if (xAttribute.Name == Constants.COMPLEXITY_ATTRIBUTE)
+                    this.m_complexityIndex = Convert.ToInt32(xAttribute.Value);
+            }
+            foreach (XmlNode iNode in split.ChildNodes)
+            {
+                if (iNode.Name == Constants.DISTRIBUTION)
+                    this.m_distribution = new Distribution(iNode);
+            }
+        }
 		/// <summary> Initializes the split model.</summary>
 		public C45Split(int attIndex, int minNoObj, double sumOfWeights)
 		{

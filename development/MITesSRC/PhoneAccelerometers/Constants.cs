@@ -10,7 +10,7 @@ namespace PhoneAccelerometers
 
         //different subtypes of built-in accelerometers
         public static int DIAMOND_TOUCH_ACCELEROMETER = 0;
-        public static int DIAMOND_TOUCH_MAX_SAMPLING_RATE = 25;
+        public static int DIAMOND_TOUCH_MAX_SAMPLING_RATE = 15;
         public static string DIAMOND_TOUCH_NAME = "HTC DIAMOND";
         
     }

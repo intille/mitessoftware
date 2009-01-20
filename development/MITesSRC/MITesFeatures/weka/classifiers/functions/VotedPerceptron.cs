@@ -10,6 +10,7 @@ using NominalToBinary = weka.filters.unsupervised.attribute.NominalToBinary;
 using ReplaceMissingValues = weka.filters.unsupervised.attribute.ReplaceMissingValues;
 using Filter = weka.filters.Filter;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.functions
 {
 	
@@ -70,12 +71,21 @@ namespace weka.classifiers.functions
 		private NominalToBinary m_NominalToBinary;
 		/// <summary>The filter used to get rid of missing values. </summary>
 		private ReplaceMissingValues m_ReplaceMissingValues;
-		
+
+
+        public override void toXML(TextWriter tw)
+        {
+
+        }
 		/// <summary> Builds the ensemble of perceptrons.
 		/// 
 		/// </summary>
 		/// <exception cref="Exception">if something goes wrong during building
 		/// </exception>
+        /// 
+        public override void buildClassifier(string fileName, Instances instances)
+        {
+        }
 		public override void  buildClassifier(Instances insts)
 		{
 			

@@ -122,9 +122,9 @@ namespace MITesDataCollection
             // 
             // menuItem3
             // 
-            this.menuItem3.Text = "Set Channels";
+            this.menuItem3.Text = "Reset";
             this.menuItem3.Click += new System.EventHandler(this.menuItem3_Click);
-            this.menuItem3.Enabled = false;
+            this.menuItem3.Enabled = true;
             // 
             // menuItem4
             // 
@@ -491,7 +491,15 @@ namespace MITesDataCollection
             pieChart.SetTime(0, 0,0);
             pieChart.SetCalories(0, 0);
             this.tabPage3.Controls.Add(pieChart);
+        //pieChartClearButton = new Button();
+        //pieChartClearButton.Text = "Clear";
+        //pieChartClearButton.Name = "pieChartButton";
+        //pieChartClearButton.Size = new System.Drawing.Size(72, 20);
+        //pieChartClearButton.Location = new Point(0, 0);
+        //pieChartClearButton.Click += new System.EventHandler(this.pieChartClearButton_Click);
+        //this.tabPage3.Controls.Add(pieChartClearButton);
 
+            
             this.tabPage3.Location = new System.Drawing.Point(0, 0);
             this.tabPage3.Name = "tabPage3";
             this.tabPage3.Size = new System.Drawing.Size(232, 239);
@@ -1110,6 +1118,7 @@ namespace MITesDataCollection
         private System.Windows.Forms.Label trainingLabel;
         private System.Windows.Forms.Button button1;
         private System.Windows.Forms.Button button2;
+        private System.Windows.Forms.Button pieChartClearButton;
         private System.Windows.Forms.MainMenu mainMenuTab2;
         private System.Windows.Forms.MenuItem menuItem1Tab2;
         private System.Windows.Forms.MenuItem menuItem2Tab2;

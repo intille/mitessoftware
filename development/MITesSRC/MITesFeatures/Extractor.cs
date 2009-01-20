@@ -427,7 +427,7 @@ namespace MITesFeatures
 
 
 
-        public static void StoreBuiltinData(GenericAccelerometerData polledData)
+        public static double StoreBuiltinData(GenericAccelerometerData polledData)
         {
             int sensorIndex = (int)Extractor.sensorIndicies[polledData.ChannelID];
             int adjusted_sensor_index = sensorIndex * 4;
@@ -439,6 +439,7 @@ namespace MITesFeatures
             //increment the y_index for the sensor and wrap around if needed
             Extractor.y_index[sensorIndex] = (Extractor.y_index[sensorIndex] + 1) % Extractor.EXPECTED_WINDOW_SIZES[sensorIndex];
 
+            return polledData.Unixtimestamp;
         }
 
         //start collecting features from MITes decoder, do windowing plus calculate features
@@ -697,7 +698,7 @@ namespace MITesFeatures
                         interpolated_data[interpolated_axes_index][k] = cs.interpolate(k * INTERPOLATED_SAMPLES_SPACING);
                         //check that the intrepolated values make sense.
                         //if ((interpolated_data[interpolated_axes_index][k] <= 0) || (interpolated_data[interpolated_axes_index][k] > 1024))
-                        if ((interpolated_data[interpolated_axes_index][k] <= 0) || (interpolated_data[interpolated_axes_index][k] > 3000))
+                        if ((interpolated_data[interpolated_axes_index][k] <= -6000) || (interpolated_data[interpolated_axes_index][k] > 6000))
                         {
                           //  errorFlag = 1;
                             return false;

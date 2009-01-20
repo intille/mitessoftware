@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -21,7 +24,30 @@ namespace weka.classifiers.trees.j48
 #endif
 	public sealed class NoSplit:ClassifierSplitModel
 	{
-		
+
+
+
+        public override void toXML(TextWriter tw)
+        {
+            tw.WriteLine("<" + Constants.NOSPLIT_ELEMENT + " " + Constants.NUM_SUBSETS_ATTRIBUTE+ "=\"" + this.m_numSubsets + "\">");
+            this.m_distribution.toXML(tw);
+            tw.WriteLine("</" + Constants.NOSPLIT_ELEMENT + ">");            
+
+        }
+
+        public NoSplit(XmlNode split)
+        {
+            foreach (XmlAttribute xAttribute in split.Attributes)
+            {
+                if (xAttribute.Name == Constants.NUM_SUBSETS_ATTRIBUTE)
+                    this.m_numSubsets= Convert.ToInt32(xAttribute.Value);
+            }
+            foreach (XmlNode iNode in split.ChildNodes)
+            {
+                if (iNode.Name == Constants.DISTRIBUTION)
+                    this.m_distribution = new Distribution(iNode);                    
+            }
+        }
 		/// <summary> Creates "no-split"-split for given distribution.</summary>
 		public NoSplit(Distribution distribution)
 		{

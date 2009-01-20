@@ -5,6 +5,7 @@
 */
 using System;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -45,7 +46,9 @@ namespace weka.classifiers.trees.j48
 			}
 			return clone;
 		}
-		
+
+
+        public abstract void toXML(TextWriter tw);
 		/// <summary> Builds the classifier split model for the given set of instances.
 		/// 
 		/// </summary>

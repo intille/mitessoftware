@@ -5,6 +5,7 @@ using System;
 using Classifier = weka.classifiers.Classifier;
 using Evaluation = weka.classifiers.Evaluation;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.rules
 {
 	
@@ -28,8 +29,16 @@ namespace weka.classifiers.rules
 		private double[] m_Counts;
 		/// <summary>The class attribute. </summary>
 		private weka.core.Attribute m_Class;
-		
-		
+        
+        public override void toXML(TextWriter tw)
+        {
+ 
+        }
+
+
+        public override void buildClassifier(string fileName, Instances instances)
+        {
+        }
 		/// <summary> Generates the classifier.
 		/// 
 		/// </summary>
