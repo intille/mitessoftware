@@ -5,6 +5,7 @@
 */
 using System;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -27,6 +28,9 @@ namespace weka.classifiers.trees.j48
 		/// <exception cref="Exception">if model can't be selected
 		/// </exception>
 		public abstract ClassifierSplitModel selectModel(Instances data);
+
+
+        public abstract void toXML(TextWriter tw);
 		
 		/// <summary> Selects a model for the given train data using the given test data
 		/// 

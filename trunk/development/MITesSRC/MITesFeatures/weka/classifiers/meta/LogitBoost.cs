@@ -6,6 +6,7 @@ using weka.classifiers;
 //UPGRADE_TODO: The type 'weka.classifiers.trees.DecisionStump' could not be found. If it was not included in the conversion, there may be compiler issues. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1262'"
 using DecisionStump = weka.classifiers.trees.DecisionStump;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.meta
 {
 	
@@ -101,7 +102,12 @@ namespace weka.classifiers.meta
 		/// true class is offset. 
 		/// </summary>
 		protected internal double m_Offset = 0.0;
-		
+
+        public override void  toXML(TextWriter tw)
+        {
+ 
+        }
+
 		/// <summary> Constructor.</summary>
 		public LogitBoost()
 		{
@@ -328,9 +334,11 @@ namespace weka.classifiers.meta
 			
 			return m_WeightThreshold;
 		}
-		
-		
-		
+
+
+        public override void buildClassifier(string fileName, Instances instances)
+        {
+        }
 		
 		/// <summary> Builds the boosted classifier</summary>
 		public virtual void  buildClassifier(Instances data)

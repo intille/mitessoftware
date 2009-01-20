@@ -112,11 +112,16 @@ namespace HousenCS.MITes
 
             double diff = current_time - previousTime;
 
-            if (diff >=1)                             
-                previousTime = Math.Round(current_time);
-
-            return previousTime;
+            if (diff <= 1)
+            {
+                previousTime++;
+                return previousTime;
+            }
             
+                
+            previousTime = current_time;
+            
+            return current_time;            
         }
 		/// <summary>
 		/// 

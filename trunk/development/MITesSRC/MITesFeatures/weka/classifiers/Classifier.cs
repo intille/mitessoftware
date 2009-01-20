@@ -5,6 +5,7 @@
 */
 using System;
 using weka.core;
+using System.IO;
 
 namespace weka.classifiers
 {
@@ -73,6 +74,11 @@ namespace weka.classifiers
 		/// generated successfully
 		/// </exception>
 		public abstract void  buildClassifier(Instances data);
+
+
+        public abstract void buildClassifier(string fileName, Instances instances);
+
+        public abstract void toXML(TextWriter tw);
 		
 		/// <summary> Classifies the given test instance. The instance has to belong to a
 		/// dataset when it's being classified. Note that a classifier MUST

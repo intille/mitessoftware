@@ -8,6 +8,7 @@ using weka.core;
 using weka.filters;
 //UPGRADE_TODO: The package 'weka.filters.unsupervised.attribute' could not be found. If it was not included in the conversion, there may be compiler issues. "ms-help://MS.VSCC.v80/dv_commoner/local/redirect.htm?index='!DefaultContextWindowIndex'&keyword='jlca1262'"
 using weka.filters.unsupervised.attribute;
+using System.IO;
 namespace weka.classifiers.functions
 {
 	
@@ -341,7 +342,14 @@ namespace weka.classifiers.functions
 				return grad;
 			}
 		}
-		
+
+        public override void toXML(TextWriter tw)
+        {     
+        }
+
+        public override void  buildClassifier(string fileName, Instances instances)
+        {
+        }
 		/// <summary> Builds the classifier
 		/// 
 		/// </summary>

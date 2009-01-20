@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -92,7 +95,110 @@ namespace weka.classifiers.trees.j48
 			m_subtreeRaising = raiseTree;
 			m_cleanup = cleanup;
 		}
-		
+
+        /// <summary>The model selection method. </summary>
+        //protected internal ModelSelection m_toSelectModel;
+        /// <summary>Local model at node. </summary>
+        //protected internal ClassifierSplitModel m_localModel;
+        /// <summary>References to sons. </summary>
+        //protected internal ClassifierTree[] m_sons;
+
+        public C45PruneableClassifierTree(XmlNode root, Instances allData)
+        {
+            if (root.Name == Constants.C45_PRUNEABLE_ELEMENT)
+            {
+
+                foreach (XmlAttribute xAttribute in root.Attributes)
+                {
+                    if (xAttribute.Name == Constants.PRUNE_THE_TREE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_pruneTheTree = true;
+                        else
+                            this.m_pruneTheTree = false;
+                    }
+                    else if (xAttribute.Name == Constants.CONFIDENCE_ATTRIBUTE)
+                        this.m_CF = (float)Convert.ToDouble(xAttribute.Value);
+                    else if (xAttribute.Name == Constants.SUBTREE_RAISING_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_subtreeRaising = true;
+                        else
+                            this.m_subtreeRaising = false;
+                    }
+                    else if (xAttribute.Name == Constants.CLEANUP_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_cleanup = true;
+                        else
+                            this.m_cleanup = false;
+                    }
+                    else if (xAttribute.Name == Constants.ISLEAF_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_isLeaf = true;
+                        else
+                            this.m_isLeaf = false;
+                    }
+                    else if (xAttribute.Name == Constants.ISEMPTY_ATTRIBUTE)
+                    {
+                        if (xAttribute.Value == "True")
+                            this.m_isEmpty = true;
+                        else
+                            this.m_isEmpty = false;
+                    }
+                    else if (xAttribute.Name == Constants.TREE_ID_ATTRIBUTE)
+                        this.m_id = Convert.ToInt32(xAttribute.Value);
+
+
+                }
+
+                int i = 0;
+                //Going through the subtrees
+                foreach (XmlNode iNode in root.ChildNodes)
+                {
+                    if (iNode.Name == Constants.C45MODELSELECTION_ELEMENT)
+                        this.m_toSelectModel = new C45ModelSelection(iNode, allData);
+                    else if (iNode.Name == Constants.BINC45MODELSELECTION_ELEMENT)
+                        this.m_toSelectModel = new BinC45ModelSelection(iNode, allData);
+                    else if (iNode.Name == Constants.NOSPLIT_ELEMENT)
+                        this.m_localModel = new NoSplit(iNode);
+                    else if (iNode.Name == Constants.C45SPLIT_ELEMENT)
+                        this.m_localModel = new C45Split(iNode);
+                    else if (iNode.Name == Constants.BINC45SPLIT_ELEMENT)
+                        this.m_localModel = new BinC45Split(iNode);
+                    else if (iNode.Name == Constants.C45_PRUNEABLE_ELEMENT)
+                    {
+                        if ((this.m_sons == null) || (this.m_sons.Length <= 0))
+                            this.m_sons = new ClassifierTree[2];
+                        this.m_sons[i] = new C45PruneableClassifierTree(iNode, allData);
+                        i++;
+                    }
+                }
+            }
+        }
+        public override void toXML(TextWriter tw)
+        {
+
+           tw.WriteLine("<" + Constants.C45_PRUNEABLE_ELEMENT + " " +
+        Constants.PRUNE_THE_TREE + "=\"" + this.m_pruneTheTree + "\"   " +
+        Constants.CONFIDENCE_ATTRIBUTE + "=\"" + this.m_CF + "\"   " +
+        Constants.SUBTREE_RAISING_ATTRIBUTE + "=\"" + this.m_subtreeRaising + "\"   " +
+        Constants.CLEANUP_ATTRIBUTE + "=\"" + this.m_cleanup + "\"   " +
+        Constants.ISLEAF_ATTRIBUTE + "=\"" + this.m_isLeaf + "\"   " +
+        Constants.ISEMPTY_ATTRIBUTE + "=\"" + this.m_isEmpty + "\"   " +
+        Constants.TREE_ID_ATTRIBUTE + "=\"" + this.m_id + "\"   " +
+        " xmlns=\"urn:mites-schema\">\n");
+            m_toSelectModel.toXML(tw);
+            m_localModel.toXML(tw);
+            if (m_sons != null)
+            {
+                for (int i = 0; (i < m_sons.Length); i++)
+                    m_sons[i].toXML(tw);
+            }
+            tw.WriteLine("</" + Constants.C45_PRUNEABLE_ELEMENT + ">\n");
+   
+        }
 		/// <summary> Method for building a pruneable classifier tree.
 		/// 
 		/// </summary>

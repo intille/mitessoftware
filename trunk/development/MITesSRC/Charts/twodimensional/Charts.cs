@@ -11,9 +11,10 @@ namespace Charts.twodimensional
     // Base class for drawing a chart
     public abstract class Chart : Control
     {
-        public bool DataIsSorted = true;
+        public bool DataIsSorted = false;
         public bool DataIsGrouped = true;
         public bool IsStretch = false;
+        public Hashtable assignedBrushes = null;
 
         // The chart data to be drawn to the Graphics 
         public IDictionary Data
@@ -24,6 +25,15 @@ namespace Charts.twodimensional
                 if (DataIsSorted) data.SortValuesDesc();
                 if (DataIsGrouped) data.GroupValues(MINIMUM_PIECE,
                                                     SMALLEST_DISPLAY_IN_PERCENT);
+
+                //Brush Assignment
+                if (assignedBrushes == null)
+                {
+                    int index = 0;
+                    assignedBrushes = new Hashtable();
+                    foreach (string keyname in data.Keys)
+                        assignedBrushes.Add(keyname, brush[index++]);
+                }
             }
         }
 
@@ -164,30 +174,45 @@ namespace Charts.twodimensional
 
             //Title for the summary
             graphics.DrawString(DateTime.Now.ToString("dddd, MMMM dd, yyyy"), new Font("Arial", 10, global::System.Drawing.FontStyle.Bold | global::System.Drawing.FontStyle.Underline), new SolidBrush(Color.Black), 20, 5);
-            graphics.DrawString("Now:", new Font("Arial", 10, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 5, Height - 100);
-            graphics.DrawString("Calories:", new Font("Arial", 10, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 5, Height - 50);
+            graphics.DrawString("Best Guess:", new Font("Arial", 10, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 5, Height - 100);
+            graphics.DrawString("METs:", new Font("Arial", 10, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 5, Height - 50);
 
             if (currentActivity.Length > 0)
             {
-                graphics.DrawString(currentActivity, new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 100);
+                graphics.DrawString(currentActivity, new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 170, Height - 100);
                
                 //graphics.DrawString(currentActivityHours.ToString("00") + ":" + currentActivityMinutes.ToString("00") + ":" + currentActivitySeconds.ToString("00"), new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
                 graphics.DrawString(currentTime, new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
             }
             else
             {
-                graphics.DrawString("Unknown", new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 90, Height - 100);
+                graphics.DrawString("Unknown", new Font("Arial", 12, global::System.Drawing.FontStyle.Bold), new SolidBrush(Color.Black), 170, Height - 100);
                 graphics.DrawString("00:00:00", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), (Width / 2) + 110, Height - 55);
 
             }
+            string mets="?";
+            if (currentActivity == "walking")
+                mets = "2.5 METs";
+            else if (currentActivity == "fast-walking")
+                mets = "8 METs";
+            else if (currentActivity == "jumping-jacks")
+                mets = "2.5 METs";
+            else if (currentActivity == "sitting")
+                mets = "1 MET";
+            else if (currentActivity == "standing")
+                mets = "1.8 METs";
+            else if (currentActivity == "running-in-place")
+                mets = "4.5 METs";
+            else if (currentActivity == "lying-down")
+                mets = "1 MET";
 
             if (this.totalCalories > 0)
             {
-                graphics.DrawString(this.totalCalories + " Kcals", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), 130, Height - 55);
+                graphics.DrawString(mets, new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), 130, Height - 55);
             }
             else
             {
-                graphics.DrawString("0 Kcals", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), 130, Height - 55);
+                graphics.DrawString("?", new Font("Arial", 12, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), 130, Height - 55);
             }
             float totalPercentage = 0;
             for (int i = 0; i < data.Length; i++)
@@ -204,15 +229,15 @@ namespace Charts.twodimensional
                     string legendText = nameText + " (" + strPercent + ")";
 
                     BrushPlus theBrush = (!data.IsGrouped | i < data.Keys.Length - 1) ?
-                        brush[i % brush.Length] : Brushes.Gold;
+                       (BrushPlus)assignedBrushes[(string)data.Keys[i]] : Brushes.Gold;// brush[i % brush.Length] : Brushes.Gold;
 
                     IntPtr hdc = graphics.GetHdc();
                     using (GraphicsPlus g = new GraphicsPlus(hdc))
                     {
-                        g.FillRectangle(theBrush, X, Y, 14, 14);
+                        g.FillRectangle(theBrush, X+25, Y, 14, 14);
                     }
                     graphics.ReleaseHdc(hdc);
-                    graphics.DrawString(legendText, new Font("Arial", 8, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), X + 20, Y - 5);
+                    graphics.DrawString(legendText, new Font("Arial", 8, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), X + 50, Y - 5);
                     Y += 20;
                 }
 
@@ -229,10 +254,10 @@ namespace Charts.twodimensional
                 IntPtr hdc = graphics.GetHdc();
                 using (GraphicsPlus g = new GraphicsPlus(hdc))
                 {
-                    g.FillRectangle(theBrush, X, Y, 14, 14);
+                    g.FillRectangle(theBrush, X+35, Y, 14, 14);
                 }
                 graphics.ReleaseHdc(hdc);
-                graphics.DrawString(legendText, new Font("Arial", 8, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), X + 20, Y - 5);
+                graphics.DrawString(legendText, new Font("Arial", 8, global::System.Drawing.FontStyle.Regular), new SolidBrush(Color.Black), X + 50, Y - 5);
                 Y += 20;
             }
 
@@ -264,7 +289,7 @@ namespace Charts.twodimensional
             // Loop to draw the Pies
             for (int i = 0; i < data.Length; i++)
             {
-                BrushPlus theBrush = brush[i % brush.Length];
+                BrushPlus theBrush = (BrushPlus) assignedBrushes[(string)data.Keys[i]];//brush[i % brush.Length];
 
                 if (i < data.Keys.Length - 1)
                     sweepAngle = (int)Math.Round((float)data.Values[i] * 360 / data.TotalValue);
@@ -284,10 +309,11 @@ namespace Charts.twodimensional
                 {
                     g.FillPie(theBrush, topX, topY,
                         _diameter, _diameter, startAngle, sweepAngle);
+                    
                 }
                 graphics.ReleaseHdc(hdc);
                 startAngle += (int)sweepAngle;
-                startAngle = (startAngle >= 360) ? startAngle - 360 : startAngle;
+                //startAngle = (startAngle >= 360) ? startAngle - 360 : startAngle;
             }
         }
     }

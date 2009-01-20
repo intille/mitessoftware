@@ -696,9 +696,9 @@ namespace HousenCS.MITes
         /// <param name="aMITesData">The object in which to store the time.</param>
         public void SetUnixTime(MITesData aMITesData)
         {
-
+            
             aMITesData.unixTimeStamp = UnixTime.GetUnixTime();
-            lastUnixTime = aMITesData.unixTimeStamp;
+            //lastUnixTime = aMITesData.unixTimeStamp;
             //  QueryPerformanceCounter(out aMITesData.highPrecisionTime);
         }
 

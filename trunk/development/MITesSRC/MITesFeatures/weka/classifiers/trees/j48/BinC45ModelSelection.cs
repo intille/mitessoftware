@@ -5,6 +5,9 @@
 */
 using System;
 using weka.core;
+using MITesFeatures;
+using System.Xml;
+using System.IO;
 namespace weka.classifiers.trees.j48
 {
 	
@@ -24,7 +27,30 @@ namespace weka.classifiers.trees.j48
 		
 		/// <summary>The FULL training dataset. </summary>
 		private Instances m_allData;
-		
+
+
+
+        public override void toXML(TextWriter tw)
+        {
+            tw.WriteLine("<" + Constants.BINC45MODELSELECTION_ELEMENT + " " +
+            Constants.MIN_NO_OBJ_ATTRIBUTE + "=\"" + this.m_minNoObj + "\"   " +
+            " xmlns=\"urn:mites-schema\">\n");
+            tw.WriteLine("</" + Constants.BINC45MODELSELECTION_ELEMENT + ">");           
+        }
+
+
+        public BinC45ModelSelection(XmlNode model,Instances allData)
+        {
+
+            foreach (XmlAttribute xAttribute in model.Attributes)
+            {
+                if (xAttribute.Name == Constants.MIN_NO_OBJ_ATTRIBUTE)
+                    this.m_minNoObj = Convert.ToInt32(xAttribute.Value);
+            }
+
+            m_allData = allData;
+                    
+        }
 		/// <summary> Initializes the split selection method with the given parameters.
 		/// 
 		/// </summary>

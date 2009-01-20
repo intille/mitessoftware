@@ -25,6 +25,8 @@ using MITesFeatures.Utils.DTs;
 using Bluetooth;
 #endif
 
+
+
 namespace MITesDataCollection
 {
     public enum PlaySoundFlags : int
@@ -597,12 +599,14 @@ namespace MITesDataCollection
 #endif
             #endregion Load Configuration files
 
+            //Initialize 1 master decoder
+            this.masterDecoder = new MITesDecoder();
+
+
             #region Initialize External Data Reception Channels
             //Initialize Data reception for Bluetooth and USB
             if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
             {
-                //Initialize 1 master decoder
-                this.masterDecoder = new MITesDecoder();
 
                 //Initialize arrays to store USB and Bluetooth controllers
                 this.mitesControllers = new MITesReceiverController[this.sensors.TotalWiredReceivers];
@@ -703,7 +707,7 @@ namespace MITesDataCollection
             if (this.sensors.TotalReceivers > 0)
                 aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
             else
-                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, GetGraphSize(false));
+                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
 
             //Override the resize event
 #if (PocketPC)
@@ -1205,6 +1209,367 @@ namespace MITesDataCollection
 
 
         #region Classifier constructor
+
+        public MITesDataCollectionForm(string dataDirectory, string arffFile, bool isHierarchical)
+        { 
+        
+
+                       //where data is being stored
+            this.dataDirectory = dataDirectory;
+
+            //Initialize high resolution unix timer
+            UnixTime.InitializeTime();
+
+            //Initialize and start GUI progress thread
+            progressMessage = null;
+            t = new Thread(new ThreadStart(ProgressThread));
+            t.Start();
+
+
+            #region Load Configuration files
+            //load the activity and sensor configuration files
+            progressMessage = "Loading XML protocol and sensors ...";
+            AXML.Reader reader = new AXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
+            if (reader.validate() == false)
+            {
+                throw new Exception("Error Code 0: XML format error - activities.xml does not match activities.xsd!");
+            }
+            else
+            {
+#endif
+            this.annotation = reader.parse();
+            this.annotation.DataDirectory = dataDirectory;
+            SXML.Reader sreader = new SXML.Reader(Constants.MASTER_DIRECTORY, dataDirectory);
+#if (!PocketPC)
+
+                if (sreader.validate() == false)
+                {
+                    throw new Exception("Error Code 0: XML format error - sensors.xml does not match sensors.xsd!");
+                }
+                else
+                {
+#endif
+            this.sensors = sreader.parse(Constants.MAX_CONTROLLERS);
+            progressMessage += " Completed\r\n";
+
+            //TODO: remove BT components
+            progressMessage += "Loading configuration file ...";
+            MITesFeatures.core.conf.ConfigurationReader creader = new MITesFeatures.core.conf.ConfigurationReader(dataDirectory);
+            this.configuration = creader.parse();
+            progressMessage += " Completed\r\n";
+#if (!PocketPC)
+                }
+            }
+#endif
+            #endregion Load Configuration files
+
+
+
+            #region Initialize External Data Reception Channels
+            //Initialize Data reception for Bluetooth and USB
+            //if ((this.sensors.TotalReceivers > 0) && (this.sensors.TotalReceivers <= Constants.MAX_CONTROLLERS))
+           // {
+                //Initialize 1 master decoder
+                this.masterDecoder = new MITesDecoder();
+
+                //Initialize the software mode
+                this.classifyDataMode = true;
+                isExtracting = false;
+                isCollectingDetailedData = false;
+                isPlotting = true;
+                isClassifying = true;
+
+
+                #region Initialize Feature Extraction
+                this.isExtracting = false;
+                if (this.sensors.TotalReceivers > 0) // if there is at least 1 MIT
+                    //Extractor.Initialize(this.mitesDecoders[0], dataDirectory, this.annotation, this.sensors, this.configuration);
+                    Extractor.Initialize(this.masterDecoder, dataDirectory, this.annotation, this.sensors, this.configuration);
+                else if (this.sensors.Sensors.Count > 0) // only built in
+                    Extractor.Initialize(this.masterDecoder, dataDirectory, this.annotation, this.sensors, this.configuration);
+                #endregion Initialize Feature Extraction
+
+                labelIndex = new Hashtable();
+                instances = new Instances(new StreamReader(arffFile));
+                instances.Class = instances.attribute(Extractor.ArffAttributeLabels.Length);
+                classifier = new J48();
+                if (!File.Exists("model.xml"))
+                {
+                    classifier.buildClassifier(instances);
+                    TextWriter tc = new StreamWriter("model.xml");
+                    classifier.toXML(tc);
+                    tc.Flush();
+                    tc.Close();
+                }
+                else
+                    classifier.buildClassifier("model.xml", instances);
+
+               
+                fvWekaAttributes = new FastVector(Extractor.ArffAttributeLabels.Length + 1);
+                for (int i = 0; (i < Extractor.ArffAttributeLabels.Length); i++)
+                    fvWekaAttributes.addElement(new weka.core.Attribute(Extractor.ArffAttributeLabels[i]));
+
+                FastVector fvClassVal = new FastVector();
+                labelCounters = new int[((AXML.Category)this.annotation.Categories[0]).Labels.Count + 1];
+                activityLabels = new string[((AXML.Category)this.annotation.Categories[0]).Labels.Count + 1];
+                for (int i = 0; (i < ((AXML.Category)this.annotation.Categories[0]).Labels.Count); i++)
+                {
+                    labelCounters[i] = 0;
+                    string label = "";
+                    int j = 0;
+                    for (j = 0; (j < this.annotation.Categories.Count - 1); j++)
+                        label += ((AXML.Label)((AXML.Category)this.annotation.Categories[j]).Labels[i]).Name.Replace(' ', '_') + "_";
+                    label += ((AXML.Label)((AXML.Category)this.annotation.Categories[j]).Labels[i]).Name.Replace(' ', '_');
+                    //labelCounters.Add(label, 0);
+                    activityLabels[i] = label;
+                    labelIndex.Add(label, i);
+                    fvClassVal.addElement(label);
+                }
+                //activityLabels[i] = "unknown";
+                //labelIndex.Add("unknown", i);
+                //fvClassVal.addElement("unknown");
+                weka.core.Attribute ClassAttribute = new weka.core.Attribute("activity", fvClassVal);
+
+                isClassifying = true;
+
+                this.aMITesActivityCounters = new Hashtable();
+
+
+                if (!((this.sensors.Sensors.Count == 1) && (this.sensors.HasBuiltinSensors)))
+                {
+                    //Initialize arrays to store USB and Bluetooth controllers
+                    this.mitesControllers = new MITesReceiverController[this.sensors.TotalWiredReceivers];
+                    this.bluetoothControllers = new BluetoothController[this.sensors.TotalBluetoothReceivers];
+                    this.ts = new Thread[this.sensors.TotalBluetoothReceivers];
+
+                    //Initialize array to store Bluetooth connection status
+                    //this.bluetoothConnectionStatus = new bool[this.sensors.TotalBluetoothReceivers];
+
+                    //Initialize a decoder for each sensor
+                    this.mitesDecoders = new MITesDecoder[this.sensors.TotalReceivers];
+
+
+
+                    #region Bluetooth reception channels initialization
+                    //Initialize and search for wockets connections
+                    progressMessage += "Initializing Bluetooth receivers ... searching " + this.sensors.TotalBluetoothReceivers + " BT receivers\r\n";
+                    //Try to initialize all Bluetooth receivers 10 times then exit
+                    int initializationAttempt = 0;
+                    while (initializationAttempt <= 10)
+                    {
+                        if (InitializeBluetoothReceivers() == false)
+                        {
+                            initializationAttempt++;
+
+                            if (initializationAttempt == 10)
+                            {
+                                MessageBox.Show("Exiting: Some Bluetooth receivers in your configuration were not initialized.");
+#if (PocketPC)
+                                Application.Exit();
+                                System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+                    Environment.Exit(0);
+#endif
+                            }
+                            else
+                                progressMessage += "Failed to initialize all BT connections. Retrying (" + initializationAttempt + ")...\r\n";
+
+                        }
+                        else
+                            break;
+                        Thread.Sleep(2000);
+                    }
+                    #endregion Bluetooth reception channels initialization
+
+                    #region USB reception channels initialization
+
+                    if (InitializeUSBReceivers() == false)
+                    {
+                        MessageBox.Show("Exiting: Some USB receivers in your configuration were not initialized.");
+#if (PocketPC)
+                        Application.Exit();
+                        System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+                    Environment.Exit(0);
+#endif
+
+                    }
+                    #endregion USB reception channels initialization
+
+                }
+                    //}
+            #endregion Initialize External Data Reception Channels
+
+            #region Initialize Builtin Data Reception Channels
+            if (InitializeBuiltinReceivers() == false)
+            {
+                MessageBox.Show("Exiting: A built in receiver channel was not found.");
+#if (PocketPC)
+                Application.Exit();
+                System.Diagnostics.Process.GetCurrentProcess().Kill();
+#else
+                    Environment.Exit(0);
+#endif
+            }
+            #endregion Initialize Builtin Data Reception Channels
+
+            
+
+            #region Initialize GUI Components
+            //initialize the interface components
+            InitializeComponent();
+            //Initialize GUI timers
+            progressMessage += "Initializing Timers ...";
+            InitializeTimers();
+            progressMessage += " Completed\r\n";
+
+            //Initialize different GUI components
+            progressMessage += "Initializing GUI ...";
+            InitializeInterface();
+            progressMessage += " Completed\r\n";
+
+            this.isPlotting = true;
+            //count the number of accelerometers
+            if (this.sensors.IsHR)
+                this.maxPlots = this.sensors.Sensors.Count - 1;
+            else
+                this.maxPlots = this.sensors.Sensors.Count;
+            SetFormPositions();
+            if (this.sensors.TotalReceivers > 0)
+                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
+            else
+                aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, GetGraphSize(false));
+
+            //Override the resize event
+#if (PocketPC)
+            this.Resize += new EventHandler(OnResize);
+#else
+            this.form1.Resize += new EventHandler(OnResizeForm1);
+            this.form1.FormClosing += new FormClosingEventHandler(form_FormClosing);
+            this.form2.Resize += new EventHandler(OnResizeForm2);
+            this.form2.FormClosing += new FormClosingEventHandler(form_FormClosing);
+            this.form3.Resize += new EventHandler(OnResizeForm3);
+            this.form3.FormClosing += new FormClosingEventHandler(form_FormClosing);
+            this.form4.Resize += new EventHandler(OnResizeForm4);
+            this.form4.FormClosing += new FormClosingEventHandler(form_FormClosing);
+#endif
+
+            //Initialize the quality interface
+            progressMessage += "Initializing MITes Quality GUI ...";
+            InitializeQualityInterface();
+            progressMessage += " Completed\r\n";
+
+            //Remove classifier tabs
+#if (PocketPC)
+
+            this.tabControl1.TabPages.RemoveAt(4);
+            this.tabControl1.SelectedIndex = 0;
+#else
+            this.ShowForms();
+#endif
+
+
+            #endregion Initialize GUI Components
+
+
+
+            #region Initialize Quality Tracking variables
+            InitializeQuality();
+            #endregion Initialize Quality Tracking variables
+
+            #region Initialize Logging
+            InitializeLogging(dataDirectory);
+            #endregion Initialize Logging
+
+            #region Initialize CSV Storage (PC Only)
+#if (!PocketPC)
+
+            //create some counters for activity counts
+            averageX = new int[this.sensors.MaximumSensorID + 1];
+            averageY = new int[this.sensors.MaximumSensorID + 1];
+            averageZ = new int[this.sensors.MaximumSensorID + 1];
+
+            averageRawX = new int[this.sensors.MaximumSensorID + 1];
+            averageRawY = new int[this.sensors.MaximumSensorID + 1];
+            averageRawZ = new int[this.sensors.MaximumSensorID + 1];
+
+            prevX = new int[this.sensors.MaximumSensorID + 1];
+            prevY = new int[this.sensors.MaximumSensorID + 1];
+            prevZ = new int[this.sensors.MaximumSensorID + 1];
+            acCounters = new int[this.sensors.MaximumSensorID + 1];
+            activityCountWindowSize = 0;
+
+            activityCountCSVs = new StreamWriter[this.sensors.MaximumSensorID + 1];
+            samplingCSVs = new StreamWriter[this.sensors.MaximumSensorID + 1];
+            averagedRaw = new StreamWriter[this.sensors.MaximumSensorID + 1];
+            masterCSV = new StreamWriter(dataDirectory + "\\MITesSummaryData.csv");
+            hrCSV = new StreamWriter(dataDirectory + "\\HeartRate_MITes.csv");
+
+            string csv_line1 = "UnixTimeStamp,TimeStamp,X,Y,Z";
+            string csv_line2 = "UnixTimeStamp,TimeStamp,Sampling";
+            string hr_csv_header = "UnixTimeStamp,TimeStamp,HR";
+            string master_csv_header = "UnixTimeStamp,TimeStamp";
+            foreach (Category category in this.annotation.Categories)
+                master_csv_header += "," + category.Name;
+
+
+            foreach (Sensor sensor in this.sensors.Sensors)
+            {
+                int sensor_id = Convert.ToInt32(sensor.ID);
+                string location = sensor.Location.Replace(' ', '-');
+                if (sensor_id > 0) //exclude HR
+                {
+                    activityCountCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" + sensor_id.ToString("00") + "_ActivityCount_" + location + ".csv");
+                    activityCountCSVs[sensor_id].WriteLine(csv_line1);
+                    averagedRaw[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" + sensor_id.ToString("00") + "_1s-RawMean_" + location + ".csv");
+                    averagedRaw[sensor_id].WriteLine(csv_line1);
+                    samplingCSVs[sensor_id] = new StreamWriter(dataDirectory + "\\MITes_" + sensor_id.ToString("00") + "_SampleRate_" + location + ".csv");
+                    samplingCSVs[sensor_id].WriteLine(csv_line2);
+                    master_csv_header += ",MITes" + sensor_id.ToString("00") + "_SR," + "MITes" + sensor_id.ToString("00") + "_AVRaw_X," +
+                        "MITes" + sensor_id.ToString("00") + "_AVRaw_Y," + "MITes" + sensor_id.ToString("00") + "_AVRaw_Z," + "MITes" + sensor_id.ToString("00") + "_AC_X," +
+                        "MITes" + sensor_id.ToString("00") + "_AC_Y," + "MITes" + sensor_id.ToString("00") + "_AC_Z";
+
+                }
+            }
+
+            master_csv_header += ",HR";
+            this.masterCSV.WriteLine(master_csv_header);
+            this.hrCSV.WriteLine(hr_csv_header);
+#endif
+
+            #endregion Initialize CSV Storage (PC Only)
+
+            #region Start Collecting Data
+
+
+
+            //if (this.sensors.TotalReceivers > 0)
+            //    isStartedReceiver = true;
+            //Start the built in polling thread            
+#if (PocketPC)
+            if (this.sensors.HasBuiltinSensors)
+            {
+                this.pollingThread = new Thread(new ThreadStart(this.pollingData));
+                this.pollingThread.Priority = ThreadPriority.Lowest;
+                this.pollingThread.Start();
+            }
+#endif
+
+            //Terminate the progress thread
+            progressThreadQuit = true;
+
+           
+            //Enable all timer functions
+            this.readDataTimer.Enabled = true;
+            this.qualityTimer.Enabled = true;
+            if (this.sensors.IsHR)
+                this.HRTimer.Enabled = true;
+
+            #endregion Start Collecting Data
+
+        }
+        /*
         public MITesDataCollectionForm(string dataDirectory, string arffFile, bool isHierarchical)
         {
             int i = 0, j = 0;
@@ -1293,21 +1658,7 @@ namespace MITesDataCollection
                 if (this.configuration.Connection == MITesFeatures.core.conf.Constants.SOFTWARE_CONNECTION_BLUETOOTH)
                 {
                     progressMessage += "Initializing Bluetooth ...";
-                    /*
-                    this.bt = new BluetoothController();
-                    try
-                    {
-                        this.bluetoothPort = bt.initialize(this.configuration.MacAddress, this.configuration.Passkey);
-                    }
-                    catch (Exception e)
-                    {
-                        progressMessage += " Failed\r\n";
-                        MessageBox.Show("Failed to find Bluetooth Device... exiting!");
-                        bt.close();          
-                        Application.Exit();
-                        System.Diagnostics.Process.GetCurrentProcess().Kill();    
-                    }
-                     */
+
                     progressMessage += " Completed\r\n";
                 }
 #endif
@@ -1580,7 +1931,7 @@ namespace MITesDataCollection
                 this.HRTimer.Enabled = true;
 
         }
-
+        */
         #endregion Classifier constructor
 
         #region Initialization Methods
@@ -1784,7 +2135,7 @@ namespace MITesDataCollection
             {
                 int sensor_id = Convert.ToInt32(((SXML.Sensor)this.sensors.Sensors[i]).ID);
                 if (sensor_id != 0)
-                    aMITesActivityCounters.Add(sensor_id, new MITesActivityCounter(this.mitesDecoders[0], sensor_id));
+                    aMITesActivityCounters.Add(sensor_id, new MITesActivityCounter(this.masterDecoder, sensor_id));
             }
             aMITesHRAnalyzer = new MITesHRAnalyzer(this.masterDecoder);
             aMITesDataFilterer = new MITesDataFilterer(this.masterDecoder);
@@ -2165,7 +2516,7 @@ namespace MITesDataCollection
                 if (this.sensors.TotalReceivers>0)
                     aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, /*this.mitesDecoders[0]*/this.masterDecoder, new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
                 else
-                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, null, new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
+                    aMITesPlotter = new MITesScalablePlotter(this.panel1, MITesScalablePlotter.DeviceTypes.IPAQ, maxPlots, this.masterDecoder, new Size(this.panel1.Width, (int)(0.60 * this.panel1.Height)));
                 SetFormPositions();
                 this.isResized = true;
             }
@@ -2453,6 +2804,13 @@ namespace MITesDataCollection
             this.isCalibrating = true;
 
         }
+
+        private void pieChartClearButton_Click(object sender, EventArgs e)
+        {
+            this.aList.reset();
+            pieChart.Data = aList.toPercentHashtable();
+            pieChart.Invalidate();
+        }
         private void button_Click(object sender, EventArgs e)
         {
             Button button = (Button)sender;
@@ -2468,9 +2826,12 @@ namespace MITesDataCollection
 
         private void menuItem3_Click(object sender, EventArgs e)
         {
-            aMITesActivityLogger.WriteLogComment("Receiver configure form opened.");
-            rcf.Show();
-            rcf.ReadChannels();
+            this.aList.reset();
+            this.activityTimer.reset();            
+            this.pieChart.Invalidate();
+            //aMITesActivityLogger.WriteLogComment("Receiver configure form opened.");
+            //rcf.Show();
+            //rcf.ReadChannels();
         }
 
         private void roundButton1_Click(object sender, EventArgs e)
@@ -3202,13 +3563,14 @@ namespace MITesDataCollection
         {
             while (true)
             {
-                if ((unprocessedBuiltin==false) && (Environment.TickCount - pollingTime >= 40))
+                if ((unprocessedBuiltin==false) && (Environment.TickCount - pollingTime >= 60))
                 {
 
                     this.builtinData = this.htcDecoder.PollBuiltInSensors();
                     pollingTime = Environment.TickCount;
                     unprocessedBuiltin = true;
                 }
+                Thread.Sleep(50);
             }
         }
 #endif
@@ -3451,6 +3813,14 @@ namespace MITesDataCollection
 
                         //Extract feature vector from accelerometer data and write an arff line
                         double lastTimeStamp = Extractor.StoreMITesWindow();
+
+                        if ((this.sensors.HasBuiltinSensors) && (polledData != null))
+                        {
+                            //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);
+                            //store it in Extractor Buffers as well
+                            lastTimeStamp = Extractor.StoreBuiltinData(polledData);
+                        }
+
                         if (Extractor.GenerateFeatureVector(lastTimeStamp))
                         {
                             Extractor.TrainingTime[current_activity] = (int)Extractor.TrainingTime[current_activity] + Extractor.Configuration.OverlapTime;// get it from configuration
@@ -3480,6 +3850,13 @@ namespace MITesDataCollection
             if (isClassifying == true)
             {
                 double lastTimeStamp = Extractor.StoreMITesWindow();
+                if ((this.sensors.HasBuiltinSensors) && (polledData != null))
+                {
+                    //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);
+                    //store it in Extractor Buffers as well
+                    lastTimeStamp = Extractor.StoreBuiltinData(polledData);
+                }
+
                 if (Extractor.GenerateFeatureVector(lastTimeStamp))
                 {
                     Instance newinstance = new Instance(instances.numAttributes());
@@ -3939,14 +4316,14 @@ namespace MITesDataCollection
 
             #region Store the sensor data
 
-            if ((this.sensors.HasBuiltinSensors) && (polledData != null))
-            {
-                //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);
-                //store it in Extractor Buffers as well
-                Extractor.StoreBuiltinData(polledData);
-            }
-            else
-                ;
+            //if ((this.sensors.HasBuiltinSensors) && (polledData != null))
+            //{
+            //    //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(polledData);
+            //    //store it in Extractor Buffers as well
+            //    lasttimestamp=Extractor.StoreBuiltinData(polledData);
+            //}
+            //else
+            //    ;
             //aMITesLoggerPLFormat.SaveRawMITesBuiltinData(null);
 
             if (flushTimer == 0)

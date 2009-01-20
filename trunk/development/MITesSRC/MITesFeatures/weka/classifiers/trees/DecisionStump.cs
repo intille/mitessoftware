@@ -6,6 +6,7 @@ using Classifier = weka.classifiers.Classifier;
 using Evaluation = weka.classifiers.Evaluation;
 using Sourcable = weka.classifiers.Sourcable;
 using weka.core;
+using System.IO;
 namespace weka.classifiers.trees
 {
 	
@@ -35,7 +36,15 @@ namespace weka.classifiers.trees
 		private double[][] m_Distribution;
 		/// <summary>The instances used for training. </summary>
 		private Instances m_Instances;
-		
+
+        public override void  toXML(TextWriter tw)
+        {
+ 
+        }
+
+        public override void buildClassifier(string fileName, Instances instances)
+        {
+        }
 		/// <summary> Generates the classifier.
 		/// 
 		/// </summary>

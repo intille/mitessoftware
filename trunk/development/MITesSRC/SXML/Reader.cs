@@ -186,7 +186,7 @@ namespace SXML
                                         }
                                         else if ((jNode.Name == Constants.DESCRIPTION_ELEMENT) && (jAttribute.Name == Constants.SR_ATTRIBUTE))
                                         {
-                                            sensor.SamplingRate = Convert.ToInt32(jAttribute.Value);
+                                            sensor.SamplingRate = 12; //TODO
                                         }
                                         else if ((jNode.Name == Constants.DISPLAY_ELEMENT) && (jAttribute.Name == Constants.DISPLAY_TYPE_ATTRIBUTE))
                                         {
