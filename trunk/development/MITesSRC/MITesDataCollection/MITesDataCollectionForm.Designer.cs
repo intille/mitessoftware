@@ -123,7 +123,6 @@ namespace MITesDataCollection
             // menuItem3
             // 
             this.menuItem3.Text = "Reset";
-            this.menuItem3.Click += new System.EventHandler(this.menuItem3_Click);
             this.menuItem3.Enabled = true;
             // 
             // menuItem4
