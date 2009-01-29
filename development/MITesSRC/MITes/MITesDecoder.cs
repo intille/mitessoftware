@@ -1,8 +1,10 @@
 using System;
 using System.Threading;
 using HousenCS.IO;
-using Bluetooth;
 using System.IO;
+#if (PocketPC)
+using Bluetooth;
+#endif
 
 namespace HousenCS.MITes
 {
@@ -318,6 +320,8 @@ namespace HousenCS.MITes
             return false;
         }
 
+
+#if (PocketPC)
         int byteCounter = 0;
         int calls = 0;
         /// <summary>
@@ -355,6 +359,8 @@ namespace HousenCS.MITes
                 someMITesDataIndex = 0;
             }
         }
+
+#endif
         /// <summary>
         /// This is the call that needs to be included in the main data processing loop.
         /// It checks for new data on the MITesReceiverController. If it finds some, it 
