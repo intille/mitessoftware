@@ -7,9 +7,12 @@ using System.Text;
 using System.Windows.Forms;
 
 using System.Collections; //ArrayList
-using ZedGraph;
-using House_n.Jennifer;
 using System.IO;
+
+using ZedGraph;
+using MobiRnD_RDT.Utilities;//FileReadWrite
+using MobiRnD_RDT.Logging; //Logger
+
 
 namespace NESPDataViewer
 {
@@ -34,15 +37,11 @@ namespace NESPDataViewer
         bool _isUsingLabels = true; //on mouse over, shows label for data point
         bool _isAdaptingPointSize = true; //as graph gets larger/smaller, changes point size to match
 
-
-        string TITLE_MAINGRAPH = "";
-        const string TITLE_ENERGYGRAPH = "Energy";        
         #endregion
 
         #region INITIALIZE
         public Form1()
         {
-            //Logger.LogDebug("Form1", "regular start");
             InitializeComponent();
             
         }
@@ -181,7 +180,6 @@ namespace NESPDataViewer
                 for (int i = 0; i < _alCheckBoxes.Count; i++)
                 {
                     string name = ((CheckBox)_alCheckBoxes[i]).Text;
-                    Console.WriteLine(name);
                     int y = 0;
                     //Is Pane Showing? 
                     if (zedGraphControl1.MasterPane.PaneList.Contains((GraphPane)_htPanes[name]))
@@ -225,13 +223,15 @@ namespace NESPDataViewer
             lbSecondDate.Text = _lastDate.ToString();
             lbScrollTime.Text = _firstDate.ToString();
             TimeSpan ts = _lastDate - _firstDate;
-            
-            if (ts.TotalHours > 3)
+
+            #region DETERMINE PAGING SIZE BASED ON TOTAL TIMESPAN OF DATA
+            if (ts.TotalHours > 3)//4 or more hours of data
                 _minutesPage = 60;
-            else if (ts.TotalMinutes > 60)
+            else if (ts.TotalMinutes > 60)//between 1-4 hours of data
                 _minutesPage = 10;
-            else if (ts.TotalMinutes > 15) _minutesPage = 5;
+            else if (ts.TotalMinutes > 15) _minutesPage = 5; //between 15-60 minutes of data
             else _minutesPage = 1;
+            #endregion
 
             hScrollBar1.LargeChange = 1;
             hScrollBar1.SmallChange = 1;
@@ -297,15 +297,15 @@ namespace NESPDataViewer
         #region HEART RATE
         private void AddHeartCurve(GraphPane gp, string name, PointPairList ppl,Color lineColor, PointPairList pplInvalid)
         {
-            LineItem myCurve = gp.AddCurve("Heart rate " + name, ppl, lineColor, SymbolType.Circle);
-            if (!_isAdaptingPointSize) myCurve.Symbol.Size = 1F;
-            myCurve.Symbol.Fill = new Fill(lineColor);
-            myCurve.Line.IsVisible = false;
-            _alLinesWithSymbols.Add(myCurve);
+            LineItem pointsCurve = gp.AddCurve("Heart rate " + name, ppl, lineColor, SymbolType.Circle);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Symbol.Fill = new Fill(lineColor);
+            pointsCurve.Line.IsVisible = false;
+            _alLinesWithSymbols.Add(pointsCurve);
 
-            LineItem myCurveInvalid = gp.AddCurve("Heart rate " + name +", Out of Range", pplInvalid, lineColor, SymbolType.XCross);
-            myCurveInvalid.Line.IsVisible = false;
-            _alLinesWithSymbols.Add(myCurveInvalid);
+            LineItem pointsCurveInvalid = gp.AddCurve("Heart rate " + name +", Out of Range", pplInvalid, lineColor, SymbolType.XCross);
+            pointsCurveInvalid.Line.IsVisible = false;
+            _alLinesWithSymbols.Add(pointsCurveInvalid);
 
         }
         
@@ -314,7 +314,7 @@ namespace NESPDataViewer
             string[] coloroptions = new string[] { "red", "darkred", "tomato", "crimson" };
             for (int f = 0; f < files.Length; f++)
             {
-                string[] values = FileUtilities.ReadLinesFromFile(files[f]);
+                string[] values = FileReadWrite.ReadLinesFromFile(files[f]);
                 string name = Path.GetFileNameWithoutExtension(files[f]).Replace("HeartRate_", "");
 
                 PointPairList listValid = new PointPairList();
@@ -375,38 +375,38 @@ namespace NESPDataViewer
         {
             GraphPane pane = AddPane(name,"Acceleration - " + title);           
 
-            LineItem myCurveX = pane.AddCurve("X", pplX, Color.LightBlue, SymbolType.Circle);
-            LineItem myCurveY = pane.AddCurve("Y", pplY, Color.Blue, SymbolType.Circle);
-            LineItem myCurveZ = pane.AddCurve("Z", pplZ, Color.DarkBlue, SymbolType.Circle);
-            myCurveX.Symbol.Fill = new Fill(Color.LightBlue);
-            myCurveY.Symbol.Fill = new Fill(Color.Blue);
-            myCurveZ.Symbol.Fill = new Fill(Color.DarkBlue);
+            LineItem pointsCurveX = pane.AddCurve("X", pplX, Color.LightBlue, SymbolType.Circle);
+            LineItem pointsCurveY = pane.AddCurve("Y", pplY, Color.Blue, SymbolType.Circle);
+            LineItem pointsCurveZ = pane.AddCurve("Z", pplZ, Color.DarkBlue, SymbolType.Circle);
+            pointsCurveX.Symbol.Fill = new Fill(Color.LightBlue);
+            pointsCurveY.Symbol.Fill = new Fill(Color.Blue);
+            pointsCurveZ.Symbol.Fill = new Fill(Color.DarkBlue);
             if (!_isAdaptingPointSize)
             {
-                myCurveX.Symbol.Size = 1F;
-                myCurveY.Symbol.Size = 1F;
-                myCurveZ.Symbol.Size = 1F;
+                pointsCurveX.Symbol.Size = 1F;
+                pointsCurveY.Symbol.Size = 1F;
+                pointsCurveZ.Symbol.Size = 1F;
             }
-            _alLinesWithSymbols.Add(myCurveX);
-            _alLinesWithSymbols.Add(myCurveY);
-            _alLinesWithSymbols.Add(myCurveZ);
+            _alLinesWithSymbols.Add(pointsCurveX);
+            _alLinesWithSymbols.Add(pointsCurveY);
+            _alLinesWithSymbols.Add(pointsCurveZ);
 
-            myCurveX.Line.IsVisible = false;
-            myCurveY.Line.IsVisible = false;
-            myCurveZ.Line.IsVisible = false;
+            pointsCurveX.Line.IsVisible = false;
+            pointsCurveY.Line.IsVisible = false;
+            pointsCurveZ.Line.IsVisible = false;
 
-            LineItem myCurveSampling = pane.AddCurve("Sampling Rate",pplSamplingRate,Color.DarkGray,SymbolType.None);            
-            LineItem myCurveActivity = pane.AddCurve("Activity Count", pplActivityCount, Color.Violet, SymbolType.None);
-            myCurveActivity.IsY2Axis = true;
+            LineItem pointsCurveSampling = pane.AddCurve("Sampling Rate",pplSamplingRate,Color.DarkGray,SymbolType.None);            
+            LineItem pointsCurveActivity = pane.AddCurve("Activity Count", pplActivityCount, Color.Violet, SymbolType.None);
+            pointsCurveActivity.IsY2Axis = true;
             
 
             
 
         }
-        private void CreateAccelerationGraph(string filepath, string channel, string location)
+        private void CreateAccelerationGraph(int paneOrder, string filepath, string channel, string location)
         {
             #region ACCELERATION X Y Z
-            string[] accel = FileUtilities.ReadLinesFromFile(filepath);
+            string[] accel = FileReadWrite.ReadLinesFromFile(filepath);
                  
             PointPairList listX = new PointPairList();
             PointPairList listY = new PointPairList();
@@ -447,7 +447,7 @@ namespace NESPDataViewer
             string[] samp = new string[0];
             string[] matches = Directory.GetFiles(Path.GetDirectoryName(filepath), String.Format("MITES_{0}_SampleRate*", channel));
             if (matches.Length == 1)
-                samp = FileUtilities.ReadLinesFromFile(matches[0]);
+                samp = FileReadWrite.ReadLinesFromFile(matches[0]);
 
             PointPairList listSampleRates = new PointPairList();
             for (int i = 1; i < samp.Length; i++)
@@ -473,7 +473,7 @@ namespace NESPDataViewer
             string[] counts = new string[0];            
             matches = Directory.GetFiles(Path.GetDirectoryName(filepath),String.Format("MITES_{0}_ActivityCount*",channel));
             if (matches.Length == 1)
-                counts = FileUtilities.ReadLinesFromFile(matches[0]);
+                counts = FileReadWrite.ReadLinesFromFile(matches[0]);
             PointPairList listActivityCounts = new PointPairList();
             for (int i = 1; i < counts.Length; i++)
             {
@@ -494,74 +494,178 @@ namespace NESPDataViewer
             }
             #endregion
 
-            AddAccelerationCurve("MITes " + channel + " " + location, location,listX, listY, listZ,listActivityCounts,listSampleRates);
+            AddAccelerationCurve(paneOrder + " MITes " + channel + " " + location, location,listX, listY, listZ,listActivityCounts,listSampleRates);
 
             WidenDatesIfNeeded(listX);
         }
 
         #endregion
 
-        #region ENERGY
-        private void CreateEnergyGraph(GraphPane gp, string[] files)
+  
+        //ADD_GRAPH STEP 2
+        #region Oxycon
+        private void CreateOxyconGraph(GraphPane gp, string filePath)
         {
-            for (int f = 0; f < files.Length; f++)
+            string[] values = FileReadWrite.ReadLinesFromFile(filePath);
+
+            //One PointPairList for each data column to graph
+            //Each of these represents a separate line
+            PointPairList listHR = new PointPairList();
+            PointPairList listBF = new PointPairList();
+            PointPairList listVE = new PointPairList();
+            PointPairList listVO2kg = new PointPairList();
+            PointPairList listRER = new PointPairList();
+
+            //for each row, add values to PointPairLists
+            for (int i = 0; i < values.Length; i++)
             {
-                string[] values = FileUtilities.ReadLinesFromFile(files[f]);
-                string name = Path.GetFileNameWithoutExtension(files[f]).Replace("Energy_", "");
-
-                PointPairList listOx = new PointPairList();
-                PointPairList listRER = new PointPairList();
-                for (int i = 0; i < values.Length; i++)
+                try
                 {
-                    try
+                    //expecting values in format: UnixTimeStamp,TimeStamp,OxyconHR,OxyconBF,OxyconVE,OxyconVO2kg,OxyconRER
+                    string[] split = values[i].Split(',');
+
+                    if (split.Length > 2) //TimeStamp + at least one data value
                     {
-                        string[] split = values[i].Split(',');
-                        if (split.Length > 2)
+                        #region TIMESTAMP - X VALUE
+                        DateTime dt = ConvertUNIXDatTime(Convert.ToDouble(split[0]));//UnixTimeStamp, Column 1/A
+                        //DateTime dt = DateTime.Parse(split[1]);//TimeStamp, Column 2/B
+                        double x = (double)new XDate(dt);//x value is numeric representation of TimeStamp
+                        #endregion
+
+                        #region DATA VALUE - Y VALUE
+                        double y = 0; string label = "";
+
+                        #region OxyconHR
+                        if ((split.Length > 2) && (split[2].Length > 0))
                         {
-                            DateTime dt = DateTime.Parse(split[1]);
-
-                            double x = (double)new XDate(dt);
-                            double y = 0; string label = "";
-                            if (split[2].Length > 0)
+                            y = Convert.ToDouble(split[2]);//Column 3/C
+                            if (_isUsingLabels)
                             {
-                                y = Convert.ToDouble(split[2]);
-                                label = String.Format("{0} vO2-KG\n{1} {2}", name, dt.ToShortTimeString(), y);
-                                if (_isUsingLabels) listOx.Add(x, y, label);
-                                else listOx.Add(x, y);
+                                label = String.Format("HR\n{0} {1}", dt.ToShortTimeString(), y);
+                                listHR.Add(x, y, label);
                             }
-
-                            if ((split.Length > 3) && (split[3].Length > 0))
-                            {
-                                y = Convert.ToDouble(split[3]);
-                                label = String.Format("{0} RER\n{1} {2}", name, dt.ToShortTimeString(), y);
-                                if (_isUsingLabels) listRER.Add(x, y, label);
-                                else listRER.Add(x, y);
-                            }
+                            else listHR.Add(x, y);
                         }
+                        #endregion
+
+                        #region OxyconBF
+                        if ((split.Length > 3) && (split[3].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[3]);//Column 4/D
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("BF\n{0} {1}", dt.ToShortTimeString(), y);
+                                listBF.Add(x, y, label);
+                            }
+                            else listBF.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconVE
+                        if ((split.Length > 4) && (split[4].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[4]);//Column 5/E
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("VE\n{0} {1}", dt.ToShortTimeString(), y);
+                                listVE.Add(x, y, label);
+                            }
+                            else listVE.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconV02kg
+                        if ((split.Length > 5) && (split[5].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[5]);//Column 6/F
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("VO2kg\n{0} {1}", dt.ToShortTimeString(), y);
+                                listVO2kg.Add(x, y, label);
+                            }
+                            else listVO2kg.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconRER
+                        if ((split.Length > 6) && (split[6].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[6]);//Column 7/G
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("RER\n{0} {1}", dt.ToShortTimeString(), y);
+                                listRER.Add(x, y, label);
+                            }
+                            else listRER.Add(x, y);
+                        }
+                        #endregion
+                        #endregion
 
                     }
-                    catch { }
+
                 }
-                LineItem myCurve = gp.AddCurve("Energy vO2-KG " + name, listOx, Color.Green, SymbolType.Circle);
-                myCurve.Symbol.Fill = new Fill(Color.Green);
-                if (!_isAdaptingPointSize) myCurve.Symbol.Size = 1F;
-                myCurve.Line.IsVisible = false;
-                myCurve.Tag = "vO2-KG";
-                _alLinesWithSymbols.Add(myCurve);
-
-                myCurve = gp.AddCurve("Energy RER " + name, listRER, Color.OrangeRed, SymbolType.Triangle);
-                myCurve.Symbol.Fill = new Fill(Color.OrangeRed);
-                if (!_isAdaptingPointSize) myCurve.Symbol.Size = 1F;
-                myCurve.Line.IsVisible = false;
-                myCurve.IsY2Axis = true;
-                _alLinesWithSymbols.Add(myCurve);
-
-                WidenDatesIfNeeded(listOx);
-
-
-
-
+                catch { }
             }
+
+            #region SET DISPLAY PROPERTIES FOR LINES
+            LineItem pointsCurve;
+
+            #region ON Y-AXIS 1 (left-side)
+            #region HR
+            pointsCurve = gp.AddCurve("Oxycon HR", listHR, Color.Red, SymbolType.Circle);
+            pointsCurve.Symbol.Fill = new Fill(Color.Red);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "HR";
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region BF
+            pointsCurve = gp.AddCurve("Oxycon BF", listBF, Color.GreenYellow, SymbolType.Square);
+            pointsCurve.Symbol.Fill = new Fill(Color.GreenYellow);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "BF";
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+            #endregion
+
+            #region ON Y-AXIS 2 - right-side
+            #region VE
+            pointsCurve = gp.AddCurve("Oxycon VE", listVE, Color.Orange, SymbolType.Diamond);
+            pointsCurve.Symbol.Fill = new Fill(Color.Orange);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "VE";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region V02kg
+            pointsCurve = gp.AddCurve("Oxycon VO2kg", listVO2kg, Color.Orchid, SymbolType.TriangleDown);
+            pointsCurve.Symbol.Fill = new Fill(Color.Orchid);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "V02kg";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region RER
+            pointsCurve = gp.AddCurve("Oxycon RER", listRER, Color.Navy, SymbolType.Triangle);
+            pointsCurve.Symbol.Fill = new Fill(Color.Navy);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "RER";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+            #endregion
+
+            #endregion
+
+            //if time-dates for lines include dates not previously graphed, widen range
+            WidenDatesIfNeeded(listHR);            
 
         }
         #endregion
@@ -569,7 +673,7 @@ namespace NESPDataViewer
         #region GPS
         private void CreateGPSGraph(GraphPane gp, string filepath)
         {
-            string[] values = FileUtilities.ReadLinesFromFile(filepath);
+            string[] values = FileReadWrite.ReadLinesFromFile(filepath);
             PointPairList list_NO = new PointPairList();
             PointPairList list_HAS = new PointPairList();
 
@@ -588,21 +692,21 @@ namespace NESPDataViewer
             }
 
 
-            LineItem myCurveNo = gp.AddCurve("GPS", list_NO, Color.Gray, SymbolType.Square);
-            myCurveNo.Line.IsVisible = false;
-            if (!_isAdaptingPointSize) myCurveNo.Symbol.Size = 1F;
-            _alLinesWithSymbols.Add(myCurveNo);
-            LineItem myCurveHas = gp.AddCurve("GPS", list_HAS, Color.Magenta, SymbolType.Triangle);
-            myCurveHas.Line.IsVisible = false;
-            if (!_isAdaptingPointSize) myCurveHas.Symbol.Size = 1F;
-            myCurveHas.Symbol.Fill = new Fill(Color.Magenta);
-            _alLinesWithSymbols.Add(myCurveHas);
+            LineItem pointsCurveNo = gp.AddCurve("GPS", list_NO, Color.Gray, SymbolType.Square);
+            pointsCurveNo.Line.IsVisible = false;
+            if (!_isAdaptingPointSize) pointsCurveNo.Symbol.Size = 1F;
+            _alLinesWithSymbols.Add(pointsCurveNo);
+            LineItem pointsCurveHas = gp.AddCurve("GPS", list_HAS, Color.Magenta, SymbolType.Triangle);
+            pointsCurveHas.Line.IsVisible = false;
+            if (!_isAdaptingPointSize) pointsCurveHas.Symbol.Size = 1F;
+            pointsCurveHas.Symbol.Fill = new Fill(Color.Magenta);
+            _alLinesWithSymbols.Add(pointsCurveHas);
             WidenDatesIfNeeded(list_NO);
         }
         private void CreatePOIGraph(GraphPane gp, string filepath)
         {
             PointPairList list = new PointPairList();
-            string[] values = FileUtilities.ReadLinesFromFile(filepath);
+            string[] values = FileReadWrite.ReadLinesFromFile(filepath);
             for (int i = 0; i < values.Length; i++)
             {
                 try
@@ -621,12 +725,12 @@ namespace NESPDataViewer
                 catch { }
             }
 
-            LineItem myCurve = gp.AddCurve("POI", list, Color.Black, SymbolType.Star);
-            myCurve.Line.IsVisible = false;
-            myCurve.Symbol.Fill = new Fill(Color.Black);
-            myCurve.Symbol.Size = 6F;
-            if (!_isAdaptingPointSize) myCurve.Symbol.Size = 1F;
-            _alLinesWithSymbols.Add(myCurve);
+            LineItem pointsCurve = gp.AddCurve("POI", list, Color.Black, SymbolType.Star);
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Symbol.Fill = new Fill(Color.Black);
+            pointsCurve.Symbol.Size = 6F;
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            _alLinesWithSymbols.Add(pointsCurve);
             WidenDatesIfNeeded(list);
         }
         #endregion
@@ -639,7 +743,7 @@ namespace NESPDataViewer
 
             PointPairList labelList = new PointPairList();
 
-            string[] values = FileUtilities.ReadLinesFromFile(filepath);
+            string[] values = FileReadWrite.ReadLinesFromFile(filepath);
             for (int i = 0; i < values.Length; i++)
             {
                 try
@@ -695,7 +799,7 @@ namespace NESPDataViewer
         private void CreatePhotoGraph(GraphPane gp, string filepath, string imagedir)
         {
             PointPairList list_Photo = new PointPairList();
-            string[] values = FileUtilities.ReadLinesFromFile(filepath);
+            string[] values = FileReadWrite.ReadLinesFromFile(filepath);
             for (int i = 0; i < values.Length; i++)
             {
                 try
@@ -707,10 +811,10 @@ namespace NESPDataViewer
                 catch { }
             }
 
-            LineItem myCurve = gp.AddCurve("photos", list_Photo, Color.Black, SymbolType.Square);
-            myCurve.Line.IsVisible = false;
-            myCurve.Symbol.Fill = new Fill(Color.LightGray);
-            myCurve.Symbol.Size = 10F;
+            LineItem pointsCurve = gp.AddCurve("photos", list_Photo, Color.Black, SymbolType.Square);
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Symbol.Fill = new Fill(Color.LightGray);
+            pointsCurve.Symbol.Size = 10F;
 
             WidenDatesIfNeeded(list_Photo);
         }
@@ -718,7 +822,7 @@ namespace NESPDataViewer
         private void CreateSurveyGraph(GraphPane gp, string filepath)
         {
             PointPairList list = new PointPairList();
-            string[] values = FileUtilities.ReadLinesFromFile(filepath);
+            string[] values = FileReadWrite.ReadLinesFromFile(filepath);
             for (int i = 0; i < values.Length; i++)
             {
                 try
@@ -730,10 +834,10 @@ namespace NESPDataViewer
                 catch { }
             }
 
-            LineItem myCurve = gp.AddCurve("surveys", list, Color.Purple, SymbolType.Diamond);
-            myCurve.Line.IsVisible = false;
-            myCurve.Symbol.Fill = new Fill(Color.Plum);
-            myCurve.Symbol.Size = 10F;
+            LineItem pointsCurve = gp.AddCurve("surveys", list, Color.Purple, SymbolType.Diamond);
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Symbol.Fill = new Fill(Color.Plum);
+            pointsCurve.Symbol.Size = 10F;
 
             WidenDatesIfNeeded(list);
         }
@@ -748,7 +852,7 @@ namespace NESPDataViewer
             {
                 DateTime dt = dtLastDate.AddMinutes(5);
 
-                string[] values = FileUtilities.ReadLinesFromFile(files[f]);
+                string[] values = FileReadWrite.ReadLinesFromFile(files[f]);
                 string name = Path.GetFileNameWithoutExtension(files[f]).Replace("average-a_", "");
 
                 PointPairList listAnnotator = new PointPairList();
@@ -848,25 +952,25 @@ namespace NESPDataViewer
                     catch { }
                 }
                 AddHorizontalText(gp, name, (double)new XDate(dt), Color.Black);
-                LineItem myCurve1 = gp.AddCurve("Annotator 1 " + name, listAnnotator, Color.Green, SymbolType.Default);
-                myCurve1.Symbol.IsVisible = false;
-                myCurve1.Line.IsVisible = true;
-                _alLinesWithSymbols.Add(myCurve1);
+                LineItem lineCurve1 = gp.AddCurve("Annotator 1 " + name, listAnnotator, Color.Green, SymbolType.Default);
+                lineCurve1.Symbol.IsVisible = false;
+                lineCurve1.Line.IsVisible = true;
+                _alLinesWithSymbols.Add(lineCurve1);
 
                 AddVerticalText(gp, "Annotators", 1.1F, Color.Green);
 
 
-                LineItem myCurveC = gp.AddCurve("Classifier " + name, listClassifier, Color.Blue, SymbolType.Default);
-                myCurveC.Line.IsVisible = true;
-                myCurveC.Symbol.IsVisible = false;
+                LineItem lineCurveC = gp.AddCurve("Classifier " + name, listClassifier, Color.Blue, SymbolType.Default);
+                lineCurveC.Line.IsVisible = true;
+                lineCurveC.Symbol.IsVisible = false;
 
                 AddVerticalText(gp, "Classifier", 2.3F, Color.Blue);
 
-                LineItem myCurveD = gp.AddCurve("Difference " + name, listDifference, Color.Tomato, SymbolType.Default);
-                myCurveD.Line.IsVisible = true;
-                myCurveD.Line.Width = 0.5F;
-                myCurveD.Symbol.IsVisible = false;
-                myCurveD.Line.Fill = new Fill(Color.Tomato);
+                LineItem lineCurveD = gp.AddCurve("Difference " + name, listDifference, Color.Tomato, SymbolType.Default);
+                lineCurveD.Line.IsVisible = true;
+                lineCurveD.Line.Width = 0.5F;
+                lineCurveD.Symbol.IsVisible = false;
+                lineCurveD.Line.Fill = new Fill(Color.Tomato);
 
                 AddVerticalText(gp, "Over\nestimate", 0, Color.Tomato);
                 AddVerticalText(gp, "Under\nestimate", -1.0F, Color.Tomato);
@@ -882,30 +986,30 @@ namespace NESPDataViewer
                 //        if (diff < 0) fillColor = Color.FromArgb(percent, percent, 255);
                 //        else fillColor = Color.FromArgb(255, percent, percent);
                 //    }
-                //    LineItem myCurveAgree = gp.AddCurve("Agreement " + name + " " + alAgree_values[a].ToString(), ((PointPairList)alAgree_lists[a]), fillColor, SymbolType.Default);
-                //    myCurveAgree.Line.IsVisible = true;
-                //    myCurveAgree.Symbol.IsVisible = false;
+                //    LineItem lineCurveAgree = gp.AddCurve("Agreement " + name + " " + alAgree_values[a].ToString(), ((PointPairList)alAgree_lists[a]), fillColor, SymbolType.Default);
+                //    lineCurveAgree.Line.IsVisible = true;
+                //    lineCurveAgree.Symbol.IsVisible = false;
                 //    // Fill the area under the curve with a white-red gradient at 45 degrees
-                //    myCurveAgree.Line.Fill = new Fill(fillColor);
+                //    lineCurveAgree.Line.Fill = new Fill(fillColor);
                 //}
 
-                //LineItem myCurveAgree = gp.AddCurve("Agreement " + name, listAgree, Color.Green, SymbolType.Default);
-                //myCurveAgree.Line.IsVisible = true;
-                //myCurveAgree.Symbol.IsVisible = false;
+                //LineItem lineCurveAgree = gp.AddCurve("Agreement " + name, listAgree, Color.Green, SymbolType.Default);
+                //lineCurveAgree.Line.IsVisible = true;
+                //lineCurveAgree.Symbol.IsVisible = false;
                 //// Fill the area under the curve with a white-red gradient at 45 degrees
-                //myCurveAgree.Line.Fill = new Fill(Color.White, Color.Green, 45F);
+                //lineCurveAgree.Line.Fill = new Fill(Color.White, Color.Green, 45F);
 
-                //LineItem myCurveDisagree = gp.AddCurve("Disgreement " + name, listDisagree, Color.Red, SymbolType.Default);
-                //myCurveDisagree.Line.IsVisible = true;
-                //myCurveDisagree.Symbol.IsVisible = false;
+                //LineItem lineCurveDisagree = gp.AddCurve("Disgreement " + name, listDisagree, Color.Red, SymbolType.Default);
+                //lineCurveDisagree.Line.IsVisible = true;
+                //lineCurveDisagree.Symbol.IsVisible = false;
                 //// Fill the area under the curve with a white-red gradient at 45 degrees
-                //myCurveDisagree.Line.Fill = new Fill(Color.White, Color.Red, 45F);
+                //lineCurveDisagree.Line.Fill = new Fill(Color.White, Color.Red, 45F);
 
-                //LineItem myCurveConfusion = gp.AddCurve("Confusion " + name, listConfusion, Color.Yellow, SymbolType.Default);
-                //myCurveConfusion.Line.IsVisible = true;
-                //myCurveConfusion.Symbol.IsVisible = false;
+                //LineItem lineCurveConfusion = gp.AddCurve("Confusion " + name, listConfusion, Color.Yellow, SymbolType.Default);
+                //lineCurveConfusion.Line.IsVisible = true;
+                //lineCurveConfusion.Symbol.IsVisible = false;
                 //// Fill the area under the curve with a white-red gradient at 45 degrees
-                //myCurveConfusion.Line.Fill = new Fill(Color.White, Color.Yellow, 45F);
+                //lineCurveConfusion.Line.Fill = new Fill(Color.White, Color.Yellow, 45F);
 
 
 
@@ -962,6 +1066,8 @@ namespace NESPDataViewer
             SetGraphPanels();
             string[] files;
 
+            int paneOrdering = 1;
+
             #region DETERMINE WHICH GRAPHS TO DISPLAY BASED ON AVAILABLE FILES
             #region ACCELEROMETER GRAPHS
             files = Directory.GetFiles(path, "MITes*Raw*");
@@ -974,16 +1080,20 @@ namespace NESPDataViewer
                     channel = sensorinfo[1];
                     location = sensorinfo[3];
                 }
-                CreateAccelerationGraph(files[i], channel, location);
+                CreateAccelerationGraph(paneOrdering, files[i], channel, location);
+                paneOrdering++;
             }
             #endregion
 
-            #region ENERGY
-            files = Directory.GetFiles(path, "Energy*");
-            if (files.Length > 0)
+            //ADD_GRAPH STEP 1
+            #region OXYCON
+            string oxyFile = Path.Combine(path, "Oxycon-S1.csv"); 
+            if (File.Exists(oxyFile))
             {
-                GraphPane ePane = AddPane(TITLE_ENERGYGRAPH, "Energy Expended");
-                CreateEnergyGraph(ePane, files);
+                string title = paneOrdering + " Oxycon";
+                GraphPane ePane = AddPane(title, "Oxycon");
+                CreateOxyconGraph(ePane, oxyFile);
+                paneOrdering++;
             }
             #endregion
 
@@ -994,24 +1104,24 @@ namespace NESPDataViewer
             files = Directory.GetFiles(path, "HeartRate*");
             if (files.Length > 0)
             {
-                TITLE_MAINGRAPH = "Heart Rate";
-                hPane = AddPane(TITLE_MAINGRAPH, "Beats Per Minute");
+                string title = paneOrdering + " Heart Rate";
+                hPane = AddPane(title, "Beats Per Minute");
                 CreateHeartRateGraph(hPane, files);
             }
             else if (AnyMatches(path, "GPS*,POI*"))
             {
-                TITLE_MAINGRAPH = "Location";
-                hPane = AddPane(TITLE_MAINGRAPH, "");
+                string title = paneOrdering + " Location";
+                hPane = AddPane(title, "");
             }
             else if (AnyMatches(path, "annotat*,photos*,surveys*"))
             {
-                TITLE_MAINGRAPH = "Labels";
-                hPane = AddPane(TITLE_MAINGRAPH, "");
+                string title = paneOrdering + " Labels";
+                hPane = AddPane(title, "");
             }
             else if (AnyMatches(path, "average-*"))
             {
-                TITLE_MAINGRAPH = "Annotation";
-                hPane = AddPane(TITLE_MAINGRAPH, "");
+                string title = paneOrdering + " Annotation";
+                hPane = AddPane(title, "");
                 hPane.YAxis.IsVisible = false;
                 _doesShowHover = false;
             }
@@ -1019,7 +1129,7 @@ namespace NESPDataViewer
 
             if (hPane != null)
             {
-
+                paneOrdering++;
                 filepath = Path.Combine(path, "GPSlog.csv");
                 if (File.Exists(filepath))
                     CreateGPSGraph(hPane, filepath);
@@ -1048,6 +1158,11 @@ namespace NESPDataViewer
 
             }
             #endregion
+
+
+
+
+
             #endregion
 
             hScrollBar1.Value = 0;            
@@ -1172,37 +1287,22 @@ namespace NESPDataViewer
         {
             GraphPane gp = (GraphPane)_htPanes[pane];
             int index = 0;
-            //determine placement
-            if (pane.Equals(TITLE_MAINGRAPH)) index = zedGraphControl1.MasterPane.PaneList.Count;
-            else if (pane.Equals(TITLE_ENERGYGRAPH))
+            //determine placement of pane
+            bool isFound = false;
+            for (int i = 0; i < zedGraphControl1.MasterPane.PaneList.Count; i++)
             {
-                if (zedGraphControl1.MasterPane.PaneList.Contains((GraphPane)_htPanes[TITLE_MAINGRAPH]))
-                    index = zedGraphControl1.MasterPane.PaneList.Count - 1;
-                else index = zedGraphControl1.MasterPane.PaneList.Count;
-
-            }
-            else
-            {
-                bool isFound = false;
-                for (int i = 0; i < zedGraphControl1.MasterPane.PaneList.Count; i++)
+                if (!isFound)
                 {
-                    if (!isFound)
+                    string panetitle = zedGraphControl1.MasterPane.PaneList[i].Title.Text;
+                    if (panetitle.CompareTo(pane) > 0)
                     {
-                        string panetitle = zedGraphControl1.MasterPane.PaneList[i].Title.Text;
-                        if (panetitle.CompareTo(pane) > 0)
-                        {
-                            index = i;
-                            isFound = true;
-                        }
-                        else if (panetitle.Equals(TITLE_ENERGYGRAPH) || panetitle.Equals(TITLE_MAINGRAPH))
-                        {
-                            index = i;
-                            isFound = true;
-                        }
+                        index = i;
+                        isFound = true;
                     }
 
                 }
             }
+            if (!isFound) index = zedGraphControl1.MasterPane.PaneList.Count;
 
             if (gp != null)
                 zedGraphControl1.MasterPane.PaneList.Insert(index, gp);
