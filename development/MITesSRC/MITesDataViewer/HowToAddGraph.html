@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1" />
+<title>How-to Add a Graph</title>
+<style type="text/css">
+<!--
+body {
+	background-color: #CCFFCC;
+	margin-left: 50px;
+	margin-right: 50px;
+	margin-top: 30px;
+	margin-bottom: 30px;
+}
+body,td,th {
+	font-family: Arial, Helvetica, sans-serif;
+}
+-->
+</style></head>
+
+<body>
+<div style="background-color:ivory;padding:20px">
+  <h2>Adding a New Graph to the MITes DataViewer Application </h2>
+  <p>The MITes Data Viewer project uses the ZedGraph library to chart data against time values. To learn more about ZedGraph, visit the <a href="http://zedgraph.org/wiki/index.php?title=Main_Page">ZedGraph Wiki </a>. You can download the ZedGraph code and dlls from the <a href="http://zedgraph.org/wiki/index.php?title=Main_Page">ZedGraph SourceForge site</a>. </p>
+  <p>In this application, the graphs are arranged vertically and each have their own "hide/show" checkbox to allow the user to see all the data at once or only certain charts for comparison purposes. 
+  <p>A chart may have multiple series of points representing different types of data, typically rendered without a connecting line for ease of viewing zoomed-out and zoomed-in. The x-axis represents the date-time at which each data point was collected. The data values can be charted against the left-side y-axis scale or the right-side axis scale.</p>
+  <p>The user may mouse-over points to see labels with the data information. The user may use the scroll-bar at the bottom of the viewer to page through the data in time chunks. If there are 4 or more than hours of data, the pages will be 60 minutes in length, if between 1-4 hours, the pages will be 10 minutes in length, if between 15 and 60 min, the pages will be 5 minutes in length, and less than 15 minutes will have 1-minute pages. The user can also drag the mouse to zoom in to sections of data. There is a "zoom out" button in the bottom right corner to return to the "all data" view.</p>
+  <p>Typically, you will want to add a new graph pane for each sensor type (corresponding to a single file), but we have also grouped data from multiple files (e.g., MITes heart-rate, GPS, survey responses, annotations) on one pane.</p>
+  <p>To add a new graph pane to correspond to a new sensor type/data file, you will need to minimally add code to the BuildCharts method and create a custom graph method for the data file.</p>
+  <p>Data files should have at least one column corresponding to date-time and one or more columns with data values. Each row should represent one data collection point in time. You may include a header with column names or not. If a particular row lacks data values, it is not graphed. The time values may be provided as UNIXTimeStamps or string representations of dates, but you will need to make sure you are handling the data correctly in the charting code (either converting from UNIX or parsing the date string).</p>
+  <p>Within the custom graph method, you may want to set up a line series for each data column of interest in your data file. You can do something systematic, where you just graph whatever columns are found, but in the example below, we are expecting specific data columns in a particular order and setting the color and symbol properties for each. The first two data types are charted against the left y-axis, because they tend to be larger values, and the other three data types are charted agains the right y-axis.</p>
+  <h4>Documentation</h4>
+  <p>All the graphing code is in a single src file (Form1.cs). Search for "ADD_GRAPH" to find the code corresponding to Step 1 and Step 2 within this file.</p>
+  
+  <p>The code below as added to chart data from a file named Oxycon-S1.csv. The data in this file were formatted as follows:</p>
+  <pre>
+  UnixTimeStamp	TimeStamp			OxyconHR	OxyconBF	OxyconVE	OxyconVO2kg	OxyconRER
+	1.2157E+12	7/10/2008 13:58		83			24			7			3.1			0.76
+	1.2157E+12	7/10/2008 13:58		87			18			8			3.9			0.79
+</pre>
+  <p>For these data, the string timestamp was only accurate to the minute, so the UnixTimeStamp was used in the graphing instead.</p>
+  <p>*To view this example executed, look for the Examples folder and double-click on the RUNME.bat.</p>
+  <h4>Steps and Code Examples </h4>
+  <ol>
+  <li>Add section in BuildCharts method that will look for a file (or files) with a specific name or prefix and if found, call a custom CreateGraph method to add content to the graph and then add the graph to pane on the viewer.<br />
+  Example:
+    <pre>
+#region OXYCON
+string oxyFile = Path.Combine(path, "Oxycon-S1.csv"); 
+if (File.Exists(oxyFile))
+{
+	string title = paneOrdering + " Oxycon";
+	GraphPane ePane = AddPane(title, "Oxycon");
+	CreateOxyconGraph(ePane, oxyFile);
+	paneOrdering++;
+}
+#endregion	
+	</pre>
+  </li>
+  <li>Add code for the custom Create(DATATYPE)Graph method.<br />
+  Example:
+  <pre>        private void CreateOxyconGraph(GraphPane gp, string filePath)
+        {
+            string[] values = FileReadWrite.ReadLinesFromFile(filePath);
+
+            //One PointPairList for each data column to graph
+            //Each of these represents a separate line
+            PointPairList listHR = new PointPairList();
+            PointPairList listBF = new PointPairList();
+            PointPairList listVE = new PointPairList();
+            PointPairList listVO2kg = new PointPairList();
+            PointPairList listRER = new PointPairList();
+
+            //for each row, add values to PointPairLists
+            for (int i = 0; i < values.Length; i++)
+            {
+                try
+                {
+                    //expecting values in format: UnixTimeStamp,TimeStamp,OxyconHR,OxyconBF,OxyconVE,OxyconVO2kg,OxyconRER
+                    string[] split = values[i].Split(',');
+
+                    if (split.Length > 2) //TimeStamp + at least one data value
+                    {
+                        #region TIMESTAMP - X VALUE
+                        DateTime dt = ConvertUNIXDatTime(Convert.ToDouble(split[0]));//UnixTimeStamp, Column 1/A
+                        //DateTime dt = DateTime.Parse(split[1]);//TimeStamp, Column 2/B
+                        double x = (double)new XDate(dt);//x value is numeric representation of TimeStamp
+                        #endregion
+
+                        #region DATA VALUE - Y VALUE
+                        double y = 0; string label = "";
+
+                        #region OxyconHR
+                        if ((split.Length > 2) && (split[2].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[2]);//Column 3/C
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("HR\n{0} {1}", dt.ToShortTimeString(), y);
+                                listHR.Add(x, y, label);
+                            }
+                            else listHR.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconBF
+                        if ((split.Length > 3) && (split[3].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[3]);//Column 4/D
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("BF\n{0} {1}", dt.ToShortTimeString(), y);
+                                listBF.Add(x, y, label);
+                            }
+                            else listBF.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconVE
+                        if ((split.Length > 4) && (split[4].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[4]);//Column 5/E
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("VE\n{0} {1}", dt.ToShortTimeString(), y);
+                                listVE.Add(x, y, label);
+                            }
+                            else listVE.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconV02kg
+                        if ((split.Length > 5) && (split[5].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[5]);//Column 6/F
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("VO2kg\n{0} {1}", dt.ToShortTimeString(), y);
+                                listVO2kg.Add(x, y, label);
+                            }
+                            else listVO2kg.Add(x, y);
+                        }
+                        #endregion
+
+                        #region OxyconRER
+                        if ((split.Length > 6) && (split[6].Length > 0))
+                        {
+                            y = Convert.ToDouble(split[6]);//Column 7/G
+                            if (_isUsingLabels)
+                            {
+                                label = String.Format("RER\n{0} {1}", dt.ToShortTimeString(), y);
+                                listRER.Add(x, y, label);
+                            }
+                            else listRER.Add(x, y);
+                        }
+                        #endregion
+                        #endregion
+
+                    }
+
+                }
+                catch { }
+            }
+
+            #region SET DISPLAY PROPERTIES FOR LINES
+            LineItem pointsCurve;
+
+            #region ON Y-AXIS 1 (left-side)
+            #region HR
+            pointsCurve = gp.AddCurve("Oxycon HR", listHR, Color.Red, SymbolType.Circle);
+            pointsCurve.Symbol.Fill = new Fill(Color.Red);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "HR";
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region BF
+            pointsCurve = gp.AddCurve("Oxycon BF", listBF, Color.GreenYellow, SymbolType.Square);
+            pointsCurve.Symbol.Fill = new Fill(Color.GreenYellow);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "BF";
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+            #endregion
+
+            #region ON Y-AXIS 2 - right-side
+            #region VE
+            pointsCurve = gp.AddCurve("Oxycon VE", listVE, Color.Orange, SymbolType.Diamond);
+            pointsCurve.Symbol.Fill = new Fill(Color.Orange);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "VE";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region V02kg
+            pointsCurve = gp.AddCurve("Oxycon VO2kg", listVO2kg, Color.Orchid, SymbolType.TriangleDown);
+            pointsCurve.Symbol.Fill = new Fill(Color.Orchid);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "V02kg";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+
+            #region RER
+            pointsCurve = gp.AddCurve("Oxycon RER", listRER, Color.Navy, SymbolType.Triangle);
+            pointsCurve.Symbol.Fill = new Fill(Color.Navy);
+            if (!_isAdaptingPointSize) pointsCurve.Symbol.Size = 1F;
+            pointsCurve.Line.IsVisible = false;
+            pointsCurve.Tag = "RER";
+            pointsCurve.IsY2Axis = true;
+            _alLinesWithSymbols.Add(pointsCurve);
+            #endregion
+            #endregion
+
+            #endregion
+
+            //if time-dates for lines include dates not previously graphed, widen range
+            WidenDatesIfNeeded(listHR);            
+
+        }
+
+  </pre>
+  </ol>
+</div>
+</body>
+</html>

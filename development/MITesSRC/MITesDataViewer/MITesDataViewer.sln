@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 9.00
 # Visual Studio 2005
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MITesDataViewer", "NESPDataViewer\MITesDataViewer.csproj", "{EE8E855D-ADC6-4981-B2DD-F427624EDF0B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MITesDataViewer", "MITesDataViewer\MITesDataViewer.csproj", "{EE8E855D-ADC6-4981-B2DD-F427624EDF0B}"
 	ProjectSection(WebsiteProperties) = preProject
 		Debug.AspNetCompiler.Debug = "True"
 		Release.AspNetCompiler.Debug = "False"
